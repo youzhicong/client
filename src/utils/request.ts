@@ -4,7 +4,7 @@ import axios, { AxiosError, type Method } from 'axios'
 
 
 // 1. 新axios实例，基础配置
-const baseURL = 'https://consult-api.itheima.net/' //基地址
+const baseURL = import.meta.env.VITE_DEV_SERVER_URL //基地址
 const instance = axios.create({
   baseURL,
   timeout: 10000,
