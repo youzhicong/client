@@ -13,26 +13,26 @@ process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
 const isMac = process.platform === 'darwin'
 
-const menuTemplate = [
+const menuTemplate: any = [
   ...(isMac
-    ? [{
-        label: app.name,
-        submenu: [
-          { role: 'about', label: '关于' },
-          { type: 'separator' },
-          { role: 'hide', label: '隐藏' },
-          { role: 'hideOthers', label: '隐藏其他' },
-          { role: 'unhide', label: '显示全部' },
-          { type: 'separator' },
-          { role: 'quit', label: '退出' },
-        ],
-      }]
+    ? [
+        {
+          label: app.name,
+          submenu: [
+            { role: 'about', label: '关于' },
+            { type: 'separator' },
+            { role: 'hide', label: '隐藏' },
+            { role: 'hideOthers', label: '隐藏其他' },
+            { role: 'unhide', label: '显示全部' },
+            { type: 'separator' },
+            { role: 'quit', label: '退出' },
+          ],
+        },
+      ]
     : []),
   {
     label: '文件',
-    submenu: [
-      { role: 'close', label: '关闭窗口' },
-    ],
+    submenu: [{ role: 'close', label: '关闭窗口' }],
   },
   {
     label: '编辑',
@@ -66,18 +66,13 @@ const menuTemplate = [
       { role: 'minimize', label: '最小化' },
       { role: 'zoom', label: '缩放' },
       ...(isMac
-        ? [
-            { type: 'separator' },
-            { role: 'front', label: '全部置顶' },
-          ]
+        ? [{ type: 'separator' }, { role: 'front', label: '全部置顶' }]
         : [{ role: 'close', label: '关闭' }]),
     ],
   },
   {
     label: '帮助',
-    submenu: [
-      { role: 'toggleDevTools', label: '开发者工具' },
-    ],
+    submenu: [{ role: 'toggleDevTools', label: '开发者工具' }],
   },
 ]
 
@@ -86,7 +81,7 @@ const createWindow = () => {
     width: 800,
     height: 600,
     //图标
-    icon: join(__dirname, '../public/logo.png'),
+    icon: join(__dirname, '../public/favicon.ico'),
   })
 
   // win.loadURL('http://localhost:3000')
@@ -115,4 +110,3 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
-

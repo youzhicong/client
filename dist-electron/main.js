@@ -72,7 +72,7 @@ const createWindow = () => {
     width: 800,
     height: 600,
     //图标
-    icon: join(__dirname$1, "../public/logo.png")
+    icon: join(__dirname$1, "../public/favicon.ico")
   });
   if (process.env.VITE_DEV_SERVER_URL) {
     win.loadURL(process.env.VITE_DEV_SERVER_URL);
