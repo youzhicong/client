@@ -84,6 +84,8 @@ const createWindow = () => {
     icon: join(__dirname, '../public/favicon.ico'),
   })
 
+  const prodWebUrl = process.env.VITE_PROD_WEB_URL
+
   // win.loadURL('http://localhost:3000')
   // development模式
   if (process.env.VITE_DEV_SERVER_URL) {
@@ -92,6 +94,8 @@ const createWindow = () => {
     if (process.env.VITE_OPEN_DEVTOOLS === 'true') {
       win.webContents.openDevTools()
     }
+  } else if (prodWebUrl) {
+    win.loadURL(prodWebUrl)
   } else {
     win.loadFile(join(__dirname, '../dist/index.html'))
   }
