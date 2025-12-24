@@ -12,20 +12,23 @@ export default defineConfig({
   plugins: [
     vue(),
     vueDevTools(),
-     AutoImport({
+    AutoImport({
+      // 自动导入 Vue 相关函数，如：ref, reactive, toRef �?
+      imports: ['vue', 'vue-router', 'pinia'],
       resolvers: [ElementPlusResolver()],
     }),
     Components({
+      dts: 'src/types/components.d.ts',
       resolvers: [ElementPlusResolver()],
     }),
-     electron({
+    electron({
             // 主进程入口文件
             entry: './src-electron/main.ts'
         })
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
 })

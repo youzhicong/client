@@ -69,11 +69,14 @@ const createWindow = () => {
     //图标
     icon: join(__dirname$1, "../public/favicon.ico")
   });
+  const prodWebUrl = process.env.VITE_PROD_WEB_URL;
   if (process.env.VITE_DEV_SERVER_URL) {
     win.loadURL(process.env.VITE_DEV_SERVER_URL);
     if (process.env.VITE_OPEN_DEVTOOLS === "true") {
       win.webContents.openDevTools();
     }
+  } else if (prodWebUrl) {
+    win.loadURL(prodWebUrl);
   } else {
     win.loadFile(join(__dirname$1, "../dist/index.html"));
   }
