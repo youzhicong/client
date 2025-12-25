@@ -12,9 +12,9 @@ router.beforeEach((to) => {
   //白名单
   const whiteList = ['/login']
   //判断是否登录且不在白名单中
-  if (!store.user?.token && !whiteList.includes(to.path)) {
-    return '/login'
-  }
+  // if (!store.user?.token && !whiteList.includes(to.path)) {
+  //   return '/login'
+  // }
 })
 //后置路由守卫
 router.afterEach((to) => {

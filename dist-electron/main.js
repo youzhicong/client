@@ -71,7 +71,7 @@ const createWindow = () => {
   });
   const prodWebUrl = process.env.VITE_PROD_WEB_URL;
   if (process.env.VITE_DEV_SERVER_URL) {
-    win.loadURL(process.env.VITE_DEV_SERVER_URL);
+    win.loadURL("https://zhjx.zafu.edu.cn/");
     if (process.env.VITE_OPEN_DEVTOOLS === "true") {
       win.webContents.openDevTools();
     }

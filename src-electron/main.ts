@@ -89,7 +89,7 @@ const createWindow = () => {
   // win.loadURL('http://localhost:3000')
   // development模式
   if (process.env.VITE_DEV_SERVER_URL) {
-    win.loadURL(process.env.VITE_DEV_SERVER_URL)
+   win.loadURL(process.env.VITE_DEV_SERVER_URL)
     // 开启调试台（通过环境变量控制）
     if (process.env.VITE_OPEN_DEVTOOLS === 'true') {
       win.webContents.openDevTools()

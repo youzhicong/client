@@ -4,6 +4,7 @@ import App from './App.vue'
 import router from './router'
 import './permission';
 import pinia from './stores'
+import 'virtual:svg-icons-register'
 const app = createApp(App)
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
