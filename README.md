@@ -1,49 +1,88 @@
-# client
-vue3+vite5+electron客户端
 # vue-pcdemo
 
-This template should help get you started developing with Vue 3 in Vite.
+基于 Vue 3 + Vite + Electron 的桌面客户端。
 
-## Recommended IDE Setup
+## 技术栈
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- Vue 3
+- Vite
+- Electron
+- Element Plus
+- TypeScript
 
-## Recommended Browser Setup
+## 目录结构
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- `src/`：渲染进程（Vue 应用）
+- `src-electron/`：主进程（Electron）
+- `public/`：静态资源
+- `dist/`：渲染进程构建产物
+- `release/`：打包产物（electron-builder 输出）
 
-## Type Support for `.vue` Imports in TS
+## 运行时配置（config.json）
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+主进程会读取 `src-electron/config.json`。
 
-## Customize configuration
+示例：
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+```json
+{
+  "mainPageUrl": "https://zhjx.zafu.edu.cn/",
+  "openDevTools": false
+}
+```
 
-## Project Setup
+说明：
+- 开发模式固定打开 `http://localhost:5173`。
+- 打包后优先读取 `mainPageUrl`。
+- 如果 `mainPageUrl` 为空，则回退到本地 `dist/index.html`。
+
+## 配置文件说明
+
+位置：
+- 开发模式：`src-electron/config.json`
+- 打包后：请将 `config.json` 放在 Electron 主进程文件旁边（应用的 `resources` 目录）。默认情况下通常为 `resources/app/src-electron/config.json`。
+
+字段：
+- `mainPageUrl`：打包后主窗口打开的地址。
+- `openDevTools`：是否自动打开 DevTools（排查问题时可开启）。
+
+优先级：
+- 开发模式：始终使用 `http://localhost:5173`。
+- 打包后：使用 `config.json` 的 `mainPageUrl`；为空则加载 `dist/index.html`。
+
+更新方式：
+- 修改 `config.json` 后重启应用即可生效。
+
+## 环境要求
+
+- Node.js `^20.19.0`
+- pnpm
+
+## 安装依赖
 
 ```sh
 pnpm install
 ```
 
-### Compile and Hot-Reload for Development
+## 本地开发
 
 ```sh
 pnpm dev
 ```
 
-### Type-Check, Compile and Minify for Production
+## 构建
 
 ```sh
 pnpm build
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## 打包（Electron）
+
+```sh
+pnpm electron:build
+```
+
+## 代码检查
 
 ```sh
 pnpm lint
