@@ -15,7 +15,14 @@
     "electron:build": "vite build && electron-builder",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix --cache",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli src/",
+    "prepare": "husky install",
+     "lint-staged": "lint-staged"
+  },
+   "lint-staged": {
+    "*.{js,ts,vue}": [
+      "eslint --fix"
+    ]
   },
   "build": {
     "productName": "yzcTool",
@@ -80,8 +87,11 @@
     "electron": "^39.2.7",
     "electron-builder": "^26.0.12",
     "eslint": "^9.39.1",
+    "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-vue": "~10.6.2",
+    "husky": "^8.0.0",
     "jiti": "^2.6.1",
+    "lint-staged": "^16.2.7",
     "npm-run-all2": "^8.0.4",
     "prettier": "3.7.4",
     "sass": "^1.97.1",
