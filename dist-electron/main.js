@@ -1,4 +1,5 @@
 import { app, Menu, BrowserWindow } from "electron";
+import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 const __dirname$1 = dirname(fileURLToPath(import.meta.url));
@@ -62,6 +63,25 @@ const menuTemplate = [
     submenu: [{ role: "toggleDevTools", label: "开发者工具" }]
   }
 ];
+const getConfigPath = () => {
+  const candidates = [
+    join(__dirname$1, "config.json"),
+    join(process.cwd(), "src-electron", "config.json")
+  ];
+  for (const filePath of candidates) {
+    if (existsSync(filePath)) return filePath;
+  }
+  return candidates[0];
+};
+const loadConfig = () => {
+  try {
+    const configPath = getConfigPath();
+    const raw = readFileSync(configPath, "utf-8");
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+};
 const createWindow = () => {
   const win = new BrowserWindow({
     width: 800,
@@ -69,16 +89,18 @@ const createWindow = () => {
     //图标
     icon: join(__dirname$1, "../public/favicon.ico")
   });
-  const prodWebUrl = process.env.VITE_PROD_WEB_URL;
-  if (process.env.VITE_DEV_SERVER_URL) {
-    win.loadURL("https://zhjx.zafu.edu.cn/");
-    if (process.env.VITE_OPEN_DEVTOOLS === "true") {
-      win.webContents.openDevTools();
+  const { mainPageUrl, openDevTools } = loadConfig();
+  if (app.isPackaged) {
+    if (mainPageUrl) {
+      win.loadURL(mainPageUrl);
+    } else {
+      win.loadFile(join(__dirname$1, "../dist/index.html"));
     }
-  } else if (prodWebUrl) {
-    win.loadURL(prodWebUrl);
   } else {
-    win.loadFile(join(__dirname$1, "../dist/index.html"));
+    win.loadURL("http://localhost:5173");
+  }
+  if (openDevTools || !app.isPackaged) {
+    win.webContents.openDevTools();
   }
 };
 app.whenReady().then(() => {

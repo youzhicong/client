@@ -1,5 +1,6 @@
 ﻿// src-electron/main.js
 import { app, BrowserWindow, Menu } from 'electron'
+import { existsSync, readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -76,6 +77,32 @@ const menuTemplate: any = [
   },
 ]
 
+type AppConfig = {
+  mainPageUrl?: string
+  openDevTools?: boolean
+}
+
+const getConfigPath = () => {
+  const candidates = [
+    join(__dirname, 'config.json'),
+    join(process.cwd(), 'src-electron', 'config.json'),
+  ]
+  for (const filePath of candidates) {
+    if (existsSync(filePath)) return filePath
+  }
+  return candidates[0]
+}
+
+const loadConfig = (): AppConfig => {
+  try {
+    const configPath = getConfigPath()
+    const raw = readFileSync(configPath, 'utf-8')
+    return JSON.parse(raw) as AppConfig
+  } catch {
+    return {}
+  }
+}
+
 const createWindow = () => {
   const win = new BrowserWindow({
     width: 800,
@@ -84,20 +111,20 @@ const createWindow = () => {
     icon: join(__dirname, '../public/favicon.ico'),
   })
 
-  const prodWebUrl = process.env.VITE_PROD_WEB_URL
+  const { mainPageUrl, openDevTools } = loadConfig()
 
-  // win.loadURL('http://localhost:3000')
-  // development模式
-  if (process.env.VITE_DEV_SERVER_URL) {
-   win.loadURL(process.env.VITE_DEV_SERVER_URL)
-    // 开启调试台（通过环境变量控制）
-    if (process.env.VITE_OPEN_DEVTOOLS === 'true') {
-      win.webContents.openDevTools()
+  if (app.isPackaged) {
+    if (mainPageUrl) {
+      win.loadURL(mainPageUrl)
+    } else {
+      win.loadFile(join(__dirname, '../dist/index.html'))
     }
-  } else if (prodWebUrl) {
-    win.loadURL(prodWebUrl)
   } else {
-    win.loadFile(join(__dirname, '../dist/index.html'))
+    win.loadURL('http://localhost:5173')
+  }
+
+  if (openDevTools || !app.isPackaged) {
+    win.webContents.openDevTools()
   }
 }
 
