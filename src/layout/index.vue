@@ -1,9 +1,9 @@
 <template>
   <div>
     <!-- 头部 -->
-     <div>我是头部</div>
+    <headerNav></headerNav>
     <!-- 放二级路由出口 -->
-     <router-view></router-view>
+    <router-view></router-view>
   </div>
 </template>
 
