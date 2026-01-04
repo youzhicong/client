@@ -8,6 +8,10 @@
 .header-1 {
   width: 100%;
   height: 60px;
-  background-color: #4c2cff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  background-color: #2b80ee;
 }
 </style>

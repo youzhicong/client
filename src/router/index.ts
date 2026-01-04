@@ -6,7 +6,7 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: () => import('@/views/login/index.vue'),
+      component: () => import('@/views/login/index.vue')
     },
     {
       path: '/',
@@ -17,11 +17,26 @@ const router = createRouter({
         {
           path: '/home',
           name: 'home',
-          component: () => import('@/views/home/index.vue'),
+          component: () => import('@/views/home/index.vue')
         },
-      ],
-    },
-  ],
+        {
+          path: '/preview',
+          name: 'preview',
+          component: () => import('@/views/preview/index.vue')
+        },
+        {
+          path: '/drag',
+          name: 'drag',
+          component: () => import('@/views/drag/index.vue')
+        },
+        {
+          path: '/im',
+          name: 'im',
+          component: () => import('@/views/im/index.vue')
+        }
+      ]
+    }
+  ]
 })
 
 export default router

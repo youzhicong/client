@@ -87,3 +87,52 @@ pnpm electron:build
 ```sh
 pnpm lint
 ```
+
+## 拖拽构建两种方案对比
+
+方案 A：模板分支渲染（大量 `v-if`）
+- 优点：直观易读、调试方便、组件细节可控。
+- 缺点：模板膨胀快、重复代码多、组件越多越难维护。
+
+方案 B：Schema + 组件映射（动态组件）
+- 优点：可扩展、方便新增组件、可导出 Schema、模板更简洁。
+- 缺点：多一层抽象、复杂组件可能需要封装、类型约束更复杂。
+
+建议：
+- 小型功能或快速原型：优先方案 A。
+- 组件多、要长期维护：优先方案 B。
+
+## Vue-Office Usage (Vue 3 + Vite + TS)
+
+Install:
+```sh
+pnpm add @vue-office/docx @vue-office/excel @vue-office/pdf
+```
+
+Basic usage:
+```vue
+<template>
+  <vue-office-pdf v-if="type === 'pdf'" :src="objectUrl" />
+  <vue-office-docx v-else-if="type === 'docx'" :src="docxData" />
+  <vue-office-excel v-else-if="type === 'excel'" :src="excelData" />
+</template>
+
+<script lang="ts" setup>
+import { ref } from 'vue'
+import VueOfficeDocx from '@vue-office/docx'
+import VueOfficeExcel from '@vue-office/excel'
+import VueOfficePdf from '@vue-office/pdf'
+import '@vue-office/docx/lib/index.css'
+import '@vue-office/excel/lib/index.css'
+
+const type = ref<'pdf' | 'docx' | 'excel'>('pdf')
+const objectUrl = ref('')
+const docxData = ref<ArrayBuffer | null>(null)
+const excelData = ref<ArrayBuffer | null>(null)
+</script>
+```
+
+Notes:
+- PDF uses `objectUrl` from `URL.createObjectURL(file)`.
+- DOCX/Excel use `ArrayBuffer` from `FileReader.readAsArrayBuffer`.
+- `@vue-office/pdf` does not provide `lib/index.css`, so do not import it.
