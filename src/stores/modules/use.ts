@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const useUserStore = defineStore(
   'cp-user',
   () => {
@@ -14,6 +15,6 @@ export const useUserStore = defineStore(
     return { user, setUser, delUser }
   },
   {
-    persist: true,
-  },
+    persist: true
+  }
 )

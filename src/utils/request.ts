@@ -2,12 +2,11 @@ import { useUserStore } from '@/stores'
 import router from '@/router'
 import axios, { AxiosError, type Method } from 'axios'
 
-
 // 1. 新axios实例，基础配置
 const baseURL = import.meta.env.VITE_DEV_SERVER_URL //基地址
 const instance = axios.create({
   baseURL,
-  timeout: 10000,
+  timeout: 10000
 })
 
 // 2. 请求拦截器，携带token
@@ -19,7 +18,7 @@ instance.interceptors.request.use(
     }
     return config
   },
-  (err) => Promise.reject(err),
+  (err) => Promise.reject(err)
 )
 
 // 3. 响应拦截器，剥离无效数据，401拦截
@@ -27,7 +26,7 @@ instance.interceptors.response.use(
   (res) => {
     // 后台约定，响应成功，但是code不是10000，是业务逻辑失败
     if (res.data?.code !== 10000) {
-     // showToast(res.data?.message || '业务逻辑失败')
+      // showToast(res.data?.message || '业务逻辑失败')
       return Promise.reject(res.data)
     }
     // 业务逻辑成功，返回响应数据，作为axios成功的结果
@@ -42,7 +41,7 @@ instance.interceptors.response.use(
       router.push(`/login?returnUrl=${router.currentRoute.value.fullPath}`)
     }
     return Promise.reject(err)
-  },
+  }
 )
 
 export { baseURL, instance }
@@ -57,10 +56,14 @@ type Data<T> = {
   data: T
 }
 // 4. 请求工具函数
-export const request = <T>(url: string, method: Method = 'get', submitData?: object) => {
+export const request = <T>(
+  url: string,
+  method: Method = 'get',
+  submitData?: object
+) => {
   return instance.request<T, Data<T>>({
     url,
     method,
-    [method.toLowerCase() === 'get' ? 'params' : 'data']: submitData,
+    [method.toLowerCase() === 'get' ? 'params' : 'data']: submitData
   })
 }

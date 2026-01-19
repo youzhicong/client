@@ -14,6 +14,7 @@ process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
 const isMac = process.platform === 'darwin'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const menuTemplate: any = [
   ...(isMac
     ? [
@@ -26,14 +27,14 @@ const menuTemplate: any = [
             { role: 'hideOthers', label: '隐藏其他' },
             { role: 'unhide', label: '显示全部' },
             { type: 'separator' },
-            { role: 'quit', label: '退出' },
-          ],
-        },
+            { role: 'quit', label: '退出' }
+          ]
+        }
       ]
     : []),
   {
     label: '文件',
-    submenu: [{ role: 'close', label: '关闭窗口' }],
+    submenu: [{ role: 'close', label: '关闭窗口' }]
   },
   {
     label: '编辑',
@@ -44,8 +45,8 @@ const menuTemplate: any = [
       { role: 'cut', label: '剪切' },
       { role: 'copy', label: '复制' },
       { role: 'paste', label: '粘贴' },
-      { role: 'selectAll', label: '全选' },
-    ],
+      { role: 'selectAll', label: '全选' }
+    ]
   },
   {
     label: '查看',
@@ -58,8 +59,8 @@ const menuTemplate: any = [
       { role: 'zoomIn', label: '放大' },
       { role: 'zoomOut', label: '缩小' },
       { type: 'separator' },
-      { role: 'togglefullscreen', label: '全屏' },
-    ],
+      { role: 'togglefullscreen', label: '全屏' }
+    ]
   },
   {
     label: '窗口',
@@ -68,13 +69,13 @@ const menuTemplate: any = [
       { role: 'zoom', label: '缩放' },
       ...(isMac
         ? [{ type: 'separator' }, { role: 'front', label: '全部置顶' }]
-        : [{ role: 'close', label: '关闭' }]),
-    ],
+        : [{ role: 'close', label: '关闭' }])
+    ]
   },
   {
     label: '帮助',
-    submenu: [{ role: 'toggleDevTools', label: '开发者工具' }],
-  },
+    submenu: [{ role: 'toggleDevTools', label: '开发者工具' }]
+  }
 ]
 
 type AppConfig = {
@@ -85,7 +86,7 @@ type AppConfig = {
 const getConfigPath = () => {
   const candidates = [
     join(__dirname, 'config.json'),
-    join(process.cwd(), 'src-electron', 'config.json'),
+    join(process.cwd(), 'src-electron', 'config.json')
   ]
   for (const filePath of candidates) {
     if (existsSync(filePath)) return filePath
@@ -108,7 +109,7 @@ const createWindow = () => {
     width: 800,
     height: 600,
     //图标
-    icon: join(__dirname, '../public/favicon.ico'),
+    icon: join(__dirname, '../public/favicon.ico')
   })
 
   const { mainPageUrl, openDevTools } = loadConfig()

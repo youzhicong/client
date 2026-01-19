@@ -33,6 +33,11 @@ const router = createRouter({
           path: '/im',
           name: 'im',
           component: () => import('@/views/im/index.vue')
+        },
+        {
+          path: '/map',
+          name: 'map',
+          component: () => import('@/views/map/index.vue')
         }
       ]
     }

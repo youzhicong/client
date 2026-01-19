@@ -82,7 +82,7 @@ const seedMessages = (
   content: text,
   type: 'text' as const,
   createdAt: now - minutesAgo * 60 * 1000,
-  status: sender.id === currentUser.id ? 'read' : 'sent'
+  status: (sender.id === currentUser.id ? 'read' : 'sent') as MessageStatus
 })
 
 const mockConversations: ConversationItem[] = [
@@ -91,7 +91,7 @@ const mockConversations: ConversationItem[] = [
     title: '产品讨论组',
     avatar: '产',
     mode: 'group',
-    members: [currentUser, users[0], users[1], users[2]],
+    members: [currentUser, users[0]!, users[1]!, users[2]!],
     lastMessage: '今天下午可以同步一下版本节奏吗？',
     lastTime: now - 8 * 60 * 1000,
     unread: 2,
@@ -102,7 +102,7 @@ const mockConversations: ConversationItem[] = [
     title: '视觉设计 · Alice',
     avatar: 'A',
     mode: 'direct',
-    members: [currentUser, users[3]],
+    members: [currentUser, users[3]!],
     lastMessage: '新插画已经发你啦，查收一下～',
     lastTime: now - 32 * 60 * 1000,
     unread: 0
@@ -112,7 +112,7 @@ const mockConversations: ConversationItem[] = [
     title: '前端协作',
     avatar: '前',
     mode: 'group',
-    members: [currentUser, users[3], users[4]],
+    members: [currentUser, users[3]!, users[4]!],
     lastMessage: '我补了一个loading动效',
     lastTime: now - 85 * 60 * 1000,
     unread: 3
@@ -122,7 +122,7 @@ const mockConversations: ConversationItem[] = [
     title: '运维值班',
     avatar: '运',
     mode: 'group',
-    members: [currentUser, users[2], users[4]],
+    members: [currentUser, users[2]!, users[4]!],
     lastMessage: '刚刚有一次高延迟告警',
     lastTime: now - 180 * 60 * 1000,
     unread: 0
@@ -131,17 +131,17 @@ const mockConversations: ConversationItem[] = [
 
 const mockMessages: Record<string, MessageItem[]> = {
   'conv-1': [
-    seedMessages('conv-1', users[0], '我们可以先对齐一下需求风险。', 60),
-    seedMessages('conv-1', users[1], '今天下午可以同步一下版本节奏吗？', 8)
+    seedMessages('conv-1', users[0]!, '我们可以先对齐一下需求风险。', 60),
+    seedMessages('conv-1', users[1]!, '今天下午可以同步一下版本节奏吗？', 8)
   ],
   'conv-2': [
-    seedMessages('conv-2', users[3], '新插画已经发你啦，查收一下～', 32)
+    seedMessages('conv-2', users[3]!, '新插画已经发你啦，查收一下～', 32)
   ],
   'conv-3': [
-    seedMessages('conv-3', users[4], '我补了一个loading动效', 85),
+    seedMessages('conv-3', users[4]!, '我补了一个loading动效', 85),
     seedMessages('conv-3', currentUser, '我会把消息动效再润色下', 72)
   ],
-  'conv-4': [seedMessages('conv-4', users[2], '刚刚有一次高延迟告警', 180)]
+  'conv-4': [seedMessages('conv-4', users[2]!, '刚刚有一次高延迟告警', 180)]
 }
 
 const incomingSamples = [
@@ -199,7 +199,7 @@ export const useImStore = defineStore('im', () => {
 
   const pushMessage = (msg: MessageItem, incoming: boolean) => {
     if (!messages[msg.convId]) messages[msg.convId] = []
-    messages[msg.convId].push(msg)
+    messages[msg.convId]!.push(msg)
 
     const conv = conversations.value.find((item) => item.id === msg.convId)
     if (conv) {
@@ -266,14 +266,15 @@ export const useImStore = defineStore('im', () => {
       (item): item is UserProfile => Boolean(item) && item.id !== currentUser.id
     )
     const sender =
-      candidates[Math.floor(Math.random() * candidates.length)] || users[0]
+      candidates[Math.floor(Math.random() * candidates.length)] ?? users[0]!
     const random = Math.random()
     const isFile = random > 0.82
     const isImage = random > 0.68 && random <= 0.82
     const text =
-      incomingSamples[Math.floor(Math.random() * incomingSamples.length)]
+      incomingSamples[Math.floor(Math.random() * incomingSamples.length)] ??
+      '收到'
     const fileName =
-      incomingFiles[Math.floor(Math.random() * incomingFiles.length)]
+      incomingFiles[Math.floor(Math.random() * incomingFiles.length)] ?? '文件'
     const msg: MessageItem = {
       id: createMessageId(),
       convId: conv.id,
@@ -312,7 +313,8 @@ export const useImStore = defineStore('im', () => {
     if (activeId.value) {
       pushSystemMessage(
         activeId.value,
-        systemSamples[Math.floor(Math.random() * systemSamples.length)]
+        systemSamples[Math.floor(Math.random() * systemSamples.length)] ??
+          '已连接'
       )
     }
     messageTimer = window.setInterval(() => {

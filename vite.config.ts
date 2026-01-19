@@ -17,24 +17,24 @@ export default defineConfig({
     AutoImport({
       // 自动导入 Vue 相关函数，如：ref, reactive, toRef �?
       imports: ['vue', 'vue-router', 'pinia'],
-      resolvers: [ElementPlusResolver()],
+      resolvers: [ElementPlusResolver()]
     }),
     Components({
       dts: 'src/types/components.d.ts',
-      resolvers: [ElementPlusResolver()],
+      resolvers: [ElementPlusResolver()]
     }),
     createSvgIconsPlugin({
-     // 指定图标文件夹，绝对路径（NODE代码）
+      // 指定图标文件夹，绝对路径（NODE代码）
       iconDirs: [path.resolve(process.cwd(), 'src/icons')]
     }),
     electron({
-            // 主进程入口文件
-            entry: './src-electron/main.ts'
-        })
+      // 主进程入口文件
+      entry: './src-electron/main.ts'
+    })
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-    },
-  },
+      '@': fileURLToPath(new URL('./src', import.meta.url))
+    }
+  }
 })
