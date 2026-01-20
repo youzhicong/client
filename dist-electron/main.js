@@ -1,13 +1,14 @@
-import { app as o, Menu as t, BrowserWindow as i } from "electron";
-import { readFileSync as b, existsSync as p } from "node:fs";
-import { dirname as m, join as a } from "node:path";
-import { fileURLToPath as u } from "node:url";
-const r = m(u(import.meta.url));
-process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = "true";
-const n = process.platform === "darwin", d = [
-  ...n ? [
+import { app, Menu, BrowserWindow } from "electron";
+import { readFileSync, existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+const __dirname$1 = dirname(fileURLToPath(import.meta.url));
+process.env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = "true";
+const isMac = process.platform === "darwin";
+const menuTemplate = [
+  ...isMac ? [
     {
-      label: o.name,
+      label: app.name,
       submenu: [
         { role: "about", label: "关于" },
         { type: "separator" },
@@ -54,43 +55,62 @@ const n = process.platform === "darwin", d = [
     submenu: [
       { role: "minimize", label: "最小化" },
       { role: "zoom", label: "缩放" },
-      ...n ? [{ type: "separator" }, { role: "front", label: "全部置顶" }] : [{ role: "close", label: "关闭" }]
+      ...isMac ? [{ type: "separator" }, { role: "front", label: "全部置顶" }] : [{ role: "close", label: "关闭" }]
     ]
   },
   {
     label: "帮助",
     submenu: [{ role: "toggleDevTools", label: "开发者工具" }]
   }
-], f = () => {
-  const e = [
-    a(r, "config.json"),
-    a(process.cwd(), "src-electron", "config.json")
+];
+const getConfigPath = () => {
+  const candidates = [
+    join(__dirname$1, "config.json"),
+    join(process.cwd(), "src-electron", "config.json")
   ];
-  for (const l of e)
-    if (p(l)) return l;
-  return e[0];
-}, g = () => {
+  for (const filePath of candidates) {
+    if (existsSync(filePath)) return filePath;
+  }
+  return candidates[0];
+};
+const loadConfig = () => {
   try {
-    const e = f(), l = b(e, "utf-8");
-    return JSON.parse(l);
+    const configPath = getConfigPath();
+    const raw = readFileSync(configPath, "utf-8");
+    return JSON.parse(raw);
   } catch {
     return {};
   }
-}, s = () => {
-  const e = new i({
+};
+const createWindow = () => {
+  const win = new BrowserWindow({
     width: 800,
     height: 600,
     //图标
-    icon: a(r, "../public/favicon.ico")
-  }), { mainPageUrl: l, openDevTools: c } = g();
-  o.isPackaged ? l ? e.loadURL(l) : e.loadFile(a(r, "../dist/index.html")) : e.loadURL("http://localhost:5173"), (c || !o.isPackaged) && e.webContents.openDevTools();
+    icon: join(__dirname$1, "../public/favicon.ico")
+  });
+  const { mainPageUrl, openDevTools } = loadConfig();
+  if (app.isPackaged) {
+    if (mainPageUrl) {
+      win.loadURL(mainPageUrl);
+    } else {
+      win.loadFile(join(__dirname$1, "../dist/index.html"));
+    }
+  } else {
+    win.loadURL("http://localhost:5173");
+  }
+  if (openDevTools || !app.isPackaged) {
+    win.webContents.openDevTools();
+  }
 };
-o.whenReady().then(() => {
-  const e = t.buildFromTemplate(d);
-  t.setApplicationMenu(e), s(), o.on("activate", () => {
-    i.getAllWindows().length === 0 && s();
+app.whenReady().then(() => {
+  const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu);
+  createWindow();
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
-o.on("window-all-closed", () => {
-  process.platform !== "darwin" && o.quit();
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
 });

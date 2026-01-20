@@ -1,5 +1,4 @@
 import { fileURLToPath, URL } from 'node:url'
-
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
@@ -9,32 +8,51 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import electron from 'vite-plugin-electron'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import path from 'path'
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [
-    vue(),
-    vueDevTools(),
-    AutoImport({
-      // 自动导入 Vue 相关函数，如：ref, reactive, toRef �?
-      imports: ['vue', 'vue-router', 'pinia'],
-      resolvers: [ElementPlusResolver()]
-    }),
-    Components({
-      dts: 'src/types/components.d.ts',
-      resolvers: [ElementPlusResolver()]
-    }),
-    createSvgIconsPlugin({
-      // 指定图标文件夹，绝对路径（NODE代码）
-      iconDirs: [path.resolve(process.cwd(), 'src/icons')]
-    }),
-    electron({
-      // 主进程入口文件
-      entry: './src-electron/main.ts'
-    })
-  ],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+
+export default defineConfig(({ mode }) => {
+  return {
+    plugins: [
+      vue(),
+      vueDevTools(),
+      AutoImport({
+        imports: ['vue', 'vue-router', 'pinia'],
+        resolvers: [ElementPlusResolver()]
+      }),
+      Components({
+        dts: 'src/types/components.d.ts',
+        resolvers: [ElementPlusResolver()]
+      }),
+      createSvgIconsPlugin({
+        iconDirs: [path.resolve(process.cwd(), 'src/icons')]
+      }),
+      mode === 'development' || mode === 'electron'
+        ? electron({
+            entry: './src-electron/main.ts'
+          })
+        : undefined
+    ],
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        '@vue-office/excel': fileURLToPath(
+          new URL(
+            './node_modules/@vue-office/excel/lib/v3/index.js',
+            import.meta.url
+          )
+        ),
+        '@vue-office/docx': fileURLToPath(
+          new URL(
+            './node_modules/@vue-office/docx/lib/v3/index.js',
+            import.meta.url
+          )
+        ),
+        '@vue-office/pdf': fileURLToPath(
+          new URL(
+            './node_modules/@vue-office/pdf/lib/v3/index.js',
+            import.meta.url
+          )
+        )
+      }
     }
   }
 })

@@ -12,7 +12,7 @@
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
-    "electron:build": "vite build && electron-builder",
+    "electron:build": "vite build --mode electron && electron-builder",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/",
