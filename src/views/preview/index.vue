@@ -11,11 +11,7 @@
         <span>选择文件</span>
       </label>
       <button class="btn" :disabled="!file" @click="clearFile">清空</button>
-      <a
-        v-if="file && objectUrl"
-        class="link"
-        :href="objectUrl"
-        :download="file.name"
+      <a v-if="file && objectUrl" class="link" :href="objectUrl" :download="file.name"
         >下载当前文件</a
       >
     </div>
@@ -30,11 +26,7 @@
       <div v-if="!file" class="empty">请选择文件开始预览。</div>
       <div v-else-if="loading" class="empty">加载中，请稍候…</div>
       <div v-else-if="message" class="empty">{{ message }}</div>
-      <vue-office-pdf
-        v-else-if="previewType === 'pdf'"
-        class="office"
-        :src="objectUrl"
-      />
+      <vue-office-pdf v-else-if="previewType === 'pdf'" class="office" :src="objectUrl" />
       <vue-office-docx
         v-else-if="previewType === 'docx'"
         class="office"
@@ -47,15 +39,8 @@
         :src="excelData"
         @error="onOfficeError"
       />
-      <img
-        v-else-if="previewType === 'image'"
-        class="image"
-        :src="objectUrl"
-        alt="preview"
-      />
-      <pre v-else-if="previewType === 'text'" class="text">{{
-        textContent
-      }}</pre>
+      <img v-else-if="previewType === 'image'" class="image" :src="objectUrl" alt="preview" />
+      <pre v-else-if="previewType === 'text'" class="text">{{ textContent }}</pre>
       <div v-else class="empty">暂不支持该文件类型的在线预览。</div>
     </div>
   </div>
@@ -66,7 +51,7 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import VueOfficeDocx from '../../../node_modules/@vue-office/docx/lib/index.js'
 import VueOfficeExcel from '@vue-office/excel'
 import VueOfficePdf from '@vue-office/pdf'
-import '@vue-office/docx/lib/index.css'
+import '../../../node_modules/@vue-office/docx/lib/index.css'
 import '@vue-office/excel/lib/index.css'
 
 type PreviewType = 'pdf' | 'docx' | 'excel' | 'image' | 'text' | 'none'
@@ -115,9 +100,7 @@ const isTextFile = (f: File) => {
   if (type.startsWith('text/')) return true
   if (type === 'application/json') return true
   const name = f.name.toLowerCase()
-  return ['.txt', '.md', '.json', '.log', '.xml', '.csv'].some((ext) =>
-    name.endsWith(ext)
-  )
+  return ['.txt', '.md', '.json', '.log', '.xml', '.csv'].some((ext) => name.endsWith(ext))
 }
 
 const readAsArrayBuffer = (f: File) =>
@@ -308,8 +291,8 @@ onBeforeUnmount(() => {
   word-break: break-word;
   margin: 0;
   font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
-    'Courier New', monospace;
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
 }
 
 .empty {
