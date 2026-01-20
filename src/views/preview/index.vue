@@ -63,7 +63,7 @@
 
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
-import VueOfficeDocx from '@vue-office/docx/lib/index.js'
+import VueOfficeDocx from '../../../node_modules/@vue-office/docx/lib/index.js'
 import VueOfficeExcel from '@vue-office/excel'
 import VueOfficePdf from '@vue-office/pdf'
 import '@vue-office/docx/lib/index.css'
