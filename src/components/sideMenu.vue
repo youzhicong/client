@@ -91,6 +91,7 @@ import {
   ChatDotRound,
   Document,
   House,
+  MagicStick,
   MapLocation,
   Plus,
   Promotion,
@@ -137,6 +138,13 @@ const menuItems = [
     desc: '位置服务',
     icon: MapLocation,
     theme: 'theme-map'
+  },
+  {
+    index: '/ai-workflow',
+    label: 'AI工作流',
+    desc: '产品创意生成',
+    icon: MagicStick,
+    theme: 'theme-ai'
   }
 ]
 
@@ -296,6 +304,10 @@ const handleAction = (key: string) => {
   &.theme-map {
     background: #fffbeb;
     color: #f59e0b;
+  }
+  &.theme-ai {
+    background: linear-gradient(135deg, #f5f3ff 0%, #fdf2f8 100%);
+    color: #8b5cf6;
   }
 }
 

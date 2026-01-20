@@ -38,6 +38,21 @@ const router = createRouter({
           path: '/map',
           name: 'map',
           component: () => import('@/views/map/index.vue')
+        },
+        {
+          path: '/ai-workflow',
+          name: 'ai-workflow',
+          component: () => import('@/views/ai-workflow/index.vue')
+        },
+        {
+          path: '/ai-workflow/detail',
+          name: 'ai-workflow-detail',
+          component: () => import('@/views/ai-workflow/detail.vue')
+        },
+        {
+          path: '/ai-workflow/settings',
+          name: 'ai-workflow-settings',
+          component: () => import('@/views/ai-workflow/settings.vue')
         }
       ]
     }
