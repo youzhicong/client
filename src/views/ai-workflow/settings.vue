@@ -244,7 +244,7 @@ const selectProvider = (provider: (typeof providers)[0]) => {
   settings.value.provider = provider.id
   settings.value.baseUrl = provider.baseUrl
   if (provider.models.length > 0) {
-    settings.value.model = provider.models[0].id
+    settings.value.model = provider.models[0]?.id || ''
   }
 }
 
