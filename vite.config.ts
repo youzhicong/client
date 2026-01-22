@@ -33,25 +33,7 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
-        '@vue-office/excel': fileURLToPath(
-          new URL(
-            './node_modules/@vue-office/excel/lib/v3/index.js',
-            import.meta.url
-          )
-        ),
-        '@vue-office/docx': fileURLToPath(
-          new URL(
-            './node_modules/@vue-office/docx/lib/v3/index.js',
-            import.meta.url
-          )
-        ),
-        '@vue-office/pdf': fileURLToPath(
-          new URL(
-            './node_modules/@vue-office/pdf/lib/v3/index.js',
-            import.meta.url
-          )
-        )
+        '@': fileURLToPath(new URL('./src', import.meta.url))
       }
     }
   }

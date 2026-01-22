@@ -6,6 +6,9 @@
     <sideMenu></sideMenu>
     <!-- 主内容区 -->
     <main class="main-content">
+      <div class="breadcrumb-container">
+        <AppBreadcrumb />
+      </div>
       <div class="content-scroll">
         <router-view v-slot="{ Component }">
           <transition name="page" mode="out-in">
@@ -17,7 +20,9 @@
   </div>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+import AppBreadcrumb from '@/components/AppBreadcrumb.vue'
+</script>
 
 <style lang="scss" scoped>
 .app-layout {
@@ -49,5 +54,12 @@
 .page-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+.breadcrumb-container {
+  padding: 10px 20px;
+  background: #fff;
+  border-bottom: 1px solid #eef1f6;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
 }
 </style>

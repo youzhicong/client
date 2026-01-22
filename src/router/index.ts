@@ -6,7 +6,8 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: () => import('@/views/login/index.vue')
+      component: () => import('@/views/login/index.vue'),
+      meta: { title: '登录' }
     },
     {
       path: '/',
@@ -17,42 +18,50 @@ const router = createRouter({
         {
           path: '/home',
           name: 'home',
-          component: () => import('@/views/home/index.vue')
+          component: () => import('@/views/home/index.vue'),
+          meta: { title: '首页' }
         },
         {
           path: '/preview',
           name: 'preview',
-          component: () => import('@/views/preview/index.vue')
+          component: () => import('@/views/preview/index.vue'),
+          meta: { title: '在线预览' }
         },
         {
           path: '/drag',
           name: 'drag',
-          component: () => import('@/views/drag/index.vue')
+          component: () => import('@/views/drag/index.vue'),
+          meta: { title: '拖拽功能' }
         },
         {
           path: '/im',
           name: 'im',
-          component: () => import('@/views/im/index.vue')
+          component: () => import('@/views/im/index.vue'),
+          meta: { title: '即时通信' }
         },
         {
           path: '/map',
           name: 'map',
-          component: () => import('@/views/map/index.vue')
+          component: () => import('@/views/map/index.vue'),
+          meta: { title: '地图菜单' }
         },
         {
           path: '/ai-workflow',
           name: 'ai-workflow',
-          component: () => import('@/views/ai-workflow/index.vue')
+          component: () => import('@/views/ai-workflow/index.vue'),
+          meta: { title: 'AI工作流' }
         },
         {
           path: '/ai-workflow/detail',
           name: 'ai-workflow-detail',
-          component: () => import('@/views/ai-workflow/detail.vue')
+          component: () => import('@/views/ai-workflow/detail.vue'),
+          meta: { title: '工作流详情' }
         },
         {
           path: '/ai-workflow/settings',
           name: 'ai-workflow-settings',
-          component: () => import('@/views/ai-workflow/settings.vue')
+          component: () => import('@/views/ai-workflow/settings.vue'),
+          meta: { title: '工作流设置' }
         }
       ]
     }
