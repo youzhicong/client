@@ -96,7 +96,8 @@ import {
   Plus,
   Promotion,
   Rank,
-  Upload
+  Upload,
+  UserFilled
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -138,6 +139,13 @@ const menuItems = [
     desc: '位置服务',
     icon: MapLocation,
     theme: 'theme-map'
+  },
+  {
+    index: '/users',
+    label: '用户列表',
+    desc: '成员管理',
+    icon: UserFilled,
+    theme: 'theme-users'
   },
   {
     index: '/ai-workflow',
@@ -304,6 +312,10 @@ const handleAction = (key: string) => {
   &.theme-map {
     background: #fffbeb;
     color: #f59e0b;
+  }
+  &.theme-users {
+    background: #f0f9ff;
+    color: #0ea5e9;
   }
   &.theme-ai {
     background: linear-gradient(135deg, #f5f3ff 0%, #fdf2f8 100%);

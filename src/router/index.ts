@@ -46,6 +46,18 @@ const router = createRouter({
           meta: { title: '地图菜单' }
         },
         {
+          path: '/users',
+          name: 'users',
+          component: () => import('@/views/users/index.vue'),
+          meta: { title: '用户列表' }
+        },
+        {
+          path: '/profile',
+          name: 'profile',
+          component: () => import('@/views/use/index.vue'),
+          meta: { title: 'User Center' }
+        },
+        {
           path: '/ai-workflow',
           name: 'ai-workflow',
           component: () => import('@/views/ai-workflow/index.vue'),
