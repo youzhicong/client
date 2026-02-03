@@ -43,11 +43,7 @@
       <div class="nav-group">
         <div class="nav-title">最近访问</div>
         <div class="recent-list">
-          <div
-            v-for="recent in recentItems"
-            :key="recent.name"
-            class="recent-item"
-          >
+          <div v-for="recent in recentItems" :key="recent.name" class="recent-item">
             <span class="recent-icon">{{ recent.icon }}</span>
             <span class="recent-name">{{ recent.name }}</span>
             <span class="recent-time">{{ recent.time }}</span>
@@ -93,11 +89,13 @@ import {
   House,
   MagicStick,
   MapLocation,
+  Monitor,
   Plus,
   Promotion,
   Rank,
+  TrendCharts,
   Upload,
-  UserFilled
+  UserFilled,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -109,21 +107,21 @@ const menuItems = [
     label: '首页',
     desc: '数据概览',
     icon: House,
-    theme: 'theme-home'
+    theme: 'theme-home',
   },
   {
     index: '/preview',
     label: '在线预览',
     desc: '文档预览',
     icon: Document,
-    theme: 'theme-preview'
+    theme: 'theme-preview',
   },
   {
     index: '/drag',
     label: '拖拽功能',
     desc: '表单构建',
     icon: Rank,
-    theme: 'theme-drag'
+    theme: 'theme-drag',
   },
   {
     index: '/im',
@@ -131,40 +129,61 @@ const menuItems = [
     desc: '消息中心',
     icon: ChatDotRound,
     theme: 'theme-im',
-    badge: 3
+    badge: 3,
   },
   {
     index: '/map',
     label: '地图菜单',
     desc: '位置服务',
     icon: MapLocation,
-    theme: 'theme-map'
+    theme: 'theme-map',
   },
   {
     index: '/users',
     label: '用户列表',
     desc: '成员管理',
     icon: UserFilled,
-    theme: 'theme-users'
+    theme: 'theme-users',
   },
   {
     index: '/ai-workflow',
     label: 'AI工作流',
     desc: '产品创意生成',
     icon: MagicStick,
-    theme: 'theme-ai'
-  }
+    theme: 'theme-ai',
+  },
+  {
+    index: '/vending-monitor',
+    label: '3D贩卖机',
+    desc: '实时监控',
+    icon: Monitor,
+    theme: 'theme-monitor',
+  },
+  {
+    index: '/fund-estimate',
+    label: '基金估值',
+    desc: '实时追踪',
+    icon: TrendCharts,
+    theme: 'theme-fund',
+  },
+  {
+    index: '/vending-list',
+    label: '贩卖机管理',
+    desc: '设备列表',
+    icon: Promotion,
+    theme: 'theme-vending',
+  },
 ]
 
 const quickActions = [
   { key: 'new', label: '新建表单', icon: Plus, theme: 'q-primary' },
-  { key: 'import', label: '导入文件', icon: Upload, theme: 'q-secondary' }
+  { key: 'import', label: '导入文件', icon: Upload, theme: 'q-secondary' },
 ]
 
 const recentItems = ref([
   { icon: '📋', name: '用户反馈表单', time: '10分钟前' },
   { icon: '📄', name: '年度报告.pdf', time: '1小时前' },
-  { icon: '🗺️', name: '北京天安门', time: '2小时前' }
+  { icon: '🗺️', name: '北京天安门', time: '2小时前' },
 ])
 
 const activePath = computed(() => route.path)
@@ -320,6 +339,18 @@ const handleAction = (key: string) => {
   &.theme-ai {
     background: linear-gradient(135deg, #f5f3ff 0%, #fdf2f8 100%);
     color: #8b5cf6;
+  }
+  &.theme-monitor {
+    background: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 100%);
+    color: #14b8a6;
+  }
+  &.theme-fund {
+    background: linear-gradient(135deg, #fef3c7 0%, #fff7ed 100%);
+    color: #d97706;
+  }
+  &.theme-vending {
+    background: linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%);
+    color: #7c3aed;
   }
 }
 

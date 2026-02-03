@@ -7,6 +7,7 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import electron from 'vite-plugin-electron'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
+import { viteMockServe } from 'vite-plugin-mock'
 import path from 'path'
 
 export default defineConfig(({ mode }) => {
@@ -16,25 +17,29 @@ export default defineConfig(({ mode }) => {
       vueDevTools(),
       AutoImport({
         imports: ['vue', 'vue-router', 'pinia'],
-        resolvers: [ElementPlusResolver()]
+        resolvers: [ElementPlusResolver()],
       }),
       Components({
         dts: 'src/types/components.d.ts',
-        resolvers: [ElementPlusResolver()]
+        resolvers: [ElementPlusResolver()],
       }),
       createSvgIconsPlugin({
-        iconDirs: [path.resolve(process.cwd(), 'src/icons')]
+        iconDirs: [path.resolve(process.cwd(), 'src/icons')],
+      }),
+      viteMockServe({
+        mockPath: 'mock',
+        enable: mode === 'development',
       }),
       mode === 'development' || mode === 'electron'
         ? electron({
-            entry: './src-electron/main.ts'
+            entry: './src-electron/main.ts',
           })
-        : undefined
+        : undefined,
     ],
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url))
-      }
-    }
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
+    },
   }
 })
