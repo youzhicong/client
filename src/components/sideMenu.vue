@@ -43,7 +43,11 @@
       <div class="nav-group">
         <div class="nav-title">最近访问</div>
         <div class="recent-list">
-          <div v-for="recent in recentItems" :key="recent.name" class="recent-item">
+          <div
+            v-for="recent in recentItems"
+            :key="recent.name"
+            class="recent-item"
+          >
             <span class="recent-icon">{{ recent.icon }}</span>
             <span class="recent-name">{{ recent.name }}</span>
             <span class="recent-time">{{ recent.time }}</span>
@@ -84,18 +88,21 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   ArrowRight,
+  Calendar,
   ChatDotRound,
   Document,
   House,
   MagicStick,
   MapLocation,
   Monitor,
+  OfficeBuilding,
   Plus,
   Promotion,
   Rank,
   TrendCharts,
   Upload,
   UserFilled,
+  View
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -107,21 +114,21 @@ const menuItems = [
     label: '首页',
     desc: '数据概览',
     icon: House,
-    theme: 'theme-home',
+    theme: 'theme-home'
   },
   {
     index: '/preview',
     label: '在线预览',
     desc: '文档预览',
     icon: Document,
-    theme: 'theme-preview',
+    theme: 'theme-preview'
   },
   {
     index: '/drag',
     label: '拖拽功能',
     desc: '表单构建',
     icon: Rank,
-    theme: 'theme-drag',
+    theme: 'theme-drag'
   },
   {
     index: '/im',
@@ -129,61 +136,82 @@ const menuItems = [
     desc: '消息中心',
     icon: ChatDotRound,
     theme: 'theme-im',
-    badge: 3,
+    badge: 3
   },
   {
     index: '/map',
     label: '地图菜单',
     desc: '位置服务',
     icon: MapLocation,
-    theme: 'theme-map',
+    theme: 'theme-map'
   },
   {
     index: '/users',
     label: '用户列表',
     desc: '成员管理',
     icon: UserFilled,
-    theme: 'theme-users',
+    theme: 'theme-users'
+  },
+  {
+    index: '/high-school-schedule',
+    label: '高中课表',
+    desc: '教师排课',
+    icon: Calendar,
+    theme: 'theme-schedule'
   },
   {
     index: '/ai-workflow',
     label: 'AI工作流',
     desc: '产品创意生成',
     icon: MagicStick,
-    theme: 'theme-ai',
+    theme: 'theme-ai'
   },
   {
     index: '/vending-monitor',
     label: '3D贩卖机',
     desc: '实时监控',
     icon: Monitor,
-    theme: 'theme-monitor',
+    theme: 'theme-monitor'
   },
   {
     index: '/fund-estimate',
     label: '基金估值',
     desc: '实时追踪',
     icon: TrendCharts,
-    theme: 'theme-fund',
+    theme: 'theme-fund'
   },
   {
     index: '/vending-list',
     label: '贩卖机管理',
     desc: '设备列表',
     icon: Promotion,
-    theme: 'theme-vending',
+    theme: 'theme-vending'
   },
+  {
+    index: '/spline-3d',
+    label: '3D可视化',
+    desc: 'Spline场景',
+    icon: View,
+    theme: 'theme-spline'
+  },
+  {
+    index: '/campus-3d',
+    label: '校园全景',
+    desc: '数字校园',
+    icon: OfficeBuilding,
+    theme: 'theme-campus'
+  }
 ]
 
 const quickActions = [
   { key: 'new', label: '新建表单', icon: Plus, theme: 'q-primary' },
-  { key: 'import', label: '导入文件', icon: Upload, theme: 'q-secondary' },
+  { key: 'import', label: '导入文件', icon: Upload, theme: 'q-secondary' }
 ]
 
 const recentItems = ref([
   { icon: '📋', name: '用户反馈表单', time: '10分钟前' },
   { icon: '📄', name: '年度报告.pdf', time: '1小时前' },
-  { icon: '🗺️', name: '北京天安门', time: '2小时前' },
+  { icon: '🗺️', name: '北京天安门', time: '2小时前' }
 ])
 
 const activePath = computed(() => route.path)
@@ -336,6 +364,10 @@ const handleAction = (key: string) => {
     background: #f0f9ff;
     color: #0ea5e9;
   }
+  &.theme-schedule {
+    background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
+    color: #0f766e;
+  }
   &.theme-ai {
     background: linear-gradient(135deg, #f5f3ff 0%, #fdf2f8 100%);
     color: #8b5cf6;
@@ -351,6 +383,14 @@ const handleAction = (key: string) => {
   &.theme-vending {
     background: linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%);
     color: #7c3aed;
+  }
+  &.theme-spline {
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    color: #fff;
+  }
+  &.theme-campus {
+    background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
+    color: #fff;
   }
 }
 

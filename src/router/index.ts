@@ -7,7 +7,7 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import('@/views/login/index.vue'),
-      meta: { title: '登录' },
+      meta: { title: '登录' }
     },
     {
       path: '/',
@@ -19,83 +19,101 @@ const router = createRouter({
           path: '/home',
           name: 'home',
           component: () => import('@/views/home/index.vue'),
-          meta: { title: '首页' },
+          meta: { title: '首页' }
         },
         {
           path: '/preview',
           name: 'preview',
           component: () => import('@/views/preview/index.vue'),
-          meta: { title: '在线预览' },
+          meta: { title: '在线预览' }
         },
         {
           path: '/drag',
           name: 'drag',
           component: () => import('@/views/drag/index.vue'),
-          meta: { title: '拖拽功能' },
+          meta: { title: '拖拽功能' }
         },
         {
           path: '/im',
           name: 'im',
           component: () => import('@/views/im/index.vue'),
-          meta: { title: '即时通信' },
+          meta: { title: '即时通信' }
         },
         {
           path: '/map',
           name: 'map',
           component: () => import('@/views/map/index.vue'),
-          meta: { title: '地图菜单' },
+          meta: { title: '地图菜单' }
         },
         {
           path: '/users',
           name: 'users',
           component: () => import('@/views/users/index.vue'),
-          meta: { title: '用户列表' },
+          meta: { title: '用户列表' }
         },
         {
           path: '/profile',
           name: 'profile',
           component: () => import('@/views/use/index.vue'),
-          meta: { title: 'User Center' },
+          meta: { title: 'User Center' }
+        },
+        {
+          path: '/high-school-schedule',
+          name: 'high-school-schedule',
+          component: () => import('@/views/high-school-schedule/index.vue'),
+          meta: { title: '高中课表' }
         },
         {
           path: '/ai-workflow',
           name: 'ai-workflow',
           component: () => import('@/views/ai-workflow/index.vue'),
-          meta: { title: 'AI工作流' },
+          meta: { title: 'AI工作流' }
         },
         {
           path: '/ai-workflow/detail',
           name: 'ai-workflow-detail',
           component: () => import('@/views/ai-workflow/detail.vue'),
-          meta: { title: '工作流详情' },
+          meta: { title: '工作流详情' }
         },
         {
           path: '/ai-workflow/settings',
           name: 'ai-workflow-settings',
           component: () => import('@/views/ai-workflow/settings.vue'),
-          meta: { title: '工作流设置' },
+          meta: { title: '工作流设置' }
         },
         {
           path: '/vending-monitor',
           name: 'vending-monitor',
           component: () => import('@/views/vending-monitor/index.vue'),
-          meta: { title: '3D贩卖机监控' },
+          meta: { title: '3D贩卖机监控' }
         },
         {
           path: '/fund-estimate',
           name: 'fund-estimate',
           component: () => import('@/views/fund-estimate/index.vue'),
-          meta: { title: '基金估值' },
+          meta: { title: '基金估值' }
         },
         {
           path: '/vending-list',
           name: 'vending-list',
           component: () => import('@/views/vending-list/index.vue'),
-          meta: { title: '贩卖机管理' },
+          meta: { title: '贩卖机管理' }
         },
-      ],
-    },
-  ],
+        {
+          path: '/spline-3d',
+          name: 'spline-3d',
+          component: () => import('@/views/spline-3d/index.vue'),
+          meta: { title: '3D可视化' }
+        },
+        {
+          path: '/campus-3d',
+          name: 'campus-3d',
+          component: () => import('@/views/campus-3d/index.vue'),
+          meta: { title: '校园全景' }
+        }
+      ]
+    }
+  ]
 })
 
 export default router
