@@ -43,7 +43,8 @@ const generateProducts = (): Product[] => {
         stock: Math.floor(Math.random() * maxStock) + 1,
         maxStock,
         price: Math.floor(Math.random() * 10) + 3,
-        color: productColors[(row * 4 + col) % productColors.length]
+        color:
+          productColors[(row * 4 + col) % productColors.length] ?? '#3b82f6'
       })
       slot++
     }

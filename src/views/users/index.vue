@@ -99,15 +99,15 @@
         </el-table-column>
         <el-table-column label="角色" min-width="120">
           <template #default="{ row }">
-            <el-tag :type="roleTagType[row.role] || 'info'" effect="light">
+            <el-tag :type="getRoleTagType(row.role)" effect="light">
               {{ row.role }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="状态" min-width="120">
           <template #default="{ row }">
-            <el-tag :type="statusTagType[row.status]" effect="light">
-              {{ statusLabelMap[row.status] }}
+            <el-tag :type="getStatusTagType(row.status)" effect="light">
+              {{ getStatusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -358,18 +358,24 @@ const statusLabelMap: Record<UserStatus, string> = {
   disabled: '已停用'
 }
 
-const roleTagType: Record<string, string> = {
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const roleTagType: Record<string, TagType> = {
   管理员: 'danger',
   研发: 'success',
   设计: 'info',
   运营: 'warning'
 }
 
-const statusTagType: Record<UserStatus, string> = {
+const statusTagType: Record<UserStatus, TagType> = {
   active: 'success',
   invited: 'warning',
   disabled: 'danger'
 }
+
+const getRoleTagType = (role: string): TagType => roleTagType[role] ?? 'info'
+const getStatusTagType = (status: UserStatus): TagType => statusTagType[status]
+const getStatusLabel = (status: UserStatus): string => statusLabelMap[status]
 
 const filteredUsers = computed(() => {
   const keywordValue = keyword.value.trim().toLowerCase()

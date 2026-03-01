@@ -245,14 +245,16 @@ const toggleFullscreen = () => {
 }
 
 // 自动旋转
-const toggleAutoRotate = (val: boolean) => {
+const toggleAutoRotate = (val: string | number | boolean) => {
+  const enabled = typeof val === 'boolean' ? val : Boolean(val)
   // 可以通过 Spline API 控制场景旋转
-  console.log('Auto rotate:', val)
+  console.log('Auto rotate:', enabled)
 }
 
 // 缩放处理
-const handleZoom = (val: number) => {
-  console.log('Zoom level:', val)
+const handleZoom = (val: number | number[]) => {
+  const zoom = Array.isArray(val) ? (val[0] ?? zoomLevel.value) : val
+  console.log('Zoom level:', zoom)
 }
 
 // FPS 监控
