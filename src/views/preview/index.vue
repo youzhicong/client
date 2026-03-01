@@ -63,11 +63,11 @@
 
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
-import VueOfficeDocx from '@vue-office/docx/lib/index.js'
-import VueOfficeExcel from '@vue-office/excel'
-import VueOfficePdf from '@vue-office/pdf'
-import '@vue-office/docx/lib/index.css'
-import '@vue-office/excel/lib/index.css'
+import VueOfficeDocx from '@vue-office/docx/lib/v3/index.js'
+import VueOfficeExcel from '@vue-office/excel/lib/v3/index.js'
+import VueOfficePdf from '@vue-office/pdf/lib/v3/index.js'
+import '@vue-office/docx/lib/v3/index.css'
+import '@vue-office/excel/lib/v3/index.css'
 
 type PreviewType = 'pdf' | 'docx' | 'excel' | 'image' | 'text' | 'none'
 
