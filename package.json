@@ -43,7 +43,7 @@
       "shortcutName": "yzcTool"
     },
     "win": {
-      "icon": "./public/favicon.ico",
+      "icon": "./public/icon-256.png",
       "artifactName": "${productName}-v${version}-${platform}-setup.${ext}",
       "target": [
         {
@@ -56,11 +56,11 @@
       ]
     },
     "mac": {
-      "icon": "./public/favicon.ico",
+      "icon": "./public/icon-256.png",
       "artifactName": "${productName}-v${version}-${platform}-setup.${ext}"
     },
     "linux": {
-      "icon": "./public/favicon.ico",
+      "icon": "./public/icon-256.png",
       "artifactName": "${productName}-v${version}-${platform}-setup.${ext}"
     }
   },

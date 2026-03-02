@@ -95,6 +95,7 @@ import {
   MagicStick,
   MapLocation,
   Monitor,
+  Notebook,
   OfficeBuilding,
   Plus,
   Promotion,
@@ -186,6 +187,13 @@ const menuItems = [
     desc: '设备列表',
     icon: Promotion,
     theme: 'theme-vending'
+  },
+  {
+    index: '/yuanyuan-diary',
+    label: '圆圆舔狗日记',
+    desc: '追爱复盘',
+    icon: Notebook,
+    theme: 'theme-diary'
   },
   {
     index: '/spline-3d',
@@ -383,6 +391,10 @@ const handleAction = (key: string) => {
   &.theme-vending {
     background: linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%);
     color: #7c3aed;
+  }
+  &.theme-diary {
+    background: linear-gradient(135deg, #fef9c3 0%, #ffedd5 100%);
+    color: #b45309;
   }
   &.theme-spline {
     background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);

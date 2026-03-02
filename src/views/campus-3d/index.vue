@@ -149,6 +149,11 @@ let walkers = []
 let lampHalos = []
 const buildingMeshes = new Map()
 const worldClock = new THREE.Clock()
+let adaptivePixelRatio = 1.5
+let fpsFrameCount = 0
+let fpsElapsed = 0
+const targetFps = 52
+const minPixelRatio = 0.9
 
 // 校园布局规划：
 // 南面：校门、广场
@@ -377,6 +382,98 @@ function resetDynamicCollections() {
   lampHalos = []
 }
 
+function getDevicePixelRatio() {
+  if (typeof window === 'undefined') return 1
+  return window.devicePixelRatio || 1
+}
+
+function disposeMaterial(material) {
+  if (!material) return
+  var textureKeys = [
+    'map',
+    'alphaMap',
+    'aoMap',
+    'bumpMap',
+    'displacementMap',
+    'emissiveMap',
+    'envMap',
+    'lightMap',
+    'metalnessMap',
+    'normalMap',
+    'roughnessMap',
+    'specularMap',
+  ]
+  textureKeys.forEach(function (key) {
+    if (material[key] && material[key].dispose) {
+      material[key].dispose()
+    }
+  })
+  if (material.dispose) material.dispose()
+}
+
+function disposeObject3D(object) {
+  if (!object || !object.traverse) return
+  object.traverse(function (child) {
+    if (child.geometry && child.geometry.dispose) {
+      child.geometry.dispose()
+    }
+    if (Array.isArray(child.material)) {
+      child.material.forEach(function (material) {
+        disposeMaterial(material)
+      })
+    } else if (child.material) {
+      disposeMaterial(child.material)
+    }
+  })
+}
+
+function clearSceneResources() {
+  if (!scene) return
+  for (var i = scene.children.length - 1; i >= 0; i--) {
+    var child = scene.children[i]
+    scene.remove(child)
+    disposeObject3D(child)
+  }
+}
+
+function updateRendererPixelRatio() {
+  if (!renderer || !canvasContainer.value) return
+  var limit = Math.min(getDevicePixelRatio(), adaptivePixelRatio)
+  renderer.setPixelRatio(limit)
+  renderer.setSize(canvasContainer.value.clientWidth, canvasContainer.value.clientHeight, false)
+  if (composer) {
+    composer.setSize(canvasContainer.value.clientWidth, canvasContainer.value.clientHeight)
+  }
+}
+
+function getShadowMapSize() {
+  if (adaptivePixelRatio >= 1.5) return 3072
+  if (adaptivePixelRatio >= 1.15) return 2048
+  return 1024
+}
+
+function tuneAdaptiveQuality(delta) {
+  fpsFrameCount += 1
+  fpsElapsed += delta
+  if (fpsElapsed < 1.5) return
+
+  var fps = fpsFrameCount / fpsElapsed
+  fpsFrameCount = 0
+  fpsElapsed = 0
+
+  var prev = adaptivePixelRatio
+  var deviceMax = Math.min(getDevicePixelRatio(), 2)
+  if (fps < targetFps - 10) {
+    adaptivePixelRatio = Math.max(minPixelRatio, adaptivePixelRatio - 0.1)
+  } else if (fps > targetFps + 8) {
+    adaptivePixelRatio = Math.min(deviceMax, adaptivePixelRatio + 0.05)
+  }
+
+  if (adaptivePixelRatio !== prev) {
+    updateRendererPixelRatio()
+  }
+}
+
 function initPostProcessing() {
   if (!renderer || !scene || !camera || !canvasContainer.value) return
 
@@ -549,6 +646,9 @@ function initScene() {
 
   resetDynamicCollections()
   worldClock.start()
+  adaptivePixelRatio = Math.min(getDevicePixelRatio(), 1.5)
+  fpsFrameCount = 0
+  fpsElapsed = 0
 
   scene = new THREE.Scene()
   camera = new THREE.PerspectiveCamera(
@@ -561,13 +661,13 @@ function initScene() {
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setSize(canvasContainer.value.clientWidth, canvasContainer.value.clientHeight)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = THREE.PCFSoftShadowMap
   renderer.physicallyCorrectLights = true
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = isNight.value ? 0.84 : 1.06
+  updateRendererPixelRatio()
   canvasContainer.value.appendChild(renderer.domElement)
 
   controls = new OrbitControls(camera, renderer.domElement)
@@ -604,8 +704,9 @@ function addLights() {
   var sunLight = new THREE.DirectionalLight(isNight.value ? 0x6688ff : 0xfffacd, isNight.value ? 0.58 : 1.45)
   sunLight.position.set(120, 180, 90)
   sunLight.castShadow = true
-  sunLight.shadow.mapSize.width = 3072
-  sunLight.shadow.mapSize.height = 3072
+  var shadowMapSize = getShadowMapSize()
+  sunLight.shadow.mapSize.width = shadowMapSize
+  sunLight.shadow.mapSize.height = shadowMapSize
   sunLight.shadow.bias = -0.00008
   sunLight.shadow.normalBias = 0.02
   sunLight.shadow.radius = 4
@@ -2501,9 +2602,7 @@ function toggleAutoRotate() {
 
 function toggleNightMode() {
   isNight.value = !isNight.value
-  while (scene.children.length > 0) {
-    scene.remove(scene.children[0])
-  }
+  clearSceneResources()
   buildingMeshes.clear()
   resetDynamicCollections()
   updateSceneMode()
@@ -2515,6 +2614,7 @@ function toggleNightMode() {
   if (showWeather.value) {
     createWeatherParticles()
   }
+  updateRendererPixelRatio()
   updatePostProcessing()
 }
 
@@ -2525,6 +2625,7 @@ function toggleWeather() {
   } else {
     if (weatherParticles) {
       scene.remove(weatherParticles)
+      disposeObject3D(weatherParticles)
       weatherParticles = null
     }
   }
@@ -2533,9 +2634,10 @@ function toggleWeather() {
 function createWeatherParticles() {
   if (weatherParticles) {
     scene.remove(weatherParticles)
+    disposeObject3D(weatherParticles)
   }
 
-  var particleCount = 2000
+  var particleCount = adaptivePixelRatio < 1.15 ? 1000 : adaptivePixelRatio < 1.45 ? 1600 : 2200
   var geometry = new THREE.BufferGeometry()
   var positions = new Float32Array(particleCount * 3)
   var velocities = new Float32Array(particleCount)
@@ -2581,20 +2683,17 @@ function toggleFullscreen() {
 }
 
 function onWindowResize() {
-  if (!canvasContainer.value) return
+  if (!canvasContainer.value || !camera || !renderer) return
   camera.aspect = canvasContainer.value.clientWidth / canvasContainer.value.clientHeight
   camera.updateProjectionMatrix()
-  renderer.setSize(canvasContainer.value.clientWidth, canvasContainer.value.clientHeight)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-  if (composer) {
-    composer.setSize(canvasContainer.value.clientWidth, canvasContainer.value.clientHeight)
-  }
+  updateRendererPixelRatio()
 }
 
 function animate() {
   animationId = requestAnimationFrame(animate)
   var delta = worldClock.getDelta()
   var time = worldClock.elapsedTime
+  tuneAdaptiveQuality(delta)
   controls.update()
 
   // 天气粒子动画
@@ -2702,11 +2801,24 @@ onUnmounted(function () {
     renderer.domElement.removeEventListener('click', onCanvasClick)
   }
   window.removeEventListener('resize', onWindowResize)
+  if (weatherParticles) {
+    scene?.remove(weatherParticles)
+    disposeObject3D(weatherParticles)
+    weatherParticles = null
+  }
+  clearSceneResources()
+  buildingMeshes.clear()
   if (composer?.dispose) {
     composer.dispose()
   }
   composer = null
   resetDynamicCollections()
+  if (renderer?.domElement?.parentNode) {
+    renderer.domElement.parentNode.removeChild(renderer.domElement)
+  }
+  if (renderer?.forceContextLoss) {
+    renderer.forceContextLoss()
+  }
   renderer?.dispose()
 })
 </script>

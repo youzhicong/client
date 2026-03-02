@@ -6,7 +6,7 @@
           <span class="logo-spark">⚡</span>
         </div>
         <div class="logo-text">
-          <span class="logo-name">YZC Tool</span>
+          <span class="logo-name">数字化平台</span>
           <span class="logo-version">v1.0</span>
         </div>
       </div>

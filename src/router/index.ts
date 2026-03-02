@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+﻿import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -55,7 +55,7 @@ const router = createRouter({
           path: '/profile',
           name: 'profile',
           component: () => import('@/views/use/index.vue'),
-          meta: { title: 'User Center' }
+          meta: { title: '用户中心' }
         },
         {
           path: '/high-school-schedule',
@@ -67,7 +67,7 @@ const router = createRouter({
           path: '/ai-workflow',
           name: 'ai-workflow',
           component: () => import('@/views/ai-workflow/index.vue'),
-          meta: { title: 'AI工作流' }
+          meta: { title: 'AI 工作流' }
         },
         {
           path: '/ai-workflow/detail',
@@ -85,7 +85,7 @@ const router = createRouter({
           path: '/vending-monitor',
           name: 'vending-monitor',
           component: () => import('@/views/vending-monitor/index.vue'),
-          meta: { title: '3D贩卖机监控' }
+          meta: { title: '3D 贩卖机监控' }
         },
         {
           path: '/fund-estimate',
@@ -100,10 +100,16 @@ const router = createRouter({
           meta: { title: '贩卖机管理' }
         },
         {
+          path: '/yuanyuan-diary',
+          name: 'yuanyuan-diary',
+          component: () => import('@/views/yuanyuan-diary/index.vue'),
+          meta: { title: '圆圆舔狗日记' }
+        },
+        {
           path: '/spline-3d',
           name: 'spline-3d',
           component: () => import('@/views/spline-3d/index.vue'),
-          meta: { title: '3D可视化' }
+          meta: { title: '3D 可视化' }
         },
         {
           path: '/campus-3d',

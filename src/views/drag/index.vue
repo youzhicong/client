@@ -1,15 +1,37 @@
 <template>
-  <div class="page">
-    <div class="header">
-      <h2>表单构建</h2>
-      <p>从左侧拖拽组件到中间画布，右侧可编辑属性。</p>
-    </div>
+  <div class="designer-page">
+    <div class="bg-shape shape-a"></div>
+    <div class="bg-shape shape-b"></div>
+
+    <header class="hero panel">
+      <div class="hero-left">
+        <span class="hero-badge">FORM BUILDER</span>
+        <h1>可视化表单设计器</h1>
+        <p>拖拽组件、实时编辑属性、排序字段并一键生成页面代码。</p>
+      </div>
+
+      <div class="hero-right">
+        <div class="hero-stat">
+          <span class="label">组件库</span>
+          <strong class="value">{{ totalTools }}</strong>
+        </div>
+        <div class="hero-stat">
+          <span class="label">画布字段</span>
+          <strong class="value">{{ schema.length }}</strong>
+        </div>
+        <div class="hero-stat">
+          <span class="label">必填字段</span>
+          <strong class="value">{{ requiredCount }}</strong>
+        </div>
+      </div>
+    </header>
 
     <div class="layout">
-      <aside class="toolbox">
-        <div class="toolbox-title">组件库</div>
+      <aside class="toolbox panel">
+        <div class="panel-title">组件库</div>
+
         <div class="toolbox-group">
-          <div class="toolbox-group-title">输入型</div>
+          <div class="group-title">输入类</div>
           <div
             v-for="tool in inputTools"
             :key="tool.type"
@@ -17,11 +39,13 @@
             draggable="true"
             @dragstart="onToolDragStart($event, tool)"
           >
-            {{ tool.label }}
+            <span class="tool-name">{{ tool.label }}</span>
+            <span class="tool-desc">{{ tool.desc }}</span>
           </div>
         </div>
+
         <div class="toolbox-group">
-          <div class="toolbox-group-title">选择型</div>
+          <div class="group-title">选择类</div>
           <div
             v-for="tool in selectTools"
             :key="tool.type"
@@ -29,11 +53,13 @@
             draggable="true"
             @dragstart="onToolDragStart($event, tool)"
           >
-            {{ tool.label }}
+            <span class="tool-name">{{ tool.label }}</span>
+            <span class="tool-desc">{{ tool.desc }}</span>
           </div>
         </div>
+
         <div class="toolbox-group">
-          <div class="toolbox-group-title">其他</div>
+          <div class="group-title">其他</div>
           <div
             v-for="tool in otherTools"
             :key="tool.type"
@@ -41,14 +67,19 @@
             draggable="true"
             @dragstart="onToolDragStart($event, tool)"
           >
-            {{ tool.label }}
+            <span class="tool-name">{{ tool.label }}</span>
+            <span class="tool-desc">{{ tool.desc }}</span>
           </div>
         </div>
       </aside>
 
-      <main class="canvas" @dragover.prevent @drop="onCanvasDrop">
+      <main class="canvas panel" @dragover.prevent @drop="onCanvasDrop">
         <div class="canvas-header">
-          <span>拖拽组件到此区域</span>
+          <div class="canvas-title">
+            <h3>表单画布</h3>
+            <span class="canvas-sub">拖拽组件到此区域，点击字段可编辑属性</span>
+          </div>
+
           <div class="canvas-actions">
             <el-button
               size="small"
@@ -68,14 +99,16 @@
               size="small"
               @click="clearAll"
               :disabled="schema.length === 0"
+              >清空</el-button
             >
-              清空
-            </el-button>
           </div>
         </div>
-        <div v-if="schema.length === 0" class="empty">
-          从左侧拖拽组件开始构建
+
+        <div v-if="schema.length === 0" class="canvas-empty">
+          <div class="empty-main">开始拖拽组件，构建你的表单</div>
+          <div class="empty-sub">支持字段排序、属性编辑和代码导出</div>
         </div>
+
         <el-form v-else class="form" label-width="100px">
           <div
             v-for="(field, index) in schema"
@@ -92,10 +125,16 @@
             @drop.stop="onFieldDrop(index)"
             @dragend="onFieldDragEnd"
           >
+            <div class="field-head">
+              <span class="field-type">{{ typeLabel(field.type) }}</span>
+              <span class="field-prop">{{ field.prop }}</span>
+            </div>
+
             <el-form-item :label="field.label" :required="field.required">
               <el-button v-if="field.type === 'button'" type="primary">
                 {{ field.label }}
               </el-button>
+
               <component
                 v-else
                 :is="componentMap[field.type]"
@@ -115,6 +154,7 @@
                 </template>
               </component>
             </el-form-item>
+
             <div class="field-actions">
               <button
                 type="button"
@@ -144,45 +184,54 @@
         </el-form>
       </main>
 
-      <aside class="props">
-        <div class="props-title">组件属性</div>
-        <div v-if="!activeField" class="empty">请选择中间组件进行编辑</div>
+      <aside class="props panel">
+        <div class="panel-title">属性面板</div>
+
+        <div v-if="!activeField" class="props-empty">
+          请选择画布中的组件进行编辑
+        </div>
+
         <div v-else class="props-form">
-          <div class="props-row">
-            <span class="props-label">类型</span>
+          <div class="props-row fixed">
+            <span class="props-label">组件类型</span>
             <span class="props-value">{{ typeLabel(activeField.type) }}</span>
           </div>
+
           <el-input
             v-model="activeField.label"
-            placeholder="标题"
+            placeholder="字段标题"
             class="props-input"
           >
             <template #prepend>标题</template>
           </el-input>
+
           <el-input
             v-model="activeField.prop"
-            placeholder="字段名"
+            placeholder="字段 key"
             class="props-input"
           >
-            <template #prepend>字段名</template>
+            <template #prepend>字段</template>
           </el-input>
+
           <el-input
             v-if="showPlaceholder(activeField.type)"
             v-model="activeField.placeholder"
-            placeholder="提示文字"
+            placeholder="请输入提示语"
             class="props-input"
           >
             <template #prepend>提示</template>
           </el-input>
+
           <div class="props-row">
             <span class="props-label">必填</span>
             <el-switch v-model="activeField.required" />
           </div>
+
           <div v-if="needsOptions(activeField.type)" class="options">
-            <div class="options-title">选项</div>
+            <div class="options-title">选项列表</div>
             <div
               v-for="(opt, idx) in activeField.options"
-              :key="opt.value"
+              :key="opt.value + idx"
               class="option-row"
             >
               <el-input
@@ -211,9 +260,9 @@
 
     <el-dialog
       v-model="codeDialogVisible"
-      width="720px"
+      width="760px"
       class="code-dialog"
-      title="Generated Page"
+      title="生成页面代码"
     >
       <el-input
         v-model="generatedCode"
@@ -224,14 +273,14 @@
       <template #footer>
         <div class="dialog-actions">
           <el-button @click="copyCode" :disabled="!generatedCode"
-            >Copy Code</el-button
+            >复制代码</el-button
           >
           <el-button
             type="primary"
             @click="downloadPage"
             :disabled="!generatedCode"
           >
-            Download Page
+            下载页面
           </el-button>
         </div>
       </template>
@@ -270,6 +319,7 @@ type OptionFieldType = 'select' | 'radio' | 'checkbox'
 type Tool = {
   type: FieldType
   label: string
+  desc: string
   placeholder?: string
   options?: Array<{ label: string; value: string }>
 }
@@ -285,13 +335,25 @@ type FieldSchema = {
 }
 
 const inputTools: Tool[] = [
-  { type: 'input', label: '单行文本', placeholder: '请输入内容' },
-  { type: 'textarea', label: '多行文本', placeholder: '请输入内容' }
+  {
+    type: 'input',
+    label: '单行文本',
+    desc: '用于普通文字输入',
+    placeholder: '请输入内容'
+  },
+  {
+    type: 'textarea',
+    label: '多行文本',
+    desc: '用于备注和说明',
+    placeholder: '请输入内容'
+  }
 ]
+
 const selectTools: Tool[] = [
   {
     type: 'select',
     label: '下拉选择',
+    desc: '单项下拉选择框',
     placeholder: '请选择',
     options: [
       { label: '选项一', value: 'option1' },
@@ -301,6 +363,7 @@ const selectTools: Tool[] = [
   {
     type: 'radio',
     label: '单选组',
+    desc: '单项互斥选择',
     options: [
       { label: '选项一', value: 'radio1' },
       { label: '选项二', value: 'radio2' }
@@ -309,16 +372,23 @@ const selectTools: Tool[] = [
   {
     type: 'checkbox',
     label: '多选组',
+    desc: '可同时选择多项',
     options: [
       { label: '选项一', value: 'check1' },
       { label: '选项二', value: 'check2' }
     ]
   }
 ]
+
 const otherTools: Tool[] = [
-  { type: 'switch', label: '开关' },
-  { type: 'date', label: '日期选择', placeholder: '请选择日期' },
-  { type: 'button', label: '按钮' }
+  { type: 'switch', label: '开关', desc: '布尔状态切换' },
+  {
+    type: 'date',
+    label: '日期选择',
+    desc: '日期类输入',
+    placeholder: '请选择日期'
+  },
+  { type: 'button', label: '按钮', desc: '操作按钮组件' }
 ]
 
 const schema = ref<FieldSchema[]>([])
@@ -345,6 +415,13 @@ const optionComponentMap: Record<OptionFieldType, Component> = {
   checkbox: ElCheckbox
 }
 
+const totalTools = computed(
+  () => inputTools.length + selectTools.length + otherTools.length
+)
+const requiredCount = computed(
+  () => schema.value.filter((item) => item.required).length
+)
+
 const onToolDragStart = (event: DragEvent, tool: Tool) => {
   event.dataTransfer?.setData('tool', JSON.stringify(tool))
   event.dataTransfer?.setData('mode', 'tool')
@@ -353,6 +430,7 @@ const onToolDragStart = (event: DragEvent, tool: Tool) => {
 const createField = (tool: Tool): FieldSchema => {
   const id = `${tool.type}-${Date.now()}-${Math.random().toString(16).slice(2)}`
   const prop = `${tool.type}${schema.value.length + 1}`
+
   const field: FieldSchema = {
     id,
     type: tool.type,
@@ -362,14 +440,21 @@ const createField = (tool: Tool): FieldSchema => {
     required: false,
     options: tool.options ? tool.options.map((opt) => ({ ...opt })) : []
   }
-  if (tool.type === 'checkbox') formModel[prop] = []
-  else if (tool.type === 'switch') formModel[prop] = false
-  else formModel[prop] = ''
+
+  if (tool.type === 'checkbox') {
+    formModel[prop] = []
+  } else if (tool.type === 'switch') {
+    formModel[prop] = false
+  } else {
+    formModel[prop] = ''
+  }
+
   return field
 }
 
 const onCanvasDrop = (event: DragEvent) => {
   const mode = event.dataTransfer?.getData('mode')
+
   if (mode === 'tool') {
     const raw = event.dataTransfer?.getData('tool') || ''
     if (!raw) return
@@ -379,6 +464,7 @@ const onCanvasDrop = (event: DragEvent) => {
     activeId.value = field.id
     return
   }
+
   if (mode === 'field' && dragIndex.value !== null) {
     const from = dragIndex.value
     const list = schema.value
@@ -396,6 +482,7 @@ const onFieldDragStart = (event: DragEvent, index: number) => {
 const onFieldDrop = (index: number) => {
   const from = dragIndex.value
   if (from === null || from === index) return
+
   const list = schema.value
   const [item] = list.splice(from, 1)
   if (!item) return
@@ -418,20 +505,26 @@ const activeField = computed(() =>
 const removeField = (id: string) => {
   const index = schema.value.findIndex((item) => item.id === id)
   if (index === -1) return
+
   const [removed] = schema.value.splice(index, 1)
   if (removed) {
     delete formModel[removed.prop]
   }
-  if (activeId.value === id) activeId.value = schema.value[0]?.id || ''
+
+  if (activeId.value === id) {
+    activeId.value = schema.value[0]?.id || ''
+  }
 }
 
 const moveItem = (index: number, offset: number) => {
   const next = index + offset
   if (next < 0 || next >= schema.value.length) return
+
   const list = schema.value
   const temp = list[index]
   const target = list[next]
   if (!temp || !target) return
+
   list[index] = target
   list[next] = temp
 }
@@ -444,10 +537,11 @@ const clearAll = () => {
 
 const needsOptions = (type: FieldType): type is OptionFieldType =>
   ['select', 'radio', 'checkbox'].includes(type)
+
 const showPlaceholder = (type: FieldType) =>
   ['input', 'textarea', 'select', 'date'].includes(type)
 
-const optionComponentFor = (type: FieldType) =>
+const optionComponentFor = (type: FieldType): Component | '' =>
   needsOptions(type) ? optionComponentMap[type] : ''
 
 const getComponentProps = (field: FieldSchema) => {
@@ -491,6 +585,7 @@ const buildFieldTemplate = (field: FieldSchema) => {
   const label = JSON.stringify(field.label)
   const modelKey = JSON.stringify(field.prop)
   const placeholder = JSON.stringify(field.placeholder || '')
+
   const lines: string[] = [
     `    <el-form-item :label=${label} :required=${field.required}>`
   ]
@@ -544,14 +639,17 @@ const buildFieldTemplate = (field: FieldSchema) => {
   lines.push('    </el-form-item>')
   return lines.join('\n')
 }
+
 const buildGeneratedCode = () => {
   const templateLines = schema.value.map((field) => buildFieldTemplate(field))
+
   const modelLines = schema.value.map((field) => {
     if (field.type === 'checkbox') return `  ${JSON.stringify(field.prop)}: [],`
     if (field.type === 'switch')
       return `  ${JSON.stringify(field.prop)}: false,`
     return `  ${JSON.stringify(field.prop)}: '',`
   })
+
   const optionLines = schema.value
     .filter((field) => needsOptions(field.type))
     .map((field) => {
@@ -621,158 +719,294 @@ const downloadPage = () => {
     'GeneratedForm.vue',
     'text/plain;charset=utf-8'
   )
-  ElMessage.success('页面已下载')
+  ElMessage.success('页面代码已下载')
 }
 
 const downloadConfig = () => {
-  const payload = {
-    schema: schema.value
-  }
+  const payload = { schema: schema.value }
   const content = JSON.stringify(payload, null, 2)
   downloadBlob(content, 'form-schema.json', 'application/json;charset=utf-8')
-  ElMessage.success('配置已下载')
+  ElMessage.success('配置文件已下载')
 }
 </script>
 
 <style lang="scss" scoped>
-.page {
-  min-height: 100vh;
+.designer-page {
+  --bg-main: #eef7f6;
+  --panel-bg: rgba(255, 255, 255, 0.84);
+  --line: #d9e8e6;
+  --text-main: #193941;
+  --text-sub: #6b868c;
+  --brand: #0f9d92;
+  --brand-dark: #0b7b73;
+  --danger: #dc2626;
+  --shadow: 0 20px 42px rgba(25, 58, 66, 0.12);
+
+  position: relative;
+  min-height: calc(100vh - 64px);
+  overflow: hidden;
   padding: 24px;
-  color: #1f2329;
-  background: linear-gradient(180deg, #f5f7fb 0%, #eef2f8 100%);
+  color: var(--text-main);
+  background:
+    radial-gradient(circle at 8% 6%, #daf4f1 0%, transparent 38%),
+    radial-gradient(circle at 95% 10%, #ffe8d7 0%, transparent 35%),
+    var(--bg-main);
+  font-family: 'Space Grotesk', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
-.header {
-  background: #fff;
-  border: 1px solid #e6e9ef;
-  border-radius: 14px;
-  padding: 16px 20px;
-  margin-bottom: 16px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+.bg-shape {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
 }
 
-.header h2 {
-  margin: 0 0 6px;
-  font-size: 20px;
+.shape-a {
+  right: -120px;
+  top: -120px;
+  width: 260px;
+  height: 260px;
+  opacity: 0.42;
+  background: linear-gradient(135deg, #b5f2ec, #ffd9bc);
 }
 
-.header p {
+.shape-b {
+  left: -140px;
+  bottom: -190px;
+  width: 320px;
+  height: 320px;
+  opacity: 0.34;
+  background: linear-gradient(135deg, #bfe9ff, #b0f6d9);
+}
+
+.panel {
+  position: relative;
+  z-index: 1;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+}
+
+.hero {
+  padding: 22px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #bee2de;
+  background: #e9f8f6;
+  color: var(--brand-dark);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.hero h1 {
+  margin: 12px 0 8px;
+  font-size: 30px;
+  line-height: 1.08;
+}
+
+.hero p {
   margin: 0;
-  color: #6b7280;
+  color: var(--text-sub);
+  font-size: 14px;
+}
+
+.hero-right {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 340px;
+}
+
+.hero-stat {
+  border: 1px solid #d7e8e6;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.74);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hero-stat .label {
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
+.hero-stat .value {
+  font-size: 22px;
+  line-height: 1;
 }
 
 .layout {
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
   display: grid;
-  grid-template-columns: 240px 1fr 300px;
-  gap: 16px;
-  align-items: start;
+  grid-template-columns: 300px 1fr 330px;
+  gap: 14px;
+  min-height: calc(100vh - 240px);
 }
 
 .toolbox,
 .props {
-  background: #fff;
-  border: 1px solid #e6e9ef;
-  border-radius: 14px;
   padding: 14px;
-  height: calc(100vh - 230px);
   overflow: auto;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
 }
 
-.toolbox-title,
-.props-title {
-  font-weight: 600;
-  color: #111827;
+.panel-title {
+  font-size: 16px;
+  font-weight: 700;
   margin-bottom: 12px;
 }
 
 .toolbox-group {
   margin-bottom: 14px;
+  padding: 10px;
+  border: 1px solid #deedeb;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.68);
 }
 
-.toolbox-group-title {
+.group-title {
   font-size: 12px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #94a3b8;
+  color: #678389;
   margin-bottom: 8px;
+  letter-spacing: 0.03em;
 }
 
 .tool {
-  padding: 10px 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #dbeae8;
   border-radius: 10px;
-  margin-bottom: 10px;
+  padding: 9px 10px;
+  background: #f7fcfb;
+  margin-bottom: 8px;
   cursor: grab;
-  background: #f8fafc;
   transition:
-    transform 120ms ease,
-    box-shadow 120ms ease,
-    border-color 120ms ease;
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tool:last-child {
+  margin-bottom: 0;
 }
 
 .tool:hover {
-  border-color: #c7d2fe;
-  box-shadow: 0 6px 12px rgba(99, 102, 241, 0.12);
   transform: translateY(-1px);
+  border-color: #b9dfda;
+  box-shadow: 0 8px 16px rgba(15, 157, 146, 0.12);
 }
 
 .tool:active {
   cursor: grabbing;
-  transform: scale(0.99);
+}
+
+.tool-name {
+  font-size: 13px;
+  color: #1e4149;
+  font-weight: 700;
+}
+
+.tool-desc {
+  font-size: 11px;
+  color: #6f8b90;
 }
 
 .canvas {
-  min-height: 520px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 14px;
-  background: #fff;
-  padding: 12px 16px 16px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
 }
 
 .canvas-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #eef2f7;
+  gap: 10px;
+  align-items: flex-start;
+  border-bottom: 1px solid #deecea;
   padding-bottom: 10px;
-  margin-bottom: 12px;
-  color: #64748b;
-  font-size: 13px;
+  margin-bottom: 10px;
 }
 
-.empty {
-  color: #94a3b8;
-  padding: 16px;
-  border: 1px dashed #e2e8f0;
-  border-radius: 12px;
-  background: #f8fafc;
+.canvas-title h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.canvas-sub {
+  margin-top: 4px;
+  display: inline-block;
+  font-size: 12px;
+  color: #708b90;
+}
+
+.canvas-empty {
+  min-height: 220px;
+  border: 2px dashed #d2e5e2;
+  border-radius: 14px;
+  background: #f7fcfb;
+  display: grid;
+  place-content: center;
   text-align: center;
+  gap: 6px;
+}
+
+.empty-main {
+  font-size: 15px;
+  color: #1f444c;
+  font-weight: 600;
+}
+
+.empty-sub {
+  font-size: 12px;
+  color: #708c91;
 }
 
 .form {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding-right: 6px;
+  padding-right: 4px;
+  overflow: auto;
 }
 
 .field {
-  position: relative;
-  border: 1px solid #eef2f7;
-  padding: 12px 12px 12px 10px;
-  border-radius: 10px;
+  border: 1px solid #dcebe9;
+  border-radius: 12px;
   background: #fff;
+  padding: 10px;
+  position: relative;
   transition:
-    border-color 120ms ease,
-    box-shadow 120ms ease,
-    transform 120ms ease;
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
 .field:hover {
-  border-color: #d6e0ff;
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.08);
+  border-color: #b7ddd8;
+  box-shadow: 0 8px 16px rgba(15, 157, 146, 0.11);
+}
+
+.field.active {
+  border-color: var(--brand);
+  background: #f0fbfa;
+  box-shadow: 0 10px 18px rgba(15, 157, 146, 0.2);
 }
 
 .field.dragging {
@@ -780,56 +1014,78 @@ const downloadConfig = () => {
   transform: scale(0.99);
 }
 
-.field.active {
-  border-color: #3b82f6;
-  background: #f4f8ff;
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.16);
+.field-head {
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-type {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #e7f7f4;
+  color: #0d7a71;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+.field-prop {
+  font-size: 11px;
+  color: #68848a;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    monospace;
 }
 
 .field-actions {
-  position: absolute;
-  top: 10px;
-  right: 10px;
   display: flex;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 2px;
-  border-radius: 8px;
+  justify-content: flex-end;
 }
 
 .icon-btn {
-  border: 1px solid #e2e8f0;
-  background: #fff;
+  border: 1px solid #d8e7e5;
   border-radius: 8px;
-  padding: 2px 8px;
-  cursor: pointer;
+  background: #fff;
+  color: #355960;
   font-size: 12px;
-  color: #334155;
-  transition:
-    border-color 120ms ease,
-    color 120ms ease,
-    background 120ms ease;
+  padding: 3px 9px;
+  cursor: pointer;
 }
 
 .icon-btn:hover {
-  border-color: #cbd5e1;
-  background: #f8fafc;
+  border-color: #bfdcd8;
+  background: #f7fcfb;
 }
 
 .icon-btn:disabled {
   cursor: not-allowed;
-  color: #9aa4b2;
-  background: #f1f5f9;
+  color: #9ab0b5;
+  background: #f4f8f8;
 }
 
 .icon-btn.danger {
-  color: #dc2626;
   border-color: #fecaca;
+  color: var(--danger);
   background: #fff5f5;
 }
 
 .icon-btn.danger:hover {
   background: #fee2e2;
+}
+
+.props-empty {
+  font-size: 13px;
+  color: #708b90;
+  padding: 12px;
+  border: 1px dashed #d5e5e3;
+  border-radius: 12px;
+  background: #f8fcfc;
 }
 
 .props-form {
@@ -840,37 +1096,93 @@ const downloadConfig = () => {
 
 .props-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  font-size: 13px;
-  color: #475569;
+  align-items: center;
+}
+
+.props-row.fixed {
+  padding: 10px;
+  border: 1px solid #deecea;
+  border-radius: 10px;
+  background: #f8fcfb;
 }
 
 .props-label {
-  color: #6b7280;
+  font-size: 12px;
+  color: #6f8a90;
+}
+
+.props-value {
+  font-size: 13px;
+  color: #1f444c;
+  font-weight: 700;
 }
 
 .props-input :deep(.el-input-group__prepend) {
-  width: 70px;
-  color: #64748b;
+  width: 64px;
+  color: #6f8a90;
 }
 
 .options {
-  border-top: 1px dashed #e2e8f0;
+  border-top: 1px dashed #dbe9e7;
   padding-top: 12px;
 }
 
 .options-title {
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   margin-bottom: 8px;
-  color: #111827;
 }
 
 .option-row {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
   gap: 8px;
-  align-items: center;
   margin-bottom: 8px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 1380px) {
+  .layout {
+    grid-template-columns: 260px 1fr;
+  }
+
+  .props {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 960px) {
+  .designer-page {
+    padding: 14px;
+  }
+
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-right {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .canvas-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .option-row {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

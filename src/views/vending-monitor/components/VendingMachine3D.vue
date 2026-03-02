@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <div ref="containerRef" class="three-container"></div>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import type { Product } from '../types'
@@ -18,235 +18,376 @@ let scene: THREE.Scene
 let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
 let controls: OrbitControls
-let animationId: number
-let productMeshes: THREE.Mesh[] = []
+let animationId = 0
+let machineGroup: THREE.Group | null = null
+let productMeshes: THREE.Object3D[] = []
 
-// 创建贩卖机主体
+const getPixelRatio = () => Math.min(window.devicePixelRatio || 1, 2)
+
+const disposeObject = (object: THREE.Object3D) => {
+  object.traverse((child) => {
+    const mesh = child as THREE.Mesh
+    if (mesh.geometry) {
+      mesh.geometry.dispose()
+    }
+    const material = (mesh as { material?: THREE.Material | THREE.Material[] })
+      .material
+    if (Array.isArray(material)) {
+      material.forEach((m) => m.dispose())
+    } else {
+      material?.dispose()
+    }
+  })
+}
+
 const createVendingMachine = () => {
   const group = new THREE.Group()
-  const frameMaterial = new THREE.MeshPhongMaterial({
-    color: 0x2d3748,
-    specular: 0x111111,
-    shininess: 30,
+
+  const shellMat = new THREE.MeshStandardMaterial({
+    color: 0x1f2a37,
+    metalness: 0.55,
+    roughness: 0.32
   })
-  const darkMaterial = new THREE.MeshPhongMaterial({ color: 0x1a1a1a })
 
-  // 左侧面板
-  const leftPanel = new THREE.Mesh(new THREE.BoxGeometry(0.15, 5, 2), frameMaterial)
-  leftPanel.position.set(-1.425, 2.5, 0)
-  group.add(leftPanel)
+  const frameMat = new THREE.MeshStandardMaterial({
+    color: 0x111827,
+    metalness: 0.7,
+    roughness: 0.28
+  })
 
-  // 右侧面板
-  const rightPanel = new THREE.Mesh(new THREE.BoxGeometry(0.15, 5, 2), frameMaterial)
-  rightPanel.position.set(1.425, 2.5, 0)
-  group.add(rightPanel)
+  const accentMat = new THREE.MeshStandardMaterial({
+    color: 0x0f9d92,
+    emissive: 0x053f3a,
+    emissiveIntensity: 0.7,
+    metalness: 0.4,
+    roughness: 0.3
+  })
 
-  // 顶部面板
-  const topPanel = new THREE.Mesh(new THREE.BoxGeometry(3, 0.15, 2), frameMaterial)
-  topPanel.position.set(0, 5.075, 0)
-  group.add(topPanel)
+  const glassMat = new THREE.MeshPhysicalMaterial({
+    color: 0xb6edf2,
+    transparent: true,
+    opacity: 0.18,
+    roughness: 0.08,
+    metalness: 0,
+    clearcoat: 1,
+    clearcoatRoughness: 0.06,
+    transmission: 0.48
+  })
 
-  // 底部面板
-  const bottomPanel = new THREE.Mesh(new THREE.BoxGeometry(3, 0.15, 2), frameMaterial)
-  bottomPanel.position.set(0, 0.075, 0)
-  group.add(bottomPanel)
+  const body = new THREE.Mesh(new THREE.BoxGeometry(3.1, 5.4, 2.2), shellMat)
+  body.position.y = 2.7
+  body.castShadow = true
+  body.receiveShadow = true
+  group.add(body)
 
-  // 背部面板（实心）
-  const backPanel = new THREE.Mesh(new THREE.BoxGeometry(2.7, 4.7, 0.15), frameMaterial)
-  backPanel.position.set(0, 2.5, -0.925)
-  group.add(backPanel)
+  const cavity = new THREE.Mesh(new THREE.BoxGeometry(2.56, 4.2, 1.6), frameMat)
+  cavity.position.set(0, 2.95, 0.37)
+  group.add(cavity)
 
-  // 货架分隔板
-  for (let i = 0; i < 3; i++) {
-    const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.05, 1.5), darkMaterial)
-    shelf.position.set(0, 1.5 + i * 1.2, 0.15)
-    group.add(shelf)
+  const glassDoor = new THREE.Mesh(
+    new THREE.BoxGeometry(2.64, 4.32, 0.08),
+    glassMat
+  )
+  glassDoor.position.set(0, 2.95, 1.08)
+  glassDoor.castShadow = true
+  group.add(glassDoor)
+
+  const sideLeft = new THREE.Mesh(
+    new THREE.BoxGeometry(0.14, 5.2, 2.08),
+    frameMat
+  )
+  sideLeft.position.set(-1.45, 2.7, 0)
+  const sideRight = sideLeft.clone()
+  sideRight.position.x = 1.45
+  group.add(sideLeft)
+  group.add(sideRight)
+
+  const topCap = new THREE.Mesh(
+    new THREE.BoxGeometry(3.26, 0.22, 2.3),
+    frameMat
+  )
+  topCap.position.set(0, 5.52, 0)
+  group.add(topCap)
+
+  const base = new THREE.Mesh(new THREE.BoxGeometry(3.35, 0.3, 2.35), frameMat)
+  base.position.set(0, 0.05, 0)
+  base.receiveShadow = true
+  group.add(base)
+
+  const topLight = new THREE.Mesh(
+    new THREE.BoxGeometry(2.4, 0.24, 0.14),
+    accentMat
+  )
+  topLight.position.set(0, 4.98, 1.08)
+  group.add(topLight)
+
+  const controlPanel = new THREE.Mesh(
+    new THREE.BoxGeometry(0.62, 2.36, 0.12),
+    frameMat
+  )
+  controlPanel.position.set(1.07, 2.7, 1.04)
+  group.add(controlPanel)
+
+  const screen = new THREE.Mesh(
+    new THREE.BoxGeometry(0.42, 0.52, 0.02),
+    new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      emissive: 0x0f172a,
+      emissiveIntensity: 0.45,
+      metalness: 0.25,
+      roughness: 0.45
+    })
+  )
+  screen.position.set(1.07, 3.42, 1.11)
+  group.add(screen)
+
+  for (let i = 0; i < 6; i++) {
+    const btn = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.05, 0.03, 16),
+      new THREE.MeshStandardMaterial({
+        color: i % 2 === 0 ? 0xe5e7eb : 0x94a3b8,
+        metalness: 0.3,
+        roughness: 0.45
+      })
+    )
+    btn.rotation.x = Math.PI / 2
+    btn.position.set(1.07, 3 - i * 0.2, 1.115)
+    group.add(btn)
   }
 
-  // 玻璃门
-  const glassGeometry = new THREE.BoxGeometry(2.7, 3.8, 0.08)
-  const glassMaterial = new THREE.MeshPhongMaterial({
-    color: 0xaaddff,
-    transparent: true,
-    opacity: 0.2,
-    specular: 0xffffff,
-    shininess: 100,
-  })
-  const glass = new THREE.Mesh(glassGeometry, glassMaterial)
-  glass.position.set(0, 3.1, 0.96)
-  group.add(glass)
+  const pickupOuter = new THREE.Mesh(
+    new THREE.BoxGeometry(2.28, 0.62, 0.34),
+    frameMat
+  )
+  pickupOuter.position.set(0, 0.72, 0.91)
+  group.add(pickupOuter)
 
-  // 取货口
-  const slotGeometry = new THREE.BoxGeometry(2.4, 0.6, 0.3)
-  const slot = new THREE.Mesh(slotGeometry, darkMaterial)
-  slot.position.set(0, 0.7, 0.85)
-  group.add(slot)
+  const pickupInner = new THREE.Mesh(
+    new THREE.BoxGeometry(2.02, 0.42, 0.52),
+    new THREE.MeshStandardMaterial({ color: 0x0b1220, roughness: 0.8 })
+  )
+  pickupInner.position.set(0, 0.72, 0.62)
+  group.add(pickupInner)
 
-  // 内部取货区
-  const innerSlotGeometry = new THREE.BoxGeometry(2.2, 0.4, 0.5)
-  const innerSlotMaterial = new THREE.MeshPhongMaterial({ color: 0x000000 })
-  const innerSlot = new THREE.Mesh(innerSlotGeometry, innerSlotMaterial)
-  innerSlot.position.set(0, 0.7, 0.6)
-  group.add(innerSlot)
-
-  // 顶部装饰条
-  const topDeco = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.2, 2.2), darkMaterial)
-  topDeco.position.set(0, 5.2, 0)
-  group.add(topDeco)
-
-  // 底座
-  const base = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.2, 2.2), darkMaterial)
-  base.position.set(0, -0.05, 0)
-  group.add(base)
+  for (let i = 0; i < 3; i++) {
+    const shelf = new THREE.Mesh(
+      new THREE.BoxGeometry(2.42, 0.05, 1.42),
+      new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        metalness: 0.25,
+        roughness: 0.6
+      })
+    )
+    shelf.position.set(0, 1.56 + i * 1.24, 0.28)
+    group.add(shelf)
+  }
 
   return group
 }
 
-// 创建商品展示
+const createProductUnit = (
+  product: Product,
+  x: number,
+  y: number,
+  z: number
+) => {
+  const group = new THREE.Group()
+
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.145, 0.145, 0.48, 20),
+    new THREE.MeshStandardMaterial({
+      color: new THREE.Color(product.color),
+      metalness: 0.36,
+      roughness: 0.42
+    })
+  )
+  body.castShadow = true
+
+  const cap = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.152, 0.152, 0.03, 20),
+    new THREE.MeshStandardMaterial({
+      color: 0xd1d5db,
+      metalness: 0.8,
+      roughness: 0.2
+    })
+  )
+  cap.position.y = 0.255
+
+  const bottom = cap.clone()
+  bottom.position.y = -0.255
+
+  const label = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.151, 0.151, 0.18, 20, 1, true),
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.9,
+      side: THREE.DoubleSide,
+      metalness: 0.05,
+      roughness: 0.7
+    })
+  )
+
+  group.add(body)
+  group.add(cap)
+  group.add(bottom)
+  group.add(label)
+  group.position.set(x, y, z)
+
+  return group
+}
+
 const createProducts = (products: Product[]) => {
-  // 清除旧商品
-  productMeshes.forEach((mesh) => {
-    scene.remove(mesh)
-    mesh.geometry.dispose()
-    if (mesh.material instanceof THREE.Material) {
-      mesh.material.dispose()
-    }
+  productMeshes.forEach((item) => {
+    scene.remove(item)
+    disposeObject(item)
   })
   productMeshes = []
 
-  const startX = -0.75
-  const startY = 4.5
+  const startX = -0.74
+  const startY = 4.44
   const startZ = 0.3
-  const spacingX = 0.55
-  const spacingY = 1.2
+  const spacingX = 0.56
+  const spacingY = 1.24
 
   products.forEach((product) => {
     if (product.stock <= 0) return
 
-    // 创建商品（圆柱体表示饮料罐）
-    const geometry = new THREE.CylinderGeometry(0.15, 0.15, 0.5, 16)
-    const color = new THREE.Color(product.color)
-    const material = new THREE.MeshPhongMaterial({
-      color: color,
-      specular: 0x444444,
-      shininess: 30,
-    })
-    const mesh = new THREE.Mesh(geometry, material)
-
     const x = startX + product.col * spacingX
     const y = startY - product.row * spacingY
-    const z = startZ
 
-    mesh.position.set(x, y, z)
-    mesh.userData = { product }
+    const front = createProductUnit(product, x, y, startZ)
+    scene.add(front)
+    productMeshes.push(front)
 
-    scene.add(mesh)
-    productMeshes.push(mesh)
-
-    // 添加库存指示（多个商品堆叠效果）
     const stackCount = Math.min(product.stock, 3)
     for (let i = 1; i < stackCount; i++) {
-      const stackMesh = new THREE.Mesh(geometry.clone(), material.clone())
-      stackMesh.position.set(x, y, z - i * 0.25)
-      scene.add(stackMesh)
-      productMeshes.push(stackMesh)
+      const stacked = createProductUnit(product, x, y, startZ - i * 0.24)
+      scene.add(stacked)
+      productMeshes.push(stacked)
     }
   })
 }
 
-// 初始化场景
 const initScene = () => {
   if (!containerRef.value) return
 
   const width = containerRef.value.clientWidth
   const height = containerRef.value.clientHeight
 
-  // 场景
   scene = new THREE.Scene()
-  scene.background = new THREE.Color(0x1a1a2e)
+  scene.background = new THREE.Color(0x0f1b2a)
+  scene.fog = new THREE.Fog(0x0f1b2a, 14, 30)
 
-  // 相机
-  camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100)
-  camera.position.set(5, 4, 7)
-  camera.lookAt(0, 2.5, 0)
+  camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100)
+  camera.position.set(5.5, 4.8, 7.2)
+  camera.lookAt(0, 2.6, 0)
 
-  // 渲染器
-  renderer = new THREE.WebGLRenderer({ antialias: true })
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
   renderer.setSize(width, height)
-  renderer.setPixelRatio(window.devicePixelRatio)
+  renderer.setPixelRatio(getPixelRatio())
   renderer.shadowMap.enabled = true
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap
+  renderer.outputColorSpace = THREE.SRGBColorSpace
+  renderer.toneMapping = THREE.ACESFilmicToneMapping
+  renderer.toneMappingExposure = 1.06
   containerRef.value.appendChild(renderer.domElement)
 
-  // 控制器
   controls = new OrbitControls(camera, renderer.domElement)
   controls.enableDamping = true
-  controls.dampingFactor = 0.05
+  controls.dampingFactor = 0.06
   controls.target.set(0, 2.5, 0)
-  controls.minDistance = 4
+  controls.minDistance = 4.2
   controls.maxDistance = 15
-  controls.maxPolarAngle = Math.PI / 2
+  controls.maxPolarAngle = Math.PI / 2.05
 
-  // 环境光
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-  scene.add(ambientLight)
+  const ambient = new THREE.AmbientLight(0xffffff, 0.45)
+  scene.add(ambient)
 
-  // 主光源
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
-  directionalLight.position.set(5, 10, 7)
-  directionalLight.castShadow = true
-  scene.add(directionalLight)
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.2)
+  keyLight.position.set(6, 9, 8)
+  keyLight.castShadow = true
+  keyLight.shadow.mapSize.set(2048, 2048)
+  keyLight.shadow.camera.near = 0.5
+  keyLight.shadow.camera.far = 40
+  keyLight.shadow.camera.left = -8
+  keyLight.shadow.camera.right = 8
+  keyLight.shadow.camera.top = 8
+  keyLight.shadow.camera.bottom = -8
+  scene.add(keyLight)
 
-  // 补光
-  const fillLight = new THREE.DirectionalLight(0x4fc3f7, 0.3)
-  fillLight.position.set(-5, 5, -5)
-  scene.add(fillLight)
+  const rimLight = new THREE.DirectionalLight(0x67e8f9, 0.4)
+  rimLight.position.set(-6, 4, -4)
+  scene.add(rimLight)
 
-  // 地面
-  const groundGeometry = new THREE.PlaneGeometry(20, 20)
-  const groundMaterial = new THREE.MeshPhongMaterial({
-    color: 0x16213e,
-    shininess: 10,
-  })
-  const ground = new THREE.Mesh(groundGeometry, groundMaterial)
-  ground.rotation.x = -Math.PI / 2
-  ground.receiveShadow = true
-  scene.add(ground)
+  const accentLight = new THREE.PointLight(0x0f9d92, 1.1, 12)
+  accentLight.position.set(0, 5, 2.4)
+  scene.add(accentLight)
 
-  // 添加贩卖机
-  const vendingMachine = createVendingMachine()
-  scene.add(vendingMachine)
+  const floor = new THREE.Mesh(
+    new THREE.CircleGeometry(9, 64),
+    new THREE.MeshStandardMaterial({
+      color: 0x152437,
+      roughness: 0.8,
+      metalness: 0.12
+    })
+  )
+  floor.rotation.x = -Math.PI / 2
+  floor.position.y = -0.02
+  floor.receiveShadow = true
+  scene.add(floor)
 
-  // 添加商品
+  const platform = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.7, 2.9, 0.22, 48),
+    new THREE.MeshStandardMaterial({
+      color: 0x22364b,
+      metalness: 0.35,
+      roughness: 0.45
+    })
+  )
+  platform.position.y = 0.06
+  platform.receiveShadow = true
+  platform.castShadow = true
+  scene.add(platform)
+
+  machineGroup = createVendingMachine()
+  scene.add(machineGroup)
+
   createProducts(props.products)
 
-  // 动画循环
   const animate = () => {
     animationId = requestAnimationFrame(animate)
     controls.update()
+
+    if (machineGroup) {
+      machineGroup.rotation.y = Math.sin(performance.now() * 0.00035) * 0.02
+    }
+
     renderer.render(scene, camera)
   }
+
   animate()
 }
 
-// 窗口大小变化处理
 const handleResize = () => {
   if (!containerRef.value || !camera || !renderer) return
+
   const width = containerRef.value.clientWidth
   const height = containerRef.value.clientHeight
+
   camera.aspect = width / height
   camera.updateProjectionMatrix()
+  renderer.setPixelRatio(getPixelRatio())
   renderer.setSize(width, height)
 }
 
-// 监听商品变化
 watch(
   () => props.products,
   (newProducts) => {
-    if (scene) {
-      createProducts(newProducts)
-    }
+    if (!scene) return
+    createProducts(newProducts)
   },
-  { deep: true },
+  { deep: true }
 )
 
 onMounted(() => {
@@ -257,7 +398,21 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   cancelAnimationFrame(animationId)
+
+  productMeshes.forEach((item) => disposeObject(item))
+  productMeshes = []
+
+  if (machineGroup) {
+    disposeObject(machineGroup)
+    machineGroup = null
+  }
+
   controls?.dispose()
+
+  if (renderer?.domElement?.parentNode) {
+    renderer.domElement.parentNode.removeChild(renderer.domElement)
+  }
+
   renderer?.dispose()
   scene?.clear()
 })
@@ -267,8 +422,9 @@ onUnmounted(() => {
 .three-container {
   width: 100%;
   height: 100%;
-  min-height: 400px;
+  min-height: 420px;
   border-radius: 16px;
   overflow: hidden;
+  background: #0f1b2a;
 }
 </style>
