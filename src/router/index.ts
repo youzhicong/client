@@ -28,6 +28,12 @@ const router = createRouter({
           meta: { title: '在线预览' }
         },
         {
+          path: '/file-upload',
+          name: 'file-upload',
+          component: () => import('@/views/file-upload/index.vue'),
+          meta: { title: '文件上传' }
+        },
+        {
           path: '/drag',
           name: 'drag',
           component: () => import('@/views/drag/index.vue'),
@@ -62,6 +68,12 @@ const router = createRouter({
           name: 'high-school-schedule',
           component: () => import('@/views/high-school-schedule/index.vue'),
           meta: { title: '高中课表' }
+        },
+        {
+          path: '/frontend-interview',
+          name: 'frontend-interview',
+          component: () => import('@/views/frontend-interview/index.vue'),
+          meta: { title: '前端面试' }
         },
         {
           path: '/ai-workflow',
@@ -104,6 +116,12 @@ const router = createRouter({
           name: 'yuanyuan-diary',
           component: () => import('@/views/yuanyuan-diary/index.vue'),
           meta: { title: '圆圆舔狗日记' }
+        },
+        {
+          path: '/pc-builder',
+          name: 'pc-builder',
+          component: () => import('@/views/pc-builder/index.vue'),
+          meta: { title: '自选装机' }
         },
         {
           path: '/spline-3d',

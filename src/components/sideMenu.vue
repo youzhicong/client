@@ -99,7 +99,9 @@ import {
   OfficeBuilding,
   Plus,
   Promotion,
+  Reading,
   Rank,
+  Setting,
   TrendCharts,
   Upload,
   UserFilled,
@@ -123,6 +125,13 @@ const menuItems = [
     desc: '文档预览',
     icon: Document,
     theme: 'theme-preview'
+  },
+  {
+    index: '/file-upload',
+    label: '文件上传',
+    desc: '分片续传',
+    icon: Upload,
+    theme: 'theme-upload'
   },
   {
     index: '/drag',
@@ -161,6 +170,13 @@ const menuItems = [
     theme: 'theme-schedule'
   },
   {
+    index: '/frontend-interview',
+    label: '前端面试',
+    desc: 'Vue 与 React',
+    icon: Reading,
+    theme: 'theme-interview'
+  },
+  {
     index: '/ai-workflow',
     label: 'AI工作流',
     desc: '产品创意生成',
@@ -196,6 +212,13 @@ const menuItems = [
     theme: 'theme-diary'
   },
   {
+    index: '/pc-builder',
+    label: '自选装机',
+    desc: '电商比价',
+    icon: Setting,
+    theme: 'theme-pc'
+  },
+  {
     index: '/spline-3d',
     label: '3D可视化',
     desc: 'Spline场景',
@@ -229,8 +252,8 @@ const handleAction = (key: string) => {
     router.push('/drag')
     ElMessage.success('开始新建表单')
   } else if (key === 'import') {
-    router.push('/preview')
-    ElMessage.success('打开文件预览')
+    router.push('/file-upload')
+    ElMessage.success('打开文件上传')
   }
 }
 </script>
@@ -356,6 +379,10 @@ const handleAction = (key: string) => {
     background: #fdf2f8;
     color: #ec4899;
   }
+  &.theme-upload {
+    background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+    color: #059669;
+  }
   &.theme-drag {
     background: #f0fdf4;
     color: #22c55e;
@@ -376,6 +403,10 @@ const handleAction = (key: string) => {
     background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
     color: #0f766e;
   }
+  &.theme-interview {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1d4ed8;
+  }
   &.theme-ai {
     background: linear-gradient(135deg, #f5f3ff 0%, #fdf2f8 100%);
     color: #8b5cf6;
@@ -395,6 +426,10 @@ const handleAction = (key: string) => {
   &.theme-diary {
     background: linear-gradient(135deg, #fef9c3 0%, #ffedd5 100%);
     color: #b45309;
+  }
+  &.theme-pc {
+    background: linear-gradient(135deg, #dcfce7 0%, #dbeafe 100%);
+    color: #166534;
   }
   &.theme-spline {
     background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);

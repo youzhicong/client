@@ -4,7 +4,7 @@
     <div class="logins-1">
       <div class="de-car">
         <CpIcon :name="`log-gengduoquanzhong`"></CpIcon>
-        <div class="textj-1">欢迎你来到萌聪系统</div>
+        <div class="textj-1">欢迎你来到数字化平台</div>
         <el-form :model="form" label-width="auto" style="max-width: 800px">
           <el-form-item label="账号">
             <el-input v-model="form.name" />
