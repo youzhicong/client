@@ -4,103 +4,81 @@
       <!-- 主导航 -->
       <div class="nav-group">
         <div class="nav-title">导航菜单</div>
-        <router-link
-          v-for="(item, index) in menuItems"
-          :key="item.index"
-          :to="item.index"
-          class="nav-link"
-          :class="{ active: activePath === item.index }"
-          :style="{ '--delay': index * 0.05 + 's' }"
+        <div
+          v-for="(section, sectionIndex) in menuSections"
+          :key="section.key"
+          class="menu-section"
         >
-          <div class="nav-icon-wrap" :class="item.theme">
-            <el-icon><component :is="item.icon" /></el-icon>
-          </div>
-          <div class="nav-content">
-            <span class="nav-label">{{ item.label }}</span>
-            <span v-if="item.desc" class="nav-desc">{{ item.desc }}</span>
-          </div>
-          <span v-if="item.badge" class="nav-badge">{{ item.badge }}</span>
-          <el-icon v-else class="nav-arrow"><ArrowRight /></el-icon>
-        </router-link>
-      </div>
-
-      <!-- 快捷操作 -->
-      <div class="nav-group">
-        <div class="nav-title">快捷操作</div>
-        <button
-          v-for="action in quickActions"
-          :key="action.key"
-          class="quick-btn"
-          :class="action.theme"
-          @click="handleAction(action.key)"
-        >
-          <el-icon><component :is="action.icon" /></el-icon>
-          <span>{{ action.label }}</span>
-        </button>
-      </div>
-
-      <!-- 最近访问 -->
-      <div class="nav-group">
-        <div class="nav-title">最近访问</div>
-        <div class="recent-list">
-          <div
-            v-for="recent in recentItems"
-            :key="recent.name"
-            class="recent-item"
+          <button
+            type="button"
+            class="section-trigger"
+            :class="{ active: sectionHasActive(section) }"
+            @click="toggleSection(section.key)"
           >
-            <span class="recent-icon">{{ recent.icon }}</span>
-            <span class="recent-name">{{ recent.name }}</span>
-            <span class="recent-time">{{ recent.time }}</span>
-          </div>
+            <span class="section-trigger-left">
+              <span class="section-icon">
+                <el-icon><component :is="section.icon" /></el-icon>
+              </span>
+              <span class="section-title">{{ section.title }}</span>
+            </span>
+            <el-icon
+              class="section-arrow"
+              :class="{ opened: isSectionOpen(section.key) }"
+            >
+              <ArrowDown />
+            </el-icon>
+          </button>
+
+          <transition name="section-collapse">
+            <div v-show="isSectionOpen(section.key)" class="section-items">
+              <router-link
+                v-for="(item, index) in section.items"
+                :key="item.index"
+                :to="item.index"
+                class="nav-link level-2"
+                :class="{ active: isActiveMenu(item) }"
+                :style="{ '--delay': getMenuDelay(sectionIndex, index) }"
+              >
+                <div class="nav-icon-wrap" :class="item.theme">
+                  <el-icon><component :is="item.icon" /></el-icon>
+                </div>
+                <div class="nav-content">
+                  <span class="nav-label">{{ item.label }}</span>
+                  <span v-if="item.desc" class="nav-desc">{{ item.desc }}</span>
+                </div>
+                <span v-if="item.badge" class="nav-badge">{{
+                  item.badge
+                }}</span>
+                <el-icon v-else class="nav-arrow"><ArrowRight /></el-icon>
+              </router-link>
+            </div>
+          </transition>
         </div>
       </div>
-    </div>
-
-    <!-- 底部 -->
-    <div class="sidebar-footer">
-      <div class="usage-card">
-        <div class="usage-header">
-          <span class="usage-title">存储空间</span>
-          <span class="usage-percent">48%</span>
-        </div>
-        <div class="usage-bar">
-          <div class="usage-fill" style="width: 48%">
-            <div class="usage-glow"></div>
-          </div>
-        </div>
-        <div class="usage-detail">
-          <span>已用 2.4 GB</span>
-          <span>共 5 GB</span>
-        </div>
-      </div>
-
-      <button class="upgrade-btn">
-        <el-icon><Promotion /></el-icon>
-        <span>升级专业版</span>
-      </button>
     </div>
   </nav>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import {
+  ArrowDown,
   ArrowRight,
   Calendar,
   ChatDotRound,
   Document,
+  Food,
   House,
   MagicStick,
   MapLocation,
   Monitor,
   Notebook,
   OfficeBuilding,
-  Plus,
   Promotion,
   Reading,
   Rank,
+  School,
   Setting,
   TrendCharts,
   Upload,
@@ -109,153 +87,237 @@ import {
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
-const router = useRouter()
 
-const menuItems = [
+type MenuItem = {
+  index: string
+  label: string
+  desc: string
+  icon: unknown
+  theme: string
+  badge?: number
+  matchPaths?: string[]
+}
+
+type MenuSection = {
+  key: string
+  title: string
+  icon: unknown
+  items: MenuItem[]
+}
+
+const menuSections: MenuSection[] = [
   {
-    index: '/home',
-    label: '首页',
-    desc: '数据概览',
+    key: 'common',
+    title: '常用功能',
     icon: House,
-    theme: 'theme-home'
+    items: [
+      {
+        index: '/home',
+        label: '首页',
+        desc: '数据概览',
+        icon: House,
+        theme: 'theme-home'
+      },
+      {
+        index: '/im',
+        label: '即时通信',
+        desc: '消息中心',
+        icon: ChatDotRound,
+        theme: 'theme-im',
+        badge: 3
+      },
+      {
+        index: '/users',
+        label: '用户列表',
+        desc: '成员管理',
+        icon: UserFilled,
+        theme: 'theme-users'
+      },
+      {
+        index: '/map',
+        label: '地图菜单',
+        desc: '位置服务',
+        icon: MapLocation,
+        theme: 'theme-map'
+      }
+    ]
   },
   {
-    index: '/preview',
-    label: '在线预览',
-    desc: '文档预览',
-    icon: Document,
-    theme: 'theme-preview'
-  },
-  {
-    index: '/file-upload',
-    label: '文件上传',
-    desc: '分片续传',
+    key: 'upload-doc',
+    title: '上传与文档',
     icon: Upload,
-    theme: 'theme-upload'
+    items: [
+      {
+        index: '/preview',
+        label: '在线预览',
+        desc: '文档预览',
+        icon: Document,
+        theme: 'theme-preview'
+      },
+      {
+        index: '/file-upload',
+        label: '文件上传',
+        desc: '分片续传',
+        icon: Upload,
+        theme: 'theme-upload'
+      },
+      {
+        index: '/drag',
+        label: '拖拽功能',
+        desc: '表单构建',
+        icon: Rank,
+        theme: 'theme-drag'
+      }
+    ]
   },
   {
-    index: '/drag',
-    label: '拖拽功能',
-    desc: '表单构建',
-    icon: Rank,
-    theme: 'theme-drag'
+    key: 'teaching',
+    title: '教学专区',
+    icon: School,
+    items: [
+      {
+        index: '/high-school-schedule',
+        label: '高中课表',
+        desc: '教师排课',
+        icon: Calendar,
+        theme: 'theme-schedule'
+      },
+      {
+        index: '/class-lottery',
+        label: '课堂抽奖',
+        desc: '随机提问',
+        icon: School,
+        theme: 'theme-classlottery'
+      },
+      {
+        index: '/frontend-interview',
+        label: '前端面试',
+        desc: 'Vue 与 React',
+        icon: Reading,
+        theme: 'theme-interview'
+      }
+    ]
   },
   {
-    index: '/im',
-    label: '即时通信',
-    desc: '消息中心',
-    icon: ChatDotRound,
-    theme: 'theme-im',
-    badge: 3
-  },
-  {
-    index: '/map',
-    label: '地图菜单',
-    desc: '位置服务',
-    icon: MapLocation,
-    theme: 'theme-map'
-  },
-  {
-    index: '/users',
-    label: '用户列表',
-    desc: '成员管理',
-    icon: UserFilled,
-    theme: 'theme-users'
-  },
-  {
-    index: '/high-school-schedule',
-    label: '高中课表',
-    desc: '教师排课',
-    icon: Calendar,
-    theme: 'theme-schedule'
-  },
-  {
-    index: '/frontend-interview',
-    label: '前端面试',
-    desc: 'Vue 与 React',
-    icon: Reading,
-    theme: 'theme-interview'
-  },
-  {
-    index: '/ai-workflow',
-    label: 'AI工作流',
-    desc: '产品创意生成',
-    icon: MagicStick,
-    theme: 'theme-ai'
-  },
-  {
-    index: '/vending-monitor',
-    label: '3D贩卖机',
-    desc: '实时监控',
-    icon: Monitor,
-    theme: 'theme-monitor'
-  },
-  {
-    index: '/fund-estimate',
-    label: '基金估值',
-    desc: '实时追踪',
-    icon: TrendCharts,
-    theme: 'theme-fund'
-  },
-  {
-    index: '/vending-list',
-    label: '贩卖机管理',
-    desc: '设备列表',
-    icon: Promotion,
-    theme: 'theme-vending'
-  },
-  {
-    index: '/yuanyuan-diary',
-    label: '圆圆舔狗日记',
-    desc: '追爱复盘',
-    icon: Notebook,
-    theme: 'theme-diary'
-  },
-  {
-    index: '/pc-builder',
-    label: '自选装机',
-    desc: '电商比价',
+    key: 'tools',
+    title: '业务工具',
     icon: Setting,
-    theme: 'theme-pc'
+    items: [
+      {
+        index: '/meal-lottery',
+        label: '三餐抽奖',
+        desc: '今天吃什么',
+        icon: Food,
+        theme: 'theme-meal'
+      },
+      {
+        index: '/fund-estimate',
+        label: '基金估值',
+        desc: '实时追踪',
+        icon: TrendCharts,
+        theme: 'theme-fund'
+      },
+      {
+        index: '/vending-list',
+        label: '贩卖机管理',
+        desc: '设备列表',
+        icon: Promotion,
+        theme: 'theme-vending'
+      },
+      {
+        index: '/pc-builder',
+        label: '自选装机',
+        desc: '电商比价',
+        icon: Setting,
+        theme: 'theme-pc'
+      },
+      {
+        index: '/yuanyuan-diary',
+        label: '圆圆舔狗日记',
+        desc: '追爱复盘',
+        icon: Notebook,
+        theme: 'theme-diary'
+      }
+    ]
   },
   {
-    index: '/spline-3d',
-    label: '3D可视化',
-    desc: 'Spline场景',
-    icon: View,
-    theme: 'theme-spline'
-  },
-  {
-    index: '/campus-3d',
-    label: '校园全景',
-    desc: '数字校园',
-    icon: OfficeBuilding,
-    theme: 'theme-campus'
+    key: 'ai-visual',
+    title: 'AI 与可视化',
+    icon: MagicStick,
+    items: [
+      {
+        index: '/ai-workflow',
+        label: 'AI工作流',
+        desc: '产品创意生成',
+        icon: MagicStick,
+        theme: 'theme-ai',
+        matchPaths: ['/ai-workflow']
+      },
+      {
+        index: '/vending-monitor',
+        label: '3D贩卖机',
+        desc: '实时监控',
+        icon: Monitor,
+        theme: 'theme-monitor'
+      },
+      {
+        index: '/spline-3d',
+        label: '3D可视化',
+        desc: 'Spline场景',
+        icon: View,
+        theme: 'theme-spline'
+      },
+      {
+        index: '/campus-3d',
+        label: '校园全景',
+        desc: '数字校园',
+        icon: OfficeBuilding,
+        theme: 'theme-campus'
+      }
+    ]
   }
 ]
-
-const quickActions = [
-  { key: 'new', label: '新建表单', icon: Plus, theme: 'q-primary' },
-  { key: 'import', label: '导入文件', icon: Upload, theme: 'q-secondary' }
-]
-
-const recentItems = ref([
-  { icon: '📋', name: '用户反馈表单', time: '10分钟前' },
-  { icon: '📄', name: '年度报告.pdf', time: '1小时前' },
-  { icon: '🗺️', name: '北京天安门', time: '2小时前' }
-])
 
 const activePath = computed(() => route.path)
+const getMenuDelay = (sectionIndex: number, index: number) =>
+  `${(sectionIndex * 0.08 + index * 0.04).toFixed(2)}s`
 
-const handleAction = (key: string) => {
-  if (key === 'new') {
-    router.push('/drag')
-    ElMessage.success('开始新建表单')
-  } else if (key === 'import') {
-    router.push('/file-upload')
-    ElMessage.success('打开文件上传')
+const isActiveMenu = (item: MenuItem) => {
+  const matchPaths = item.matchPaths ?? [item.index]
+  return matchPaths.some((path) => {
+    return activePath.value === path || activePath.value.startsWith(`${path}/`)
+  })
+}
+
+const sectionHasActive = (section: MenuSection) => {
+  return section.items.some((item) => isActiveMenu(item))
+}
+
+const openedSections = ref<string[]>(['common', 'upload-doc'])
+
+const isSectionOpen = (key: string) => {
+  return openedSections.value.includes(key)
+}
+
+const toggleSection = (key: string) => {
+  if (isSectionOpen(key)) {
+    openedSections.value = openedSections.value.filter((item) => item !== key)
+    return
+  }
+  openedSections.value = [...openedSections.value, key]
+}
+
+const ensureActiveSectionOpened = () => {
+  const currentSection = menuSections.find((section) =>
+    sectionHasActive(section)
+  )
+  if (!currentSection) return
+  if (!isSectionOpen(currentSection.key)) {
+    openedSections.value = [...openedSections.value, currentSection.key]
   }
 }
+
+watch(activePath, ensureActiveSectionOpened, { immediate: true })
 </script>
 
 <style lang="scss" scoped>
@@ -297,9 +359,93 @@ const handleAction = (key: string) => {
   margin-bottom: 12px;
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   color: #94a3b8;
+}
+
+.menu-section {
+  margin-bottom: 8px;
+}
+
+.section-trigger {
+  width: 100%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 8px 10px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+
+  &.active {
+    background: #eef2ff;
+    color: #1e293b;
+  }
+}
+
+.section-trigger-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.section-arrow {
+  font-size: 12px;
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+
+  &.opened {
+    transform: rotate(180deg);
+  }
+}
+
+.section-items {
+  padding-left: 10px;
+  padding-top: 6px;
+}
+
+.section-collapse-enter-active,
+.section-collapse-leave-active {
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.section-collapse-enter-from,
+.section-collapse-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-2px);
+}
+
+.section-collapse-enter-to,
+.section-collapse-leave-from {
+  max-height: 560px;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .nav-link {
@@ -349,6 +495,10 @@ const handleAction = (key: string) => {
       color: rgba(255, 255, 255, 0.6);
     }
   }
+}
+
+.level-2 {
+  margin-left: 0;
 }
 
 @keyframes slideIn {
@@ -403,9 +553,17 @@ const handleAction = (key: string) => {
     background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
     color: #0f766e;
   }
+  &.theme-classlottery {
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+    color: #1d4ed8;
+  }
   &.theme-interview {
     background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
     color: #1d4ed8;
+  }
+  &.theme-meal {
+    background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+    color: #b45309;
   }
   &.theme-ai {
     background: linear-gradient(135deg, #f5f3ff 0%, #fdf2f8 100%);
@@ -491,202 +649,5 @@ const handleAction = (key: string) => {
   opacity: 0;
   transform: translateX(-4px);
   transition: all 0.2s ease;
-}
-
-/* Quick Actions */
-.quick-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 8px;
-  border: 1px dashed #e2e8f0;
-  border-radius: 12px;
-  background: #fafafa;
-  font-size: 13px;
-  font-weight: 500;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.25s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  }
-
-  &.q-primary {
-    border-color: #c7d2fe;
-    background: linear-gradient(135deg, #eef2ff, #f5f3ff);
-    color: #6366f1;
-
-    &:hover {
-      border-color: #6366f1;
-      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
-    }
-  }
-
-  &.q-secondary {
-    border-color: #d1fae5;
-    background: linear-gradient(135deg, #ecfdf5, #f0fdf4);
-    color: #10b981;
-
-    &:hover {
-      border-color: #10b981;
-      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
-    }
-  }
-
-  .el-icon {
-    font-size: 16px;
-  }
-}
-
-/* Recent Items */
-.recent-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.recent-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: #f8fafc;
-  font-size: 12px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #f1f5f9;
-    transform: translateX(4px);
-  }
-}
-
-.recent-icon {
-  font-size: 14px;
-}
-
-.recent-name {
-  flex: 1;
-  color: #475569;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.recent-time {
-  color: #94a3b8;
-  font-size: 11px;
-}
-
-/* Footer */
-.sidebar-footer {
-  padding: 16px 14px;
-  border-top: 1px solid #e2e8f0;
-  background: #fff;
-}
-
-.usage-card {
-  padding: 14px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  margin-bottom: 12px;
-}
-
-.usage-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.usage-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #475569;
-}
-
-.usage-percent {
-  font-size: 12px;
-  font-weight: 700;
-  color: #6366f1;
-}
-
-.usage-bar {
-  height: 8px;
-  border-radius: 999px;
-  background: #e2e8f0;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.usage-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
-  position: relative;
-  transition: width 0.6s ease;
-}
-
-.usage-glow {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 20px;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6));
-  animation: glowMove 2s ease-in-out infinite;
-}
-
-@keyframes glowMove {
-  0%,
-  100% {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  50% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.usage-detail {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: #94a3b8;
-}
-
-.upgrade-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(30, 41, 59, 0.3);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  .el-icon {
-    font-size: 16px;
-  }
 }
 </style>

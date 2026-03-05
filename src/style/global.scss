@@ -1,0 +1,86 @@
+:root {
+  --app-bg-start: #f6f8fc;
+  --app-bg-end: #eef3fb;
+  --app-bg-soft: #f2f6fd;
+  --app-surface: #ffffff;
+  --app-border: #dbe4f1;
+  --app-shadow: 0 10px 26px rgba(18, 45, 86, 0.08);
+  --app-text-main: #1f2a44;
+  --app-text-sub: #70829b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--app-bg-start);
+  color: var(--app-text-main);
+}
+
+body {
+  font-family:
+    'PingFang SC',
+    'Microsoft YaHei',
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+}
+
+.app-layout {
+  background: linear-gradient(
+    180deg,
+    var(--app-bg-start) 0%,
+    var(--app-bg-end) 100%
+  ) !important;
+}
+
+.breadcrumb-container {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-bottom: 1px solid var(--app-border) !important;
+  box-shadow: 0 1px 0 rgba(18, 45, 86, 0.06) !important;
+  backdrop-filter: blur(8px);
+}
+
+.content-scroll {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    var(--app-bg-start) 0%,
+    var(--app-bg-soft) 70%,
+    var(--app-bg-end) 100%
+  );
+}
+
+.content-scroll::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 36%),
+    radial-gradient(circle at 96% 8%, rgba(14, 165, 233, 0.08) 0%, transparent 32%);
+}
+
+.content-scroll > * {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+}
+
+.content-scroll .bg-grid,
+.content-scroll .bg-glow {
+  display: none !important;
+}
+
+.content-scroll .panel,
+.content-scroll .el-card {
+  border-color: var(--app-border) !important;
+  box-shadow: var(--app-shadow) !important;
+}

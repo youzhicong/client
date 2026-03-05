@@ -70,10 +70,22 @@ const router = createRouter({
           meta: { title: '高中课表' }
         },
         {
+          path: '/class-lottery',
+          name: 'class-lottery',
+          component: () => import('@/views/class-lottery/index.vue'),
+          meta: { title: '上课抽奖提问' }
+        },
+        {
           path: '/frontend-interview',
           name: 'frontend-interview',
           component: () => import('@/views/frontend-interview/index.vue'),
           meta: { title: '前端面试' }
+        },
+        {
+          path: '/meal-lottery',
+          name: 'meal-lottery',
+          component: () => import('@/views/meal-lottery/index.vue'),
+          meta: { title: '三餐抽奖' }
         },
         {
           path: '/ai-workflow',
