@@ -155,6 +155,18 @@ const menuSections: MenuSection[] = [
         theme: 'theme-preview'
       },
       {
+        index: '/announcement/list',
+        label: '公告管理',
+        desc: '发布与统计',
+        icon: Document,
+        theme: 'theme-announcement',
+        matchPaths: [
+          '/announcement/list',
+          '/announcement/publish',
+          '/announcement/detail'
+        ]
+      },
+      {
         index: '/file-upload',
         label: '文件上传',
         desc: '分片续传',
@@ -209,6 +221,20 @@ const menuSections: MenuSection[] = [
         desc: '今天吃什么',
         icon: Food,
         theme: 'theme-meal'
+      },
+      {
+        index: '/approval-workflow',
+        label: '审批流程',
+        desc: '发起/驳回/修改',
+        icon: Document,
+        theme: 'theme-workflow'
+      },
+      {
+        index: '/e-contract',
+        label: '电子合同签署',
+        desc: '在线签章',
+        icon: Document,
+        theme: 'theme-econtract'
       },
       {
         index: '/fund-estimate',
@@ -529,6 +555,10 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
     background: #fdf2f8;
     color: #ec4899;
   }
+  &.theme-announcement {
+    background: linear-gradient(135deg, #d7f5f7 0%, #dbeafe 100%);
+    color: #0f7f93;
+  }
   &.theme-upload {
     background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
     color: #059669;
@@ -564,6 +594,14 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   &.theme-meal {
     background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
     color: #b45309;
+  }
+  &.theme-workflow {
+    background: linear-gradient(135deg, #d8f2f2 0%, #dbeafe 100%);
+    color: #0f8f92;
+  }
+  &.theme-econtract {
+    background: linear-gradient(135deg, #ffe8d4 0%, #fde68a 100%);
+    color: #9a3412;
   }
   &.theme-ai {
     background: linear-gradient(135deg, #f5f3ff 0%, #fdf2f8 100%);

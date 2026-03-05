@@ -164,7 +164,7 @@
         </div>
       </div>
 
-      <el-table :data="displayList" v-loading="loading" border height="520">
+      <AppDataTable :data="displayList" v-loading="loading" border height="520">
         <el-table-column
           prop="code"
           label="基金代码"
@@ -247,7 +247,7 @@
             />
           </template>
         </el-table-column>
-      </el-table>
+      </AppDataTable>
     </section>
   </div>
 </template>

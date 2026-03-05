@@ -88,6 +88,36 @@ const router = createRouter({
           meta: { title: '三餐抽奖' }
         },
         {
+          path: '/approval-workflow',
+          name: 'approval-workflow',
+          component: () => import('@/views/approval-workflow/index.vue'),
+          meta: { title: '审批流程可视化' }
+        },
+        {
+          path: '/e-contract',
+          name: 'e-contract',
+          component: () => import('@/views/e-contract/index.vue'),
+          meta: { title: '电子合同签署' }
+        },
+        {
+          path: '/announcement/list',
+          name: 'announcement-list',
+          component: () => import('@/views/announcement/list.vue'),
+          meta: { title: '公告管理' }
+        },
+        {
+          path: '/announcement/publish',
+          name: 'announcement-publish',
+          component: () => import('@/views/announcement/publish.vue'),
+          meta: { title: '发布公告' }
+        },
+        {
+          path: '/announcement/detail/:id',
+          name: 'announcement-detail',
+          component: () => import('@/views/announcement/detail.vue'),
+          meta: { title: '公告详情' }
+        },
+        {
           path: '/ai-workflow',
           name: 'ai-workflow',
           component: () => import('@/views/ai-workflow/index.vue'),

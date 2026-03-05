@@ -79,7 +79,7 @@
     </section>
 
     <section class="table-panel panel">
-      <el-table
+      <AppDataTable
         :data="tableData"
         v-loading="loading"
         border
@@ -160,7 +160,7 @@
             >
           </template>
         </el-table-column>
-      </el-table>
+      </AppDataTable>
 
       <div class="pagination-wrap">
         <el-pagination
@@ -379,7 +379,16 @@ const getStatusText = (status: string) => {
   return map[status] || status
 }
 
-const rowClassName = ({ row }: { row: VendingMachine }) => `row-${row.status}`
+const rowClassName = ({ row }: { row: unknown }) => {
+  const status =
+    typeof row === 'object' &&
+    row !== null &&
+    'status' in row &&
+    typeof (row as { status?: unknown }).status === 'string'
+      ? (row as { status: string }).status
+      : 'unknown'
+  return `row-${status}`
+}
 
 const fetchList = async () => {
   loading.value = true

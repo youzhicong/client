@@ -122,7 +122,7 @@
         </div>
       </div>
 
-      <el-table
+      <AppDataTable
         :data="displayLocalTasks"
         border
         empty-text="暂无任务，请先选择文件"
@@ -229,7 +229,7 @@
             >
           </template>
         </el-table-column>
-      </el-table>
+      </AppDataTable>
     </section>
     <section class="card table-card">
       <div class="toolbar">
@@ -248,7 +248,7 @@
         </div>
       </div>
 
-      <el-table
+      <AppDataTable
         :data="serverTasks"
         border
         v-loading="serverLoading"
@@ -303,7 +303,7 @@
             >
           </template>
         </el-table-column>
-      </el-table>
+      </AppDataTable>
     </section>
   </div>
 </template>

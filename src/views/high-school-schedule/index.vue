@@ -81,7 +81,7 @@
     </el-card>
 
     <el-card class="table-card" shadow="never">
-      <el-table
+      <AppDataTable
         ref="tableRef"
         :data="pagedCourses"
         row-key="id"
@@ -119,7 +119,7 @@
         <template #empty>
           <el-empty description="暂无课程数据" />
         </template>
-      </el-table>
+      </AppDataTable>
 
       <div class="pagination-wrap">
         <el-pagination

@@ -154,7 +154,7 @@
           <p>当前模式：{{ usageModeLabel }}</p>
         </div>
 
-        <el-table
+        <AppDataTable
           :data="selectedParts"
           size="small"
           border
@@ -168,7 +168,7 @@
               {{ formatPrice(minPrice(row)) }}
             </template>
           </el-table-column>
-        </el-table>
+        </AppDataTable>
       </aside>
     </section>
   </div>

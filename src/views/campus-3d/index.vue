@@ -1019,6 +1019,53 @@ function createGround() {
   westSide.position.set(-100, 0.02, -25)
   scene.add(westSide)
 
+  // ========== 道路细节：虚线与斑马线 ==========
+  var laneMarkMat = new THREE.MeshBasicMaterial({
+    color: isNight.value ? 0xfff0b3 : 0xffffff,
+    transparent: true,
+    opacity: isNight.value ? 0.86 : 0.62,
+  })
+  for (var nsDashIdx = 0; nsDashIdx < 22; nsDashIdx++) {
+    var nsDash = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 6), laneMarkMat)
+    nsDash.rotation.x = -Math.PI / 2
+    nsDash.position.set(0, 0.025, -142 + nsDashIdx * 14)
+    scene.add(nsDash)
+  }
+  for (var ewDashIdx = 0; ewDashIdx < 24; ewDashIdx++) {
+    var ewDash = new THREE.Mesh(new THREE.PlaneGeometry(6, 0.42), laneMarkMat)
+    ewDash.rotation.x = -Math.PI / 2
+    ewDash.position.set(-156 + ewDashIdx * 13.5, 0.025, 0)
+    scene.add(ewDash)
+  }
+
+  var crosswalkMat = new THREE.MeshStandardMaterial({
+    color: isNight.value ? 0xe6f0ff : 0xffffff,
+    roughness: 0.5,
+    metalness: 0.06,
+    transparent: true,
+    opacity: isNight.value ? 0.9 : 0.82,
+  })
+  function addCrosswalkByZ(zPos) {
+    for (var stripe = 0; stripe < 6; stripe++) {
+      var stripeMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.8), crosswalkMat)
+      stripeMesh.rotation.x = -Math.PI / 2
+      stripeMesh.position.set(-3.8 + stripe * 1.5, 0.03, zPos)
+      scene.add(stripeMesh)
+    }
+  }
+  function addCrosswalkByX(xPos) {
+    for (var stripe = 0; stripe < 6; stripe++) {
+      var stripeMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.1), crosswalkMat)
+      stripeMesh.rotation.x = -Math.PI / 2
+      stripeMesh.position.set(xPos, 0.03, -3.8 + stripe * 1.5)
+      scene.add(stripeMesh)
+    }
+  }
+  addCrosswalkByZ(-136)
+  addCrosswalkByZ(156)
+  addCrosswalkByX(156)
+  addCrosswalkByX(-156)
+
   // ========== 绿化广场 ==========
   var greenBeltMat = new THREE.MeshStandardMaterial({ color: 0x4caf50 })
 
@@ -1404,6 +1451,17 @@ function createBuildings() {
     body.userData = { buildingId: building.id }
     scene.add(body)
     buildingMeshes.set(building.id, body)
+    // 轻量轮廓线，提升建筑边缘层次感
+    var bodyEdge = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(width, height, depth)),
+      new THREE.LineBasicMaterial({
+        color: isNight.value ? 0x415980 : 0x6f8198,
+        transparent: true,
+        opacity: isNight.value ? 0.38 : 0.24,
+      }),
+    )
+    bodyEdge.position.set(x, height / 2 + 0.01, z)
+    scene.add(bodyEdge)
 
     // 屋顶 - 根据建筑类型不同设计
     if (building.type === '体育设施') {
@@ -1615,6 +1673,39 @@ function createBuildings() {
     var canopy = new THREE.Mesh(new THREE.BoxGeometry(doorWidth + 3, 0.15, 2), canopyMat)
     canopy.position.set(x, doorHeight + 0.8, z + depth / 2 + 1)
     scene.add(canopy)
+
+    // 入口铺装与灌木，弱化“平铺地面”观感
+    var apron = new THREE.Mesh(
+      new THREE.PlaneGeometry(doorWidth + 4, 3.6),
+      new THREE.MeshStandardMaterial({
+        color: isNight.value ? 0x5c636d : 0xb8b7ae,
+        roughness: 0.88,
+      }),
+    )
+    apron.rotation.x = -Math.PI / 2
+    apron.position.set(x, 0.021, z + depth / 2 + 3.2)
+    scene.add(apron)
+
+    if (width >= 20) {
+      var planterMat = new THREE.MeshStandardMaterial({ color: 0x8d7b67, roughness: 0.9 })
+      var shrubMat = new THREE.MeshStandardMaterial({
+        color: isNight.value ? 0x2f6a35 : 0x3f8f45,
+        roughness: 0.92,
+      })
+      var shrubOffsets = [
+        [-doorWidth / 2 - 1.6, depth / 2 + 2.4],
+        [doorWidth / 2 + 1.6, depth / 2 + 2.4],
+      ]
+      shrubOffsets.forEach(function (offset) {
+        var planter = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.62, 0.36, 10), planterMat)
+        planter.position.set(x + offset[0], 0.18, z + offset[1])
+        scene.add(planter)
+        var shrub = new THREE.Mesh(new THREE.SphereGeometry(0.62, 10, 8), shrubMat)
+        shrub.position.set(x + offset[0], 0.74, z + offset[1])
+        shrub.castShadow = true
+        scene.add(shrub)
+      })
+    }
   })
 }
 
