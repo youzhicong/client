@@ -2837,10 +2837,11 @@ onUnmounted(function () {
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  background: rgba(255, 255, 255, 0.05);
+  background: linear-gradient(135deg, rgba(27, 45, 71, 0.82) 0%, rgba(24, 38, 58, 0.72) 100%);
   backdrop-filter: blur(20px);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(125, 166, 205, 0.28);
+  box-shadow: 0 10px 26px rgba(16, 30, 48, 0.24);
 }
 .header-left {
   display: flex;
@@ -3031,12 +3032,15 @@ onUnmounted(function () {
   color: rgba(255, 255, 255, 0.6);
 }
 .building-list {
-  background: rgba(255, 255, 255, 0.03);
+  background: linear-gradient(180deg, rgba(27, 43, 67, 0.84) 0%, rgba(22, 35, 54, 0.78) 100%);
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(127, 169, 207, 0.22);
   padding: 20px;
   max-height: 600px;
   overflow-y: auto;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 14px 30px rgba(12, 24, 38, 0.28);
 }
 .building-list::-webkit-scrollbar {
   width: 4px;
