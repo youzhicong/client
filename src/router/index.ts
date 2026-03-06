@@ -64,6 +64,18 @@ const router = createRouter({
           meta: { title: '用户中心' }
         },
         {
+          path: '/account-settings',
+          name: 'account-settings',
+          component: () => import('@/views/account-settings/index.vue'),
+          meta: { title: '账号设置' }
+        },
+        {
+          path: '/help-center',
+          name: 'help-center',
+          component: () => import('@/views/help-center/index.vue'),
+          meta: { title: '帮助中心' }
+        },
+        {
           path: '/high-school-schedule',
           name: 'high-school-schedule',
           component: () => import('@/views/high-school-schedule/index.vue'),
@@ -80,6 +92,12 @@ const router = createRouter({
           name: 'frontend-interview',
           component: () => import('@/views/frontend-interview/index.vue'),
           meta: { title: '前端面试' }
+        },
+        {
+          path: '/games/:gameId?',
+          name: 'games',
+          component: () => import('@/views/game-center/index.vue'),
+          meta: { title: '游戏中心' }
         },
         {
           path: '/meal-lottery',
@@ -146,6 +164,12 @@ const router = createRouter({
           name: 'fund-estimate',
           component: () => import('@/views/fund-estimate/index.vue'),
           meta: { title: '基金估值' }
+        },
+        {
+          path: '/h5-project-config',
+          name: 'h5-project-config',
+          component: () => import('@/views/h5-project-config/index.vue'),
+          meta: { title: 'H5项目配置' }
         },
         {
           path: '/vending-list',

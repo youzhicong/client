@@ -65,10 +65,13 @@ import { useRoute } from 'vue-router'
 import {
   ArrowDown,
   ArrowRight,
+  Aim,
   Calendar,
   ChatDotRound,
+  Compass,
   Document,
   Food,
+  Grid,
   House,
   MagicStick,
   MapLocation,
@@ -81,6 +84,7 @@ import {
   School,
   Setting,
   TrendCharts,
+  TrophyBase,
   Upload,
   UserFilled,
   View
@@ -95,6 +99,7 @@ type MenuItem = {
   icon: unknown
   theme: string
   badge?: number
+  exact?: boolean
   matchPaths?: string[]
 }
 
@@ -211,6 +216,42 @@ const menuSections: MenuSection[] = [
     ]
   },
   {
+    key: 'games',
+    title: '游戏中心',
+    icon: TrophyBase,
+    items: [
+      {
+        index: '/games',
+        label: '游戏大厅',
+        desc: '前端小游戏',
+        icon: Compass,
+        theme: 'theme-game-hall',
+        exact: true
+      },
+      {
+        index: '/games/snake',
+        label: '贪吃蛇',
+        desc: '经典街机',
+        icon: Aim,
+        theme: 'theme-game-snake'
+      },
+      {
+        index: '/games/2048',
+        label: '2048',
+        desc: '合并数字',
+        icon: Grid,
+        theme: 'theme-game-merge'
+      },
+      {
+        index: '/games/memory',
+        label: '记忆翻牌',
+        desc: '考验记忆',
+        icon: MagicStick,
+        theme: 'theme-game-memory'
+      }
+    ]
+  },
+  {
     key: 'tools',
     title: '业务工具',
     icon: Setting,
@@ -242,6 +283,13 @@ const menuSections: MenuSection[] = [
         desc: '实时追踪',
         icon: TrendCharts,
         theme: 'theme-fund'
+      },
+      {
+        index: '/h5-project-config',
+        label: 'H5项目配置',
+        desc: '后台数据编排',
+        icon: Grid,
+        theme: 'theme-h5config'
       },
       {
         index: '/vending-list',
@@ -311,6 +359,9 @@ const getMenuDelay = (sectionIndex: number, index: number) =>
 const isActiveMenu = (item: MenuItem) => {
   const matchPaths = item.matchPaths ?? [item.index]
   return matchPaths.some((path) => {
+    if (item.exact) {
+      return activePath.value === path
+    }
     return activePath.value === path || activePath.value.startsWith(`${path}/`)
   })
 }
@@ -319,7 +370,7 @@ const sectionHasActive = (section: MenuSection) => {
   return section.items.some((item) => isActiveMenu(item))
 }
 
-const openedSections = ref<string[]>(['common', 'upload-doc'])
+const openedSections = ref<string[]>(['common', 'upload-doc', 'games'])
 
 const isSectionOpen = (key: string) => {
   return openedSections.value.includes(key)
@@ -356,9 +407,9 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   z-index: 999;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  border-right: 1px solid #e2e8f0;
-  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.04);
+  background: var(--app-sidebar-bg);
+  border-right: 1px solid var(--app-sidebar-border);
+  box-shadow: var(--app-sidebar-shadow);
 }
 
 .sidebar-scroll {
@@ -371,7 +422,7 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: var(--app-sidebar-scrollbar);
     border-radius: 4px;
   }
 }
@@ -386,7 +437,7 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: #94a3b8;
+  color: var(--app-sidebar-muted);
 }
 
 .menu-section {
@@ -403,17 +454,17 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   gap: 10px;
   border-radius: 12px;
   padding: 8px 10px;
-  color: #475569;
+  color: var(--app-sidebar-text);
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f1f5f9;
+    background: var(--app-sidebar-hover);
   }
 
   &.active {
-    background: #eef2ff;
-    color: #1e293b;
+    background: var(--app-sidebar-section-active-bg);
+    color: var(--app-sidebar-section-active-text);
   }
 }
 
@@ -429,8 +480,8 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   display: grid;
   place-items: center;
   border-radius: 9px;
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--app-sidebar-icon-bg);
+  color: var(--app-sidebar-muted);
   font-size: 14px;
 }
 
@@ -441,7 +492,7 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
 
 .section-arrow {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--app-sidebar-muted);
   transition: transform 0.2s ease;
 
   &.opened {
@@ -482,13 +533,13 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   margin-bottom: 4px;
   border-radius: 14px;
   text-decoration: none;
-  color: #475569;
+  color: var(--app-sidebar-text);
   transition: all 0.25s ease;
   animation: slideIn 0.4s ease backwards;
   animation-delay: var(--delay);
 
   &:hover {
-    background: #f1f5f9;
+    background: var(--app-sidebar-hover);
     transform: translateX(4px);
 
     .nav-arrow {
@@ -519,6 +570,8 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
 
     .nav-arrow {
       color: rgba(255, 255, 255, 0.6);
+      opacity: 1;
+      transform: translateX(0);
     }
   }
 }
@@ -591,6 +644,22 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
     background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
     color: #1d4ed8;
   }
+  &.theme-game-hall {
+    background: linear-gradient(135deg, #dcfce7 0%, #ecfccb 100%);
+    color: #15803d;
+  }
+  &.theme-game-snake {
+    background: linear-gradient(135deg, #d1fae5 0%, #bbf7d0 100%);
+    color: #047857;
+  }
+  &.theme-game-merge {
+    background: linear-gradient(135deg, #ffedd5 0%, #fde68a 100%);
+    color: #c2410c;
+  }
+  &.theme-game-memory {
+    background: linear-gradient(135deg, #ede9fe 0%, #f5d0fe 100%);
+    color: #7e22ce;
+  }
   &.theme-meal {
     background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
     color: #b45309;
@@ -614,6 +683,10 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   &.theme-fund {
     background: linear-gradient(135deg, #fef3c7 0%, #fff7ed 100%);
     color: #d97706;
+  }
+  &.theme-h5config {
+    background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
+    color: #4338ca;
   }
   &.theme-vending {
     background: linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%);
@@ -652,7 +725,7 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
 
 .nav-desc {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--app-sidebar-muted);
   margin-top: 1px;
 }
 
@@ -682,7 +755,7 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
 }
 
 .nav-arrow {
-  color: #cbd5e1;
+  color: var(--app-sidebar-arrow);
   font-size: 12px;
   opacity: 0;
   transform: translateX(-4px);

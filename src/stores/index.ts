@@ -9,3 +9,4 @@ export default pinia
 
 export * from './modules/use'
 export * from './modules/im'
+export * from './modules/account'

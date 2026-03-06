@@ -74,7 +74,7 @@ onMounted(async () => {
 <style lang="scss" scoped>
 .app-layout {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
+  background: var(--app-shell-bg);
 }
 
 .main-content {
@@ -105,8 +105,9 @@ onMounted(async () => {
 
 .breadcrumb-container {
   padding: 10px 20px;
-  background: #fff;
-  border-bottom: 1px solid #eef1f6;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  background: var(--app-breadcrumb-bg);
+  border-bottom: 1px solid var(--app-border);
+  box-shadow: var(--app-breadcrumb-shadow);
+  backdrop-filter: blur(8px);
 }
 </style>

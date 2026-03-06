@@ -6,23 +6,27 @@
     <header class="hero panel">
       <div class="identity">
         <div class="avatar-shell">
-          <img
-            class="avatar"
-            src="https://api.dicebear.com/9.x/notionists/svg?seed=LiWenxin"
-            alt="avatar"
-          />
+          <img class="avatar" :src="profile.avatar" alt="avatar" />
           <span class="live-dot"></span>
         </div>
 
         <div class="identity-main">
           <span class="hero-badge">PERSONAL CENTER</span>
-          <h1>李文心</h1>
-          <p>产品设计师 · 数字化平台 · 上海</p>
+          <h1>{{ profile.name }}</h1>
+          <p>
+            {{ profile.title }} · {{ profile.company }} · {{ profile.city }}
+          </p>
 
           <div class="tags">
-            <el-tag type="success" effect="light">成长型账号</el-tag>
-            <el-tag type="info" effect="light">最近活跃 2 分钟前</el-tag>
-            <el-tag type="warning" effect="light">安全等级 A</el-tag>
+            <el-tag type="success" effect="light">{{
+              profile.statusLabel
+            }}</el-tag>
+            <el-tag type="info" effect="light"
+              >最近活跃 {{ recentActiveText }}</el-tag
+            >
+            <el-tag type="warning" effect="light"
+              >安全等级 {{ securityLevel }}</el-tag
+            >
           </div>
         </div>
       </div>
@@ -185,12 +189,60 @@
         </ul>
       </article>
     </section>
+
+    <el-dialog v-model="profileDialogVisible" title="编辑资料" width="560px">
+      <el-form label-width="88px">
+        <el-form-item label="姓名">
+          <el-input v-model="profileDraft.name" />
+        </el-form-item>
+        <el-form-item label="职位">
+          <el-input v-model="profileDraft.title" />
+        </el-form-item>
+        <el-form-item label="公司">
+          <el-input v-model="profileDraft.company" />
+        </el-form-item>
+        <el-form-item label="城市">
+          <el-input v-model="profileDraft.city" />
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-input v-model="profileDraft.email" />
+        </el-form-item>
+        <el-form-item label="电话">
+          <el-input v-model="profileDraft.phone" />
+        </el-form-item>
+        <el-form-item label="简介">
+          <el-input v-model="profileDraft.bio" type="textarea" :rows="4" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="profileDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveProfile">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-drawer v-model="activityDrawerVisible" title="近期动态" size="460px">
+      <div class="drawer-activity-list">
+        <div
+          v-for="item in allActivities"
+          :key="item.id"
+          class="drawer-activity-item"
+        >
+          <div class="drawer-activity-head">
+            <strong>{{ item.title }}</strong>
+            <el-tag size="small" effect="light">{{ item.tag }}</el-tag>
+          </div>
+          <p>{{ item.desc }}</p>
+          <span>{{ item.time }}</span>
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useAccountStore, useUserStore } from '@/stores'
 
 type Trend = 'up' | 'down' | 'flat'
 
@@ -231,109 +283,197 @@ type ActivityItem = {
   tag: string
 }
 
-const notifyEnabled = ref(true)
-const digestEnabled = ref(false)
-const securityScore = ref(92)
-const storageUsed = ref(48)
+const router = useRouter()
+const accountStore = useAccountStore()
+const userStore = useUserStore()
 
-const metrics: MetricItem[] = [
-  { label: '本月登录', value: '28 次', delta: '+12%', trend: 'up', icon: '🛰️' },
-  { label: '工单处理', value: '16 项', delta: '+4%', trend: 'up', icon: '🧩' },
-  { label: '消息提醒', value: '5 条', delta: '-2', trend: 'down', icon: '🔔' },
-  { label: '项目协作', value: '7 个', delta: '+1', trend: 'up', icon: '🧠' }
-]
+const profileDialogVisible = ref(false)
+const activityDrawerVisible = ref(false)
 
-const profileItems: ProfileItem[] = [
+const profile = computed(() => accountStore.profile)
+
+const profileDraft = reactive({
+  name: accountStore.profile.name,
+  title: accountStore.profile.title,
+  company: accountStore.profile.company,
+  city: accountStore.profile.city,
+  email: accountStore.profile.email,
+  phone: accountStore.profile.phone,
+  bio: accountStore.profile.bio
+})
+
+const formatRelativeTime = (timestamp: number) => {
+  const diff = Date.now() - timestamp
+  const minute = 60 * 1000
+  const hour = 60 * minute
+  const day = 24 * hour
+
+  if (diff < hour) return `${Math.max(1, Math.floor(diff / minute))} 分钟前`
+  if (diff < day) return `${Math.floor(diff / hour)} 小时前`
+  if (diff < 7 * day) return `${Math.floor(diff / day)} 天前`
+  return new Date(timestamp).toLocaleDateString('zh-CN')
+}
+
+const recentActiveText = computed(() =>
+  formatRelativeTime(accountStore.profile.lastActiveAt)
+)
+
+const notifyEnabled = computed({
+  get: () => accountStore.notifications.siteNotice,
+  set: (value: boolean) => {
+    accountStore.updateNotifications({ siteNotice: value })
+  }
+})
+
+const digestEnabled = computed({
+  get: () => accountStore.notifications.weeklyDigest,
+  set: (value: boolean) => {
+    accountStore.updateNotifications({ weeklyDigest: value })
+  }
+})
+
+const securityScore = computed(() => {
+  let score = 60
+  if (accountStore.security.emailVerified) score += 15
+  if (accountStore.security.twoFactorEnabled) score += 15
+  if (accountStore.notifications.loginAlert) score += 5
+  if (accountStore.security.deviceCount >= 2) score += 5
+  return Math.min(score, 100)
+})
+
+const storageUsed = computed(() => {
+  const { storageUsedGB, storageCapacityGB } = accountStore.assets
+  if (!storageCapacityGB) return 0
+  return Math.round((storageUsedGB / storageCapacityGB) * 100)
+})
+
+const metrics = computed<MetricItem[]>(() => [
+  {
+    label: '本月登录',
+    value: `${accountStore.metrics.monthlyLogins} 次`,
+    delta: '+12%',
+    trend: 'up',
+    icon: '🛰️'
+  },
+  {
+    label: '工单处理',
+    value: `${accountStore.metrics.completedTasks} 项`,
+    delta: '+4%',
+    trend: 'up',
+    icon: '🧩'
+  },
+  {
+    label: '消息提醒',
+    value: `${accountStore.metrics.messageAlerts} 条`,
+    delta: accountStore.notifications.siteNotice ? '-2' : '已关闭',
+    trend: accountStore.notifications.siteNotice ? 'down' : 'flat',
+    icon: '🔔'
+  },
+  {
+    label: '项目协作',
+    value: `${accountStore.metrics.collaborations} 个`,
+    delta: '+1',
+    trend: 'up',
+    icon: '🧠'
+  }
+])
+
+const profileItems = computed<ProfileItem[]>(() => [
   {
     label: '手机号',
-    value: '+86 138 **** 8899',
+    value: accountStore.profile.phone,
     state: '已验证',
     stateClass: 'ok'
   },
   {
     label: '邮箱',
-    value: 'wenxin.li@platform.com',
-    state: '待验证',
-    stateClass: 'warn'
+    value: accountStore.profile.email,
+    state: accountStore.security.emailVerified ? '已验证' : '待验证',
+    stateClass: accountStore.security.emailVerified ? 'ok' : 'warn'
   },
   {
     label: '企业',
-    value: 'Digital Platform Studio',
+    value: accountStore.profile.company,
     state: '已认证',
     stateClass: 'ok'
   },
   {
     label: '会员等级',
-    value: '高级会员',
-    state: '有效至 2026-12',
+    value: accountStore.assets.plan,
+    state: `有效至 ${accountStore.assets.renewalDate.slice(0, 7)}`,
     stateClass: 'vip'
   }
-]
+])
 
-const securityItems: SecurityItem[] = [
+const securityItems = computed<SecurityItem[]>(() => [
   {
     title: '登录保护',
-    desc: '最近一次登录：上海 · Chrome',
+    desc: `最近一次登录：${accountStore.security.lastLoginCity} · ${accountStore.security.lastLoginDevice}`,
     state: 'ok',
-    action: '查看'
+    action: '查看设置'
   },
   {
     title: '邮箱验证',
     desc: '用于找回账号与接收通知',
-    state: 'warn',
-    action: '去验证'
+    state: accountStore.security.emailVerified ? 'ok' : 'warn',
+    action: accountStore.security.emailVerified ? '已验证' : '去验证'
   },
   {
     title: '设备管理',
-    desc: '当前已绑定 3 台设备',
+    desc: `当前已绑定 ${accountStore.security.deviceCount} 台设备`,
     state: 'ok',
-    action: '管理'
+    action: '管理设备'
   },
   {
     title: '风险扫描',
-    desc: '本周未发现异常登录行为',
-    state: 'ok',
-    action: '详情'
+    desc: accountStore.security.twoFactorEnabled
+      ? '已开启双重验证，风险防护良好'
+      : '建议开启双重验证，提升账号安全性',
+    state: accountStore.security.twoFactorEnabled ? 'ok' : 'warn',
+    action: '安全详情'
   }
-]
+])
 
-const assets: AssetItem[] = [
-  { title: '积分', value: '2,480', foot: '近 30 天 +120', icon: '🎯' },
-  { title: '优惠券', value: '3 张', foot: '本月将过期 1 张', icon: '🎟️' },
-  { title: '订阅', value: '专业版', foot: '续费日期 2026/12/22', icon: '📦' },
-  { title: '云存储', value: '2.4 / 5 GB', foot: '剩余 52%', icon: '💾' }
-]
-
-const activities: ActivityItem[] = [
+const assets = computed<AssetItem[]>(() => [
   {
-    id: 'a1',
-    time: '2 分钟前',
-    title: '完成表单搭建',
-    desc: '《用户反馈》项目已发布并通知团队成员。',
-    tag: '项目'
+    title: '积分',
+    value: accountStore.assets.points.toLocaleString('zh-CN'),
+    foot: '近 30 天 +120',
+    icon: '🎯'
   },
   {
-    id: 'a2',
-    time: '1 小时前',
-    title: '更新头像',
-    desc: '新头像已同步到控制台和协作空间。',
-    tag: '账号'
+    title: '优惠券',
+    value: `${accountStore.assets.coupons} 张`,
+    foot: '本月将过期 1 张',
+    icon: '🎟️'
   },
   {
-    id: 'a3',
-    time: '昨天',
-    title: '创建团队空间',
-    desc: '新增 4 位协作者，已分配初始权限。',
-    tag: '协作'
+    title: '订阅',
+    value: accountStore.assets.plan,
+    foot: `续费日期 ${accountStore.assets.renewalDate.replace(/-/g, '/')}`,
+    icon: '📦'
   },
   {
-    id: 'a4',
-    time: '2 天前',
-    title: '修改密码',
-    desc: '系统已更新安全策略并启用二次校验。',
-    tag: '安全'
+    title: '云存储',
+    value: `${accountStore.assets.storageUsedGB} / ${accountStore.assets.storageCapacityGB} GB`,
+    foot: `剩余 ${100 - storageUsed.value}%`,
+    icon: '💾'
   }
-]
+])
+
+const allActivities = computed<ActivityItem[]>(() =>
+  accountStore.activities.map((item) => ({
+    id: item.id,
+    time: formatRelativeTime(item.createdAt),
+    title: item.title,
+    desc: item.desc,
+    tag: item.tag
+  }))
+)
+
+const activities = computed<ActivityItem[]>(() =>
+  allActivities.value.slice(0, 4)
+)
 
 const securityLevel = computed(() => {
   if (securityScore.value >= 90) return '优秀'
@@ -341,8 +481,99 @@ const securityLevel = computed(() => {
   return '一般'
 })
 
+const syncDraftFromStore = () => {
+  Object.assign(profileDraft, {
+    name: accountStore.profile.name,
+    title: accountStore.profile.title,
+    company: accountStore.profile.company,
+    city: accountStore.profile.city,
+    email: accountStore.profile.email,
+    phone: accountStore.profile.phone,
+    bio: accountStore.profile.bio
+  })
+}
+
+const openEditProfile = () => {
+  syncDraftFromStore()
+  profileDialogVisible.value = true
+}
+
+const syncUserStore = () => {
+  userStore.setUser({
+    ...(userStore.user || {}),
+    name: accountStore.profile.name,
+    username: accountStore.profile.name,
+    nickname: accountStore.profile.name,
+    account: accountStore.profile.name,
+    email: accountStore.profile.email,
+    role: accountStore.profile.role,
+    avatar: accountStore.profile.avatar,
+    city: accountStore.profile.city
+  })
+}
+
+const saveProfile = () => {
+  accountStore.updateProfile({ ...profileDraft })
+  syncUserStore()
+  profileDialogVisible.value = false
+  ElMessage.success('个人资料已更新')
+}
+
+const exportArchive = () => {
+  const content = JSON.stringify(accountStore.exportArchive(), null, 2)
+  const blob = new Blob([content], { type: 'application/json;charset=utf-8' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = `profile-archive-${new Date().toISOString().slice(0, 10)}.json`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(link.href)
+  accountStore.recordActivity(
+    '导出账号档案',
+    '已导出当前账号资料与设置快照。',
+    '资料'
+  )
+  ElMessage.success('账号档案已导出')
+}
+
 const onAction = (name: string) => {
-  ElMessage.success(`${name}功能已触发`)
+  switch (name) {
+    case '资料编辑':
+    case '管理资料':
+      openEditProfile()
+      break
+    case '账号设置':
+      void router.push('/account-settings')
+      break
+    case '导出档案':
+      exportArchive()
+      break
+    case '安全策略':
+    case '查看设置':
+    case '管理设备':
+    case '安全详情':
+      void router.push({
+        path: '/account-settings',
+        query: { tab: 'security' }
+      })
+      break
+    case '查看账单':
+      void router.push({ path: '/account-settings', query: { tab: 'billing' } })
+      break
+    case '查看日志':
+      activityDrawerVisible.value = true
+      break
+    case '已验证':
+      ElMessage.info('邮箱已验证')
+      break
+    case '去验证':
+      accountStore.verifyEmail()
+      ElMessage.success('邮箱已完成验证')
+      break
+    default:
+      ElMessage.info(`${name} 已处理`)
+  }
 }
 </script>
 
@@ -830,6 +1061,37 @@ const onAction = (name: string) => {
 
 .content p {
   margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
+.drawer-activity-list {
+  display: grid;
+  gap: 12px;
+}
+
+.drawer-activity-item {
+  border: 1px solid #dce8e7;
+  border-radius: 14px;
+  padding: 14px;
+  background: #f9fcfc;
+}
+
+.drawer-activity-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.drawer-activity-item p {
+  margin: 10px 0 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-sub);
+}
+
+.drawer-activity-item span {
   font-size: 12px;
   color: var(--text-sub);
 }

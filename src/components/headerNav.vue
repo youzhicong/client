@@ -30,7 +30,12 @@
 
     <div class="header-right">
       <div class="header-actions">
-        <button class="action-btn" title="主题" @click="toggleTheme">
+        <button
+          class="action-btn"
+          :class="{ active: isDark }"
+          :title="isDark ? '切换到浅色模式' : '切换到深色模式'"
+          @click="handleToggleTheme"
+        >
           <el-icon><Sunny v-if="isDark" /><Moon v-else /></el-icon>
         </button>
         <button class="action-btn has-badge" title="通知">
@@ -40,7 +45,11 @@
         <button class="action-btn" title="消息" @click="goToIM">
           <el-icon><ChatDotRound /></el-icon>
         </button>
-        <button class="action-btn" title="设置">
+        <button
+          class="action-btn"
+          title="设置"
+          @click="router.push('/account-settings')"
+        >
           <el-icon><Setting /></el-icon>
         </button>
       </div>
@@ -50,13 +59,10 @@
       <el-dropdown trigger="click" @command="handleCommand">
         <div class="user-profile">
           <div class="user-avatar">
-            <img
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
-              alt="avatar"
-            />
+            <img :src="displayAvatar" alt="avatar" />
           </div>
           <div class="user-info">
-            <span class="user-name">管理员</span>
+            <span class="user-name">{{ displayName }}</span>
             <span class="user-status">
               <span class="status-dot online"></span>
               在线
@@ -68,14 +74,11 @@
           <el-dropdown-menu class="user-dropdown">
             <div class="dropdown-header">
               <div class="dropdown-avatar">
-                <img
-                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
-                  alt="avatar"
-                />
+                <img :src="displayAvatar" alt="avatar" />
               </div>
               <div class="dropdown-info">
-                <div class="dropdown-name">管理员</div>
-                <div class="dropdown-email">admin@yzcTool.com</div>
+                <div class="dropdown-name">{{ displayName }}</div>
+                <div class="dropdown-email">{{ displayEmail }}</div>
               </div>
             </div>
             <el-dropdown-item command="profile">
@@ -102,8 +105,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useAccountStore, useUserStore } from '@/stores'
 import {
   ArrowDown,
   Bell,
@@ -117,18 +121,35 @@ import {
   User
 } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
+const userStore = useUserStore()
+const accountStore = useAccountStore()
 const searchQuery = ref('')
 const searchFocused = ref(false)
-const isDark = ref(false)
+const { isDark, toggleTheme } = useTheme()
+
+const displayName = computed(
+  () => userStore.user?.name || accountStore.profile.name || '管理员'
+)
+const displayEmail = computed(
+  () =>
+    userStore.user?.email || accountStore.profile.email || 'admin@yzcTool.com'
+)
+const displayAvatar = computed(
+  () =>
+    userStore.user?.avatar ||
+    accountStore.profile.avatar ||
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=user'
+)
 
 const goHome = () => router.push('/home')
 const goToIM = () => router.push('/im')
 
-const toggleTheme = () => {
-  isDark.value = !isDark.value
-  ElMessage.info(isDark.value ? '已切换到深色模式' : '已切换到浅色模式')
+const handleToggleTheme = () => {
+  const theme = toggleTheme()
+  ElMessage.info(theme === 'dark' ? '已切换到深色模式' : '已切换到浅色模式')
 }
 
 const handleSearch = () => {
@@ -143,12 +164,18 @@ const handleCommand = (command: string) => {
       router.push('/profile')
       break
     case 'settings':
-      ElMessage.info('账号设置功能开发中...')
+      router.push('/account-settings')
       break
     case 'help':
-      ElMessage.info('帮助中心功能开发中...')
+      router.push('/help-center')
       break
     case 'logout':
+      accountStore.recordActivity(
+        '退出登录',
+        '已安全退出当前账号会话。',
+        '账号'
+      )
+      userStore.delUser()
       ElMessage.success('已退出登录')
       router.push('/login')
       break
@@ -168,9 +195,9 @@ const handleCommand = (command: string) => {
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.2);
+  background: var(--app-header-bg);
+  border-bottom: 1px solid var(--app-header-border);
+  box-shadow: var(--app-header-shadow);
   backdrop-filter: blur(12px);
 }
 
@@ -230,14 +257,14 @@ const handleCommand = (command: string) => {
 .logo-name {
   font-size: 18px;
   font-weight: 700;
-  color: #fff;
+  color: var(--app-header-text);
   letter-spacing: 0.01em;
   line-height: 1.2;
 }
 
 .logo-version {
   font-size: 10px;
-  color: #64748b;
+  color: var(--app-header-muted);
   font-weight: 500;
 }
 
@@ -258,15 +285,13 @@ const handleCommand = (command: string) => {
 
   &.focused {
     .search-input {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: #6366f1;
-      box-shadow:
-        0 0 0 4px rgba(99, 102, 241, 0.15),
-        0 4px 20px rgba(0, 0, 0, 0.1);
+      background: var(--app-search-bg-focus);
+      border-color: var(--app-search-focus-border);
+      box-shadow: var(--app-search-focus-shadow);
     }
 
     .search-icon {
-      color: #a5b4fc;
+      color: var(--app-search-focus-color);
     }
   }
 }
@@ -274,7 +299,7 @@ const handleCommand = (command: string) => {
 .search-icon {
   position: absolute;
   left: 16px;
-  color: #64748b;
+  color: var(--app-header-muted);
   font-size: 16px;
   transition: color 0.2s ease;
 }
@@ -283,16 +308,16 @@ const handleCommand = (command: string) => {
   width: 100%;
   height: 44px;
   padding: 0 90px 0 46px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--app-search-border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background: var(--app-search-bg);
+  color: var(--app-header-text);
   font-size: 14px;
   outline: none;
   transition: all 0.3s ease;
 
   &::placeholder {
-    color: #64748b;
+    color: var(--app-header-muted);
   }
 }
 
@@ -304,10 +329,10 @@ const handleCommand = (command: string) => {
 
   span {
     padding: 3px 7px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--app-search-shortcut-bg);
+    border: 1px solid var(--app-search-shortcut-border);
     border-radius: 6px;
-    color: #64748b;
+    color: var(--app-header-muted);
     font-size: 11px;
     font-family:
       system-ui,
@@ -336,18 +361,24 @@ const handleCommand = (command: string) => {
   border: none;
   border-radius: 12px;
   background: transparent;
-  color: #94a3b8;
+  color: var(--app-header-subtle);
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
+    background: var(--app-header-hover);
+    color: var(--app-header-text);
     transform: scale(1.05);
   }
 
   &:active {
     transform: scale(0.95);
+  }
+
+  &.active {
+    background: var(--app-header-active-bg);
+    color: var(--app-header-text);
+    box-shadow: inset 0 0 0 1px var(--app-header-active-border);
   }
 
   .el-icon {
@@ -389,7 +420,7 @@ const handleCommand = (command: string) => {
 .header-divider {
   width: 1px;
   height: 28px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--app-header-border);
   margin: 0 8px;
 }
 
@@ -399,14 +430,14 @@ const handleCommand = (command: string) => {
   gap: 12px;
   padding: 6px 14px 6px 6px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--app-header-surface);
+  border: 1px solid var(--app-header-surface-border);
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: var(--app-header-hover-surface);
+    border-color: var(--app-header-hover-border);
     transform: translateY(-1px);
   }
 }
@@ -435,7 +466,7 @@ const handleCommand = (command: string) => {
 .user-name {
   font-size: 13px;
   font-weight: 600;
-  color: #fff;
+  color: var(--app-header-text);
   line-height: 1;
 }
 
@@ -444,14 +475,14 @@ const handleCommand = (command: string) => {
   align-items: center;
   gap: 5px;
   font-size: 11px;
-  color: #64748b;
+  color: var(--app-header-muted);
 }
 
 .status-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #94a3b8;
+  background: var(--app-header-subtle);
 
   &.online {
     background: #22c55e;
@@ -460,18 +491,18 @@ const handleCommand = (command: string) => {
 }
 
 .user-arrow {
-  color: #64748b;
+  color: var(--app-header-muted);
   font-size: 12px;
   transition: transform 0.2s ease;
 }
 
-/* Dropdown styles */
 :deep(.user-dropdown) {
+  min-width: 220px;
   padding: 8px;
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-  min-width: 220px;
+  background: var(--app-dropdown-bg);
+  border: 1px solid var(--app-dropdown-border);
+  box-shadow: var(--app-dropdown-shadow);
 }
 
 .dropdown-header {
@@ -479,7 +510,7 @@ const handleCommand = (command: string) => {
   gap: 12px;
   padding: 12px;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  background: var(--app-dropdown-header-bg);
   border-radius: 12px;
 }
 
@@ -506,12 +537,12 @@ const handleCommand = (command: string) => {
 .dropdown-name {
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--app-dropdown-text);
 }
 
 .dropdown-email {
   font-size: 12px;
-  color: #64748b;
+  color: var(--app-dropdown-muted);
 }
 
 :deep(.el-dropdown-menu__item) {
@@ -523,8 +554,8 @@ const handleCommand = (command: string) => {
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f1f5f9;
-    color: #6366f1;
+    background: var(--app-dropdown-hover);
+    color: var(--app-accent);
     transform: translateX(4px);
   }
 

@@ -15,6 +15,22 @@
         padding: 0;
       }
     </style>
+    <script>
+      ;(() => {
+        const storageKey = 'pcdemo-theme'
+        const stored = localStorage.getItem(storageKey)
+        const theme =
+          stored === 'dark' || stored === 'light'
+            ? stored
+            : window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light'
+        const root = document.documentElement
+        root.classList.toggle('dark', theme === 'dark')
+        root.dataset.theme = theme
+        root.style.colorScheme = theme
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>
