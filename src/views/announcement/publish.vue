@@ -1,15 +1,15 @@
 <template>
   <div class="announcement-publish-page">
-    <header class="hero panel">
+    <div class="hero panel">
       <div>
         <span class="hero-badge">EDITOR</span>
         <h1>{{ isEditMode ? '编辑公告' : '发布公告' }}</h1>
         <p>使用富文本编辑正文内容，支持先保存草稿再正式发布。</p>
       </div>
       <el-button @click="goList">返回列表</el-button>
-    </header>
+    </div>
 
-    <section class="panel form-panel">
+    <div class="panel form-panel">
       <el-form
         ref="formRef"
         :model="formData"
@@ -41,7 +41,7 @@
           >立即发布</el-button
         >
       </div>
-    </section>
+    </div>
   </div>
 </template>
 

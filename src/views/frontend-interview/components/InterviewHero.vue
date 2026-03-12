@@ -1,5 +1,5 @@
 <template>
-  <header class="hero panel">
+  <div class="hero panel">
     <div class="hero-left">
       <p class="hero-kicker">FRONTEND INTERVIEW BANK</p>
       <h1>前端面试题库</h1>
@@ -21,7 +21,7 @@
         <strong>{{ totalReactQuestions }}</strong>
       </div>
     </div>
-  </header>
+  </div>
 </template>
 
 <script lang="ts" setup>

@@ -1,6 +1,6 @@
 <template>
   <div class="meal-page">
-    <header class="hero panel">
+    <div class="hero panel">
       <div class="hero-text">
         <p class="hero-kicker">MEAL LOTTERY</p>
         <h1>今天三餐吃什么</h1>
@@ -28,7 +28,7 @@
           >恢复默认奖池</el-button
         >
       </div>
-    </header>
+    </div>
 
     <el-row :gutter="14" class="stats-row">
       <el-col v-for="meal in mealConfigs" :key="meal.key" :span="8">

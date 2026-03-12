@@ -1,7 +1,7 @@
 <template>
   <div class="ai-workflow-page">
     <!-- Hero Section -->
-    <section class="hero-section">
+    <div class="hero-section">
       <div class="hero-bg">
         <div class="hero-pattern"></div>
         <div class="hero-glow"></div>
@@ -21,10 +21,10 @@
         </div>
         <button class="settings-btn" @click="goToSettings">⚙️ API 设置</button>
       </div>
-    </section>
+    </div>
 
     <!-- Input Section -->
-    <section class="input-section">
+    <div class="input-section">
       <div class="input-card">
         <div class="input-wrapper">
           <el-icon class="input-prefix"><MagicStick /></el-icon>
@@ -56,10 +56,10 @@
           {{ errorMsg }}
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- Loading Skeleton -->
-    <section v-if="isLoading" class="skeleton-section">
+    <div v-if="isLoading" class="skeleton-section">
       <div class="skeleton-header">
         <div class="skeleton-line w-40"></div>
       </div>
@@ -73,10 +73,10 @@
           </div>
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- Results Section -->
-    <section v-else-if="result" class="results-section">
+    <div v-else-if="result" class="results-section">
       <div class="results-header">
         <h2>
           <span class="keyword-tag">{{ result.keyword }}</span>
@@ -128,10 +128,10 @@
           </div>
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- History Section -->
-    <section v-if="history.length > 0" class="history-section">
+    <div v-if="history.length > 0" class="history-section">
       <div class="section-header">
         <h3>历史记录</h3>
         <button class="clear-btn" @click="handleClearHistory">清空历史</button>
@@ -149,10 +149,10 @@
           <span class="history-time">{{ formatTime(item.timestamp) }}</span>
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- Empty State -->
-    <section
+    <div
       v-if="!isLoading && !result && history.length === 0"
       class="empty-section"
     >
@@ -169,7 +169,7 @@
           {{ example }}
         </span>
       </div>
-    </section>
+    </div>
   </div>
 </template>
 

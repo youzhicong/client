@@ -3,7 +3,7 @@
     <div class="bg-shape shape-a"></div>
     <div class="bg-shape shape-b"></div>
 
-    <header class="im-header panel">
+    <div class="im-header panel">
       <div class="brand">
         <span class="brand-badge">IM HUB</span>
         <div class="brand-copy">
@@ -21,10 +21,10 @@
           {{ connected ? '断开连接' : '重新连接' }}
         </el-button>
       </div>
-    </header>
+    </div>
 
-    <section class="im-shell">
-      <aside class="sidebar panel">
+    <div class="im-shell">
+      <div class="sidebar panel">
         <div class="search-wrap">
           <el-input
             v-model="keyword"
@@ -112,7 +112,7 @@
             </div>
           </div>
         </div>
-      </aside>
+      </div>
 
       <main class="chat panel">
         <div v-if="!activeConversation" class="chat-empty">
@@ -121,7 +121,7 @@
         </div>
 
         <template v-else>
-          <header class="chat-header">
+          <div class="chat-header">
             <div>
               <h3>{{ activeConversation.title }}</h3>
               <div class="chat-sub">
@@ -141,7 +141,7 @@
               >
               <el-button size="small" type="primary" plain>发起会议</el-button>
             </div>
-          </header>
+          </div>
 
           <div ref="messageWrapRef" class="chat-body" @scroll="handleScroll">
             <button
@@ -224,7 +224,7 @@
             </div>
           </div>
 
-          <footer class="composer">
+          <div class="composer">
             <div class="composer-tools">
               <button class="tool-btn" type="button" @click="appendEmoji('😊')">
                 😊 表情
@@ -276,11 +276,11 @@
                 </el-button>
               </div>
             </div>
-          </footer>
+          </div>
         </template>
       </main>
 
-      <aside class="members panel">
+      <div class="members panel">
         <div class="members-head">
           <h4>参与成员</h4>
           <span class="count">{{ activeMembers.length }}</span>
@@ -312,8 +312,8 @@
             </div>
           </div>
         </div>
-      </aside>
-    </section>
+      </div>
+    </div>
   </div>
 </template>
 

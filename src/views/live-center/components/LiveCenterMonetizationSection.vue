@@ -1,6 +1,6 @@
 <template>
-  <section class="monetization-grid">
-    <article class="gift-card card">
+  <div class="monetization-grid">
+    <div class="gift-card card">
       <div class="card-head">
         <div>
           <span class="section-kicker">礼物中心</span>
@@ -33,8 +33,8 @@
           >立即送礼</el-button
         >
       </div>
-    </article>
-    <article class="recharge-card card">
+    </div>
+    <div class="recharge-card card">
       <div class="card-head">
         <div>
           <span class="section-kicker">充值中心</span>
@@ -42,16 +42,16 @@
         </div>
       </div>
       <div class="wallet-strip">
-        <article class="wallet-card">
+        <div class="wallet-card">
           <span>当前余额</span
           ><strong>{{ formatAmount(walletSummary.balance) }} 金豆</strong>
-        </article>
-        <article class="wallet-card">
+        </div>
+        <div class="wallet-card">
           <span>今日送礼</span
           ><strong
             >{{ formatAmount(walletSummary.giftSpendToday) }} 金豆</strong
           >
-        </article>
+        </div>
       </div>
       <div class="package-list">
         <button
@@ -84,8 +84,8 @@
           >立即充值</el-button
         >
       </div>
-    </article>
-    <article class="wallet-ledger card">
+    </div>
+    <div class="wallet-ledger card">
       <div class="card-head">
         <div>
           <span class="section-kicker">交易流水</span>
@@ -96,7 +96,7 @@
         >
       </div>
       <div class="ledger-list">
-        <article
+        <div
           v-for="item in recentTransactions"
           :key="item.id"
           class="ledger-item"
@@ -121,10 +121,10 @@
               >{{ item.type === 'recharge' ? '充值' : '送礼' }}</span
             >
           </div>
-        </article>
+        </div>
       </div>
-    </article>
-  </section>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>

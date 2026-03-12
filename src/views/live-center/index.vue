@@ -1,5 +1,5 @@
 <template>
-  <div class="live-center-page">
+  <div class="live-center-page" :class="{ 'rooms-mode': isRoomsPage }">
     <div class="ambient ambient-a"></div>
     <div class="ambient ambient-b"></div>
 

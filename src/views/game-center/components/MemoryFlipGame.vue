@@ -1,7 +1,7 @@
 <template>
   <div class="memory-shell">
     <div class="memory-header">
-      <section class="memory-panel intro-panel">
+      <div class="memory-panel intro-panel">
         <p class="panel-kicker">MEMORY MATCH</p>
         <h3>翻开成对卡牌</h3>
         <p>
@@ -11,9 +11,9 @@
         <div class="actions">
           <el-button type="primary" @click="startGame">重新开始</el-button>
         </div>
-      </section>
+      </div>
 
-      <section class="memory-panel stat-panel">
+      <div class="memory-panel stat-panel">
         <div class="stat-card">
           <span>已用步数</span>
           <strong>{{ moves }}</strong>
@@ -30,11 +30,11 @@
           <span>最佳步数</span>
           <strong>{{ bestMoves || '--' }}</strong>
         </div>
-      </section>
+      </div>
     </div>
 
     <div class="memory-content">
-      <section class="memory-panel board-panel">
+      <div class="memory-panel board-panel">
         <div class="card-grid">
           <button
             v-for="card in cards"
@@ -54,9 +54,9 @@
             <span class="card-face card-back">{{ card.symbol }}</span>
           </button>
         </div>
-      </section>
+      </div>
 
-      <section class="memory-panel aside-panel">
+      <div class="memory-panel aside-panel">
         <div class="aside-block">
           <p class="panel-kicker">STATUS</p>
           <h3>{{ statusText }}</h3>
@@ -92,7 +92,7 @@
             <span>刷新后重新洗牌</span>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   </div>
 </template>

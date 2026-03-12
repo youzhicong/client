@@ -1,6 +1,6 @@
 <template>
-  <section class="support-grid">
-    <article class="goods-card card">
+  <div class="support-grid">
+    <div class="goods-card card">
       <div class="card-head">
         <div>
           <span class="section-kicker">商品节奏</span>
@@ -8,11 +8,7 @@
         </div>
       </div>
       <div class="goods-list">
-        <article
-          v-for="item in productItems"
-          :key="item.name"
-          class="goods-item"
-        >
+        <div v-for="item in productItems" :key="item.name" class="goods-item">
           <div class="goods-top">
             <div>
               <h4>{{ item.name }}</h4>
@@ -30,10 +26,10 @@
             <span>{{ item.inventory }}</span
             ><span>上架进度 {{ item.progress }}%</span>
           </div>
-        </article>
+        </div>
       </div>
-    </article>
-    <article class="team-card card">
+    </div>
+    <div class="team-card card">
       <div class="card-head">
         <div>
           <span class="section-kicker">协同动作</span>
@@ -41,7 +37,7 @@
         </div>
       </div>
       <div class="team-list">
-        <article v-for="item in teamTasks" :key="item.name" class="team-item">
+        <div v-for="item in teamTasks" :key="item.name" class="team-item">
           <div class="team-top">
             <h4>{{ item.name }}</h4>
             <span class="status-chip small" :class="item.tone">{{
@@ -50,10 +46,10 @@
           </div>
           <p>{{ item.owner }}</p>
           <span class="team-deadline">{{ item.deadline }}</span>
-        </article>
+        </div>
       </div>
-    </article>
-    <article class="alerts-card card">
+    </div>
+    <div class="alerts-card card">
       <div class="card-head">
         <div>
           <span class="section-kicker">风险提醒</span>
@@ -61,7 +57,7 @@
         </div>
       </div>
       <div class="alert-list">
-        <article
+        <div
           v-for="item in alerts"
           :key="item.title"
           class="alert-item"
@@ -74,10 +70,10 @@
             }}</span>
           </div>
           <p>{{ item.detail }}</p>
-        </article>
+        </div>
       </div>
-    </article>
-  </section>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>

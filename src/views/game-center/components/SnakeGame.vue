@@ -29,7 +29,7 @@
     </div>
 
     <div class="content-grid">
-      <section class="board-panel panel">
+      <div class="board-panel panel">
         <div class="board-caption">
           <div>
             <p class="caption-kicker">SNAKE BOARD</p>
@@ -51,9 +51,9 @@
           吃到橙色能量块会加分并变长。支持键盘方向键 /
           WASD，也支持下面的方向按钮。
         </p>
-      </section>
+      </div>
 
-      <section class="side-panel">
+      <div class="side-panel">
         <div class="panel info-card">
           <p class="caption-kicker">HOW TO PLAY</p>
           <h3>玩法说明</h3>
@@ -103,7 +103,7 @@
             </button>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   </div>
 </template>

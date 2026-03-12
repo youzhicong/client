@@ -1,6 +1,6 @@
 <template>
   <div class="approval-page">
-    <header class="hero panel">
+    <div class="hero panel">
       <div>
         <span class="hero-badge">WORKFLOW</span>
         <h1>审批流程可视化</h1>
@@ -20,29 +20,29 @@
           placeholder="当前操作人姓名"
         />
       </div>
-    </header>
+    </div>
 
-    <section class="stats-grid">
-      <article class="stat-card panel">
+    <div class="stats-grid">
+      <div class="stat-card panel">
         <span>流程总数</span>
         <strong>{{ summary.total }}</strong>
-      </article>
-      <article class="stat-card panel warning">
+      </div>
+      <div class="stat-card panel warning">
         <span>审批中</span>
         <strong>{{ summary.pending }}</strong>
-      </article>
-      <article class="stat-card panel danger">
+      </div>
+      <div class="stat-card panel danger">
         <span>已驳回 / 待改</span>
         <strong>{{ summary.rejected + summary.modified }}</strong>
-      </article>
-      <article class="stat-card panel success">
+      </div>
+      <div class="stat-card panel success">
         <span>已通过</span>
         <strong>{{ summary.approved }}</strong>
-      </article>
-    </section>
+      </div>
+    </div>
 
-    <section class="main-grid">
-      <aside class="left-col panel">
+    <div class="main-grid">
+      <div class="left-col panel">
         <div class="col-head">
           <h3>申请单编辑</h3>
           <el-tag v-if="canModifyCurrent" type="warning">当前单可修改</el-tag>
@@ -112,9 +112,9 @@
             发起新审批
           </el-button>
         </div>
-      </aside>
+      </div>
 
-      <section class="right-col">
+      <div class="right-col">
         <WorkflowGraph
           :status="currentDetail?.status || 'pending'"
           :reject-count="currentDetail?.rejectCount || 0"
@@ -162,10 +162,10 @@
         </div>
 
         <WorkflowRecordTimeline :records="currentDetail?.records || []" />
-      </section>
-    </section>
+      </div>
+    </div>
 
-    <section class="table-panel panel">
+    <div class="table-panel panel">
       <div class="table-head">
         <div class="table-filters">
           <el-input
@@ -238,7 +238,7 @@
           @current-change="fetchList"
         />
       </div>
-    </section>
+    </div>
   </div>
 </template>
 

@@ -1,7 +1,7 @@
 <template>
   <div class="merge-shell">
     <div class="top-grid">
-      <section class="merge-panel hero-panel">
+      <div class="merge-panel hero-panel">
         <div>
           <p class="panel-kicker">2048 MERGE</p>
           <h3>把数字一路合到更高</h3>
@@ -15,9 +15,9 @@
             {{ hasWon ? '继续冲分' : '继续当前局' }}
           </el-button>
         </div>
-      </section>
+      </div>
 
-      <section class="merge-panel score-panel">
+      <div class="merge-panel score-panel">
         <div class="score-card">
           <span>当前分数</span>
           <strong>{{ score }}</strong>
@@ -34,11 +34,11 @@
           <span>状态</span>
           <strong>{{ statusText }}</strong>
         </div>
-      </section>
+      </div>
     </div>
 
     <div class="content-grid">
-      <section class="merge-panel board-panel">
+      <div class="merge-panel board-panel">
         <div class="merge-board">
           <div
             v-for="(row, rowIndex) in board"
@@ -73,9 +73,9 @@
             ↓
           </button>
         </div>
-      </section>
+      </div>
 
-      <section class="merge-panel tips-panel">
+      <div class="merge-panel tips-panel">
         <p class="panel-kicker">PLAY TIPS</p>
         <h3>实用技巧</h3>
         <div class="tip-list">
@@ -92,7 +92,7 @@
             <span>一旦合成 2048 还可以继续冲更高分，不用停。</span>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   </div>
 </template>

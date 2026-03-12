@@ -1,6 +1,6 @@
 <template>
-  <section class="kpi-grid">
-    <article
+  <div class="kpi-grid">
+    <div
       v-for="item in kpiCards"
       :key="item.label"
       class="kpi-card card"
@@ -15,8 +15,8 @@
         <span class="kpi-delta" :class="item.deltaTone">{{ item.delta }}</span>
         <span class="kpi-note">{{ item.note }}</span>
       </div>
-    </article>
-  </section>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>

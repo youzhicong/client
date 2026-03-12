@@ -1,5 +1,5 @@
 <template>
-  <header class="hero card">
+  <div class="hero card">
     <div class="hero-copy">
       <span class="hero-kicker">LIVE COMMERCE HUB</span>
       <h1 class="hero-title">直播模块</h1>
@@ -15,13 +15,13 @@
     </div>
 
     <div class="hero-stats">
-      <article v-for="item in heroMetrics" :key="item.label" class="hero-stat">
+      <div v-for="item in heroMetrics" :key="item.label" class="hero-stat">
         <span class="hero-stat-label">{{ item.label }}</span>
         <strong class="hero-stat-value">{{ item.value }}</strong>
         <span class="hero-stat-foot">{{ item.foot }}</span>
-      </article>
+      </div>
     </div>
-  </header>
+  </div>
 </template>
 
 <script lang="ts" setup>

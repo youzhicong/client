@@ -1,15 +1,15 @@
 <template>
   <div class="settings-page">
     <!-- Header -->
-    <section class="settings-header">
+    <div class="settings-header">
       <div class="header-content">
         <h1>⚙️ AI 设置</h1>
         <p>配置 AI 服务的 API Key 和模型</p>
       </div>
-    </section>
+    </div>
 
     <!-- Settings Form -->
-    <section class="settings-form">
+    <div class="settings-form">
       <!-- Provider Selection -->
       <div class="form-group">
         <label>选择服务商</label>
@@ -96,10 +96,10 @@
         <span class="result-icon">{{ testResult.success ? '✅' : '❌' }}</span>
         <span class="result-text">{{ testResult.message }}</span>
       </div>
-    </section>
+    </div>
 
     <!-- Help Section -->
-    <section class="help-section">
+    <div class="help-section">
       <h3>📖 获取 API Key 指南</h3>
       <div class="help-cards">
         <div class="help-card">
@@ -145,7 +145,7 @@
           </ol>
         </div>
       </div>
-    </section>
+    </div>
   </div>
 </template>
 

@@ -4,7 +4,7 @@
     <div class="ambient ambient-b"></div>
     <div class="ambient ambient-c"></div>
 
-    <section class="login-shell">
+    <div class="login-shell">
       <div class="login-showcase">
         <div class="showcase-grid"></div>
         <div class="showcase-orb orb-a"></div>
@@ -94,7 +94,7 @@
           </div>
 
           <div class="signal-grid">
-            <article
+            <div
               v-for="item in signalCards"
               :key="item.label"
               class="signal-card"
@@ -102,7 +102,7 @@
               <span class="signal-value">{{ item.value }}</span>
               <span class="signal-label">{{ item.label }}</span>
               <p>{{ item.desc }}</p>
-            </article>
+            </div>
           </div>
         </div>
       </div>
@@ -175,7 +175,7 @@
           </div>
         </div>
       </div>
-    </section>
+    </div>
   </div>
 </template>
 

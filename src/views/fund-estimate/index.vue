@@ -1,9 +1,9 @@
-﻿<template>
+<template>
   <div class="fund-page">
     <div class="bg-shape shape-a"></div>
     <div class="bg-shape shape-b"></div>
 
-    <header class="hero panel">
+    <div class="hero panel">
       <div class="hero-main">
         <span class="hero-badge">FUND TRACKER</span>
         <h1>基金估值驾驶舱</h1>
@@ -36,22 +36,22 @@
           </el-button>
         </div>
       </div>
-    </header>
+    </div>
 
-    <section class="summary-grid">
-      <article class="summary-card panel">
+    <div class="summary-grid">
+      <div class="summary-card panel">
         <span class="label">持仓成本</span>
         <strong class="value">{{ formatCurrency(summary.totalCost) }}</strong>
         <span class="hint">累计投入</span>
-      </article>
+      </div>
 
-      <article class="summary-card panel">
+      <div class="summary-card panel">
         <span class="label">估算市值</span>
         <strong class="value">{{ formatCurrency(summary.totalValue) }}</strong>
         <span class="hint">实时净值估算</span>
-      </article>
+      </div>
 
-      <article
+      <div
         class="summary-card panel"
         :class="summary.totalProfit >= 0 ? 'profit' : 'loss'"
       >
@@ -60,9 +60,9 @@
           formatSignedCurrency(summary.totalProfit)
         }}</strong>
         <span class="hint">总浮动收益</span>
-      </article>
+      </div>
 
-      <article
+      <div
         class="summary-card panel"
         :class="summary.profitRate >= 0 ? 'profit' : 'loss'"
       >
@@ -71,10 +71,10 @@
           formatSignedPercent(summary.profitRate)
         }}</strong>
         <span class="hint">收益 / 成本</span>
-      </article>
-    </section>
+      </div>
+    </div>
 
-    <section class="workspace-grid">
+    <div class="workspace-grid">
       <div class="panel add-panel">
         <div class="panel-head">
           <h3>新增持仓</h3>
@@ -151,9 +151,9 @@
           <el-button @click="resetFilters">重置筛选</el-button>
         </div>
       </div>
-    </section>
+    </div>
 
-    <section class="table-panel panel">
+    <div class="table-panel panel">
       <div class="table-header">
         <div>
           <h3>持仓列表</h3>
@@ -248,7 +248,7 @@
           </template>
         </el-table-column>
       </AppDataTable>
-    </section>
+    </div>
   </div>
 </template>
 

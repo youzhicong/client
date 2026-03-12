@@ -1,6 +1,6 @@
 <template>
   <div class="h5-config-page">
-    <header class="hero panel">
+    <div class="hero panel">
       <div class="hero-copy">
         <span class="hero-badge">H5 CMS</span>
         <h1>H5 项目后台数据配置</h1>
@@ -15,33 +15,33 @@
         <el-button @click="copyConfig">复制 JSON</el-button>
         <el-button type="primary" @click="downloadConfig">导出配置</el-button>
       </div>
-    </header>
+    </div>
 
-    <section class="summary-grid">
-      <article class="summary-card panel">
+    <div class="summary-grid">
+      <div class="summary-card panel">
         <span class="label">项目状态</span>
         <strong>{{ statusLabelMap[config.publish.status] }}</strong>
         <p>{{ config.project.name || '未命名项目' }}</p>
-      </article>
-      <article class="summary-card panel">
+      </div>
+      <div class="summary-card panel">
         <span class="label">导航数量</span>
         <strong>{{ config.navigation.length }}</strong>
         <p>首屏导航与锚点入口</p>
-      </article>
-      <article class="summary-card panel">
+      </div>
+      <div class="summary-card panel">
         <span class="label">模块数量</span>
         <strong>{{ config.modules.length }}</strong>
         <p>可用于 H5 页面内容编排</p>
-      </article>
-      <article class="summary-card panel">
+      </div>
+      <div class="summary-card panel">
         <span class="label">最近保存</span>
         <strong>{{ savedAtText }}</strong>
         <p>配置自动落到本地存储</p>
-      </article>
-    </section>
+      </div>
+    </div>
 
     <div class="workspace">
-      <section class="editor">
+      <div class="editor">
         <el-card class="editor-card" shadow="never">
           <template #header>
             <div class="card-head">
@@ -306,9 +306,9 @@
             </el-form-item>
           </div>
         </el-card>
-      </section>
+      </div>
 
-      <aside class="preview">
+      <div class="preview">
         <el-card class="preview-card" shadow="never">
           <template #header>
             <div class="card-head">
@@ -343,7 +343,7 @@
             </div>
 
             <div class="phone-modules">
-              <article
+              <div
                 v-for="module in config.modules"
                 :key="module.id"
                 class="phone-module"
@@ -357,7 +357,7 @@
                   <strong>{{ module.metric || '--' }}</strong>
                   <span>{{ module.buttonText || '查看详情' }}</span>
                 </div>
-              </article>
+              </div>
             </div>
           </div>
         </el-card>
@@ -374,7 +374,7 @@
 
           <pre class="json-output">{{ serializedConfig }}</pre>
         </el-card>
-      </aside>
+      </div>
     </div>
   </div>
 </template>

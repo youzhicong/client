@@ -1,5 +1,5 @@
 <template>
-  <header class="app-header">
+  <div class="app-header">
     <div class="header-left">
       <div class="logo" @click="goHome">
         <div class="logo-icon">
@@ -101,7 +101,7 @@
         </template>
       </el-dropdown>
     </div>
-  </header>
+  </div>
 </template>
 
 <script lang="ts" setup>

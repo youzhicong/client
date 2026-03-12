@@ -1,9 +1,9 @@
-﻿<template>
+<template>
   <div class="map-page">
     <div class="bg-glow glow-a"></div>
     <div class="bg-glow glow-b"></div>
 
-    <header class="map-hero panel">
+    <div class="map-hero panel">
       <div class="hero-left">
         <span class="hero-badge">SMART MAP</span>
         <h2>数字地图中控台</h2>
@@ -37,9 +37,9 @@
           <span class="meta-chip">中心 {{ centerLabel }}</span>
         </div>
       </div>
-    </header>
+    </div>
 
-    <section class="map-layout">
+    <div class="map-layout">
       <main class="map-stage panel">
         <div class="stage-toolbar">
           <div class="toolbar-label">地图样式</div>
@@ -94,8 +94,8 @@
         </div>
       </main>
 
-      <aside class="side-panel panel">
-        <section class="side-block">
+      <div class="side-panel panel">
+        <div class="side-block">
           <div class="block-head">
             <h3>快捷地点</h3>
             <span>{{ quickSpots.length }}</span>
@@ -112,9 +112,9 @@
               <span class="spot-desc">{{ spot.desc }}</span>
             </button>
           </div>
-        </section>
+        </div>
 
-        <section v-if="searchResults.length" class="side-block">
+        <div v-if="searchResults.length" class="side-block">
           <div class="block-head">
             <h3>搜索结果</h3>
             <span>{{ searchResults.length }}</span>
@@ -131,9 +131,9 @@
               <span class="spot-desc">{{ item.address }}</span>
             </button>
           </div>
-        </section>
+        </div>
 
-        <section class="side-block grow">
+        <div class="side-block grow">
           <div class="block-head">
             <h3>最近访问</h3>
             <el-button
@@ -163,9 +163,9 @@
           <div v-else class="empty-block">
             点击地图或搜索地点后会自动记录到这里。
           </div>
-        </section>
-      </aside>
-    </section>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

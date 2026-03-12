@@ -1,30 +1,30 @@
 <template>
   <div class="announcement-list-page">
-    <header class="hero panel">
+    <div class="hero panel">
       <div>
         <span class="hero-badge">ANNOUNCEMENT</span>
         <h1>公告管理</h1>
         <p>查看公告发布数量、状态和阅读情况，支持快速跳转编辑与详情。</p>
       </div>
       <el-button type="primary" @click="goPublish()">发布新公告</el-button>
-    </header>
+    </div>
 
-    <section class="stats-grid">
-      <article class="panel stat">
+    <div class="stats-grid">
+      <div class="panel stat">
         <span>公告总数</span>
         <strong>{{ summary.total }}</strong>
-      </article>
-      <article class="panel stat">
+      </div>
+      <div class="panel stat">
         <span>已发布</span>
         <strong>{{ summary.published }}</strong>
-      </article>
-      <article class="panel stat">
+      </div>
+      <div class="panel stat">
         <span>草稿</span>
         <strong>{{ summary.draft }}</strong>
-      </article>
-    </section>
+      </div>
+    </div>
 
-    <section class="panel table-panel">
+    <div class="panel table-panel">
       <div class="table-head">
         <div class="filters">
           <el-input
@@ -107,7 +107,7 @@
           @current-change="fetchList"
         />
       </div>
-    </section>
+    </div>
   </div>
 </template>
 

@@ -1,6 +1,6 @@
 <template>
-  <section class="ops-grid">
-    <article class="schedule-card card">
+  <div class="ops-grid">
+    <div class="schedule-card card">
       <div class="card-head">
         <div>
           <span class="section-kicker">今日排期</span>
@@ -8,7 +8,7 @@
         </div>
       </div>
       <div class="schedule-list">
-        <article
+        <div
           v-for="item in scheduleItems"
           :key="`${item.time}-${item.title}`"
           class="schedule-item"
@@ -25,10 +25,10 @@
           <span class="status-chip small" :class="item.tone">{{
             item.status
           }}</span>
-        </article>
+        </div>
       </div>
-    </article>
-    <article class="script-card card">
+    </div>
+    <div class="script-card card">
       <div class="card-head">
         <div>
           <span class="section-kicker">直播内容</span>
@@ -36,7 +36,7 @@
         </div>
       </div>
       <div class="script-list">
-        <article
+        <div
           v-for="item in scriptBlocks"
           :key="item.stage"
           class="script-item"
@@ -48,10 +48,10 @@
           </div>
           <p class="script-focus">{{ item.focus }}</p>
           <p class="script-action">{{ item.action }}</p>
-        </article>
+        </div>
       </div>
-    </article>
-    <article class="conversion-card card">
+    </div>
+    <div class="conversion-card card">
       <div class="card-head">
         <div>
           <span class="section-kicker">内容转化</span>
@@ -69,8 +69,8 @@
           ><span class="conversion-note">{{ item.note }}</span>
         </div>
       </div>
-    </article>
-  </section>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>

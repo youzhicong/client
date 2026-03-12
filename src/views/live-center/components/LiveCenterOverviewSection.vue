@@ -1,6 +1,6 @@
 <template>
-  <section class="overview-grid">
-    <article class="traffic-card card">
+  <div class="overview-grid">
+    <div class="traffic-card card">
       <div class="card-head">
         <div>
           <span class="section-kicker">实时热度</span>
@@ -10,7 +10,7 @@
       </div>
 
       <div class="traffic-grid">
-        <article
+        <div
           v-for="item in trafficHighlights"
           :key="item.label"
           class="traffic-item"
@@ -18,11 +18,11 @@
           <span>{{ item.label }}</span>
           <strong>{{ item.value }}</strong>
           <p>{{ item.delta }}</p>
-        </article>
+        </div>
       </div>
-    </article>
+    </div>
 
-    <article class="rooms-card card">
+    <div class="rooms-card card">
       <div class="card-head">
         <div>
           <span class="section-kicker">直播间分布</span>
@@ -32,7 +32,7 @@
       </div>
 
       <div class="room-list">
-        <article v-for="room in streamRooms" :key="room.id" class="room-item">
+        <div v-for="room in streamRooms" :key="room.id" class="room-item">
           <div class="room-top">
             <div>
               <span class="status-chip" :class="room.statusTone">{{
@@ -51,10 +51,10 @@
               <span>场次 GMV</span><strong>{{ room.gmv }}</strong>
             </div>
           </div>
-        </article>
+        </div>
       </div>
-    </article>
-  </section>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>

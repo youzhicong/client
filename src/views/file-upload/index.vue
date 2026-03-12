@@ -1,6 +1,6 @@
-﻿<template>
+<template>
   <div class="upload-center">
-    <header class="hero card">
+    <div class="hero card">
       <div>
         <span class="badge">UPLOAD CENTER</span>
         <h1>上传中心</h1>
@@ -58,9 +58,9 @@
           >清理完成</el-button
         >
       </div>
-    </header>
+    </div>
 
-    <section class="stats card">
+    <div class="stats card">
       <div class="stat-item">
         <span>本地任务</span>
         <strong>{{ localTasks.length }}</strong>
@@ -81,9 +81,9 @@
         <span>实时速率</span>
         <strong>{{ totalSpeedLabel }}</strong>
       </div>
-    </section>
+    </div>
 
-    <section class="drop-card card">
+    <div class="drop-card card">
       <input
         ref="fileInputRef"
         class="hidden"
@@ -103,9 +103,9 @@
         <h3>拖拽文件到这里，或点击选择文件</h3>
         <p>图片、视频、音频、文档、压缩包都支持上传</p>
       </div>
-    </section>
+    </div>
 
-    <section class="card table-card">
+    <div class="card table-card">
       <div class="toolbar">
         <h3>本地上传队列</h3>
         <div class="toolbar-right">
@@ -230,8 +230,8 @@
           </template>
         </el-table-column>
       </AppDataTable>
-    </section>
-    <section class="card table-card">
+    </div>
+    <div class="card table-card">
       <div class="toolbar">
         <h3>服务端上传记录</h3>
         <div class="toolbar-right">
@@ -304,7 +304,7 @@
           </template>
         </el-table-column>
       </AppDataTable>
-    </section>
+    </div>
   </div>
 </template>
 

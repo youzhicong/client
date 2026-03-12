@@ -22,6 +22,27 @@
   font-family: 'Space Grotesk', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
+.live-center-page.rooms-mode {
+  --lc-bg: #07090d;
+  --lc-panel: rgba(15, 17, 23, 0.88);
+  --lc-panel-strong: rgba(21, 24, 32, 0.96);
+  --lc-border: rgba(255, 255, 255, 0.08);
+  --lc-text: #f4f7fb;
+  --lc-muted: #95a1b4;
+  --lc-accent: #fe2c55;
+  --lc-secondary: #25f4ee;
+  --lc-cool: #ffb84d;
+  --lc-shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
+
+  padding: 16px;
+  background:
+    radial-gradient(circle at 12% -4%, rgba(121, 95, 165, 0.26) 0%, transparent 24%),
+    radial-gradient(circle at 100% 10%, rgba(255, 190, 92, 0.1) 0%, transparent 20%),
+    linear-gradient(180deg, #3a3645 0%, #2c2d3a 46%, #252735 100%);
+  font-family: 'Outfit', 'Space Grotesk', 'PingFang SC', 'Microsoft YaHei',
+    sans-serif;
+}
+
 .live-center-page::before {
   content: '';
   position: absolute;
@@ -32,6 +53,30 @@
     linear-gradient(rgba(22, 73, 85, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(22, 73, 85, 0.05) 1px, transparent 1px);
   background-size: 26px 26px;
+}
+
+.live-center-page.rooms-mode::before {
+  opacity: 0.08;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+.live-center-page.rooms-mode::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 10px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(141, 156, 255, 0.34),
+    rgba(255, 255, 255, 0.02)
+  );
 }
 
 .ambient {
@@ -57,6 +102,14 @@
   bottom: 120px;
   opacity: 0.34;
   background: linear-gradient(135deg, rgba(188, 232, 255, 0.88), rgba(174, 244, 211, 0.72));
+}
+
+.live-center-page.rooms-mode .ambient-a {
+  display: none;
+}
+
+.live-center-page.rooms-mode .ambient-b {
+  display: none;
 }
 
 .card {

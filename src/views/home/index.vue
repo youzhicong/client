@@ -1,10 +1,10 @@
-﻿<template>
+<template>
   <div class="home-dashboard">
     <div class="bg-grid"></div>
     <div class="bg-glow glow-a"></div>
     <div class="bg-glow glow-b"></div>
 
-    <header class="hero-panel panel">
+    <div class="hero-panel panel">
       <div class="hero-left">
         <span class="hero-kicker">DIGITAL OPS</span>
         <h1 class="hero-title">数字化运营驾驶舱</h1>
@@ -25,10 +25,10 @@
           <span class="stat-delta up">+0.6%</span>
         </div>
       </div>
-    </header>
+    </div>
 
-    <section class="kpi-strip">
-      <article
+    <div class="kpi-strip">
+      <div
         v-for="item in kpiCards"
         :key="item.label"
         class="kpi-card panel"
@@ -40,19 +40,19 @@
         </div>
         <strong class="kpi-value">{{ item.value }}</strong>
         <span class="kpi-trend" :class="item.trendTone">{{ item.trend }}</span>
-      </article>
-    </section>
+      </div>
+    </div>
 
-    <section class="charts-grid">
-      <article class="panel chart-panel trend-panel">
+    <div class="charts-grid">
+      <div class="panel chart-panel trend-panel">
         <div class="card-header">
           <h3>近七日访问趋势</h3>
           <span class="card-subtitle">UV / PV 双轴对比</span>
         </div>
         <div ref="lineChartRef" class="chart-box"></div>
-      </article>
+      </div>
 
-      <article class="panel chart-panel source-panel">
+      <div class="panel chart-panel source-panel">
         <div class="card-header">
           <h3>流量来源结构</h3>
           <span class="card-subtitle">渠道贡献占比</span>
@@ -71,17 +71,17 @@
             </div>
           </div>
         </div>
-      </article>
+      </div>
 
-      <article class="panel chart-panel region-panel">
+      <div class="panel chart-panel region-panel">
         <div class="card-header">
           <h3>区域活跃分布</h3>
           <span class="card-subtitle">Top 5 城市</span>
         </div>
         <div ref="barChartRef" class="chart-box"></div>
-      </article>
+      </div>
 
-      <article class="panel chart-panel health-panel">
+      <div class="panel chart-panel health-panel">
         <div class="card-header">
           <h3>业务健康度</h3>
           <span class="card-subtitle">关键指标监测</span>
@@ -111,8 +111,8 @@
             }}</span>
           </div>
         </div>
-      </article>
-    </section>
+      </div>
+    </div>
   </div>
 </template>
 

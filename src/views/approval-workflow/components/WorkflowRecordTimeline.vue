@@ -1,9 +1,9 @@
 <template>
-  <section class="record-board">
-    <header class="board-header">
+  <div class="record-board">
+    <div class="board-header">
       <h3>流转记录</h3>
       <span class="count">{{ records.length }} 条</span>
-    </header>
+    </div>
 
     <el-timeline v-if="records.length">
       <el-timeline-item
@@ -21,7 +21,7 @@
     </el-timeline>
 
     <el-empty v-else description="暂无流转记录" />
-  </section>
+  </div>
 </template>
 
 <script lang="ts" setup>

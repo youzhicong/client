@@ -1,9 +1,9 @@
 <template>
-  <section class="flow-board">
-    <header class="flow-header">
+  <div class="flow-board">
+    <div class="flow-header">
       <h3>签署流程</h3>
       <el-tag :type="statusType">{{ statusLabel }}</el-tag>
-    </header>
+    </div>
 
     <div class="flow-track">
       <template v-for="(node, index) in flowNodes" :key="node.key">
@@ -21,7 +21,7 @@
         ></div>
       </template>
     </div>
-  </section>
+  </div>
 </template>
 
 <script lang="ts" setup>

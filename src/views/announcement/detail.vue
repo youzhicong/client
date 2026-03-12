@@ -1,6 +1,6 @@
 <template>
   <div class="announcement-detail-page">
-    <header class="hero panel">
+    <div class="hero panel">
       <div class="hero-main">
         <span class="hero-badge">DETAIL</span>
         <h1>{{ detail.title || '公告详情' }}</h1>
@@ -10,9 +10,9 @@
         <el-button @click="goList">返回列表</el-button>
         <el-button type="primary" @click="goEdit">编辑公告</el-button>
       </div>
-    </header>
+    </div>
 
-    <section class="panel info-panel">
+    <div class="panel info-panel">
       <el-descriptions :column="4" border>
         <el-descriptions-item label="作者">{{
           detail.author || '-'
@@ -29,14 +29,11 @@
           {{ detail.publishedAt || '-' }}
         </el-descriptions-item>
       </el-descriptions>
-    </section>
+    </div>
 
-    <section class="panel content-panel" v-loading="loading">
-      <article
-        class="content"
-        v-html="detail.content || emptyContent"
-      ></article>
-    </section>
+    <div class="panel content-panel" v-loading="loading">
+      <div class="content" v-html="detail.content || emptyContent"></div>
+    </div>
   </div>
 </template>
 

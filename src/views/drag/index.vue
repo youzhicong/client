@@ -3,7 +3,7 @@
     <div class="bg-shape shape-a"></div>
     <div class="bg-shape shape-b"></div>
 
-    <header class="hero panel">
+    <div class="hero panel">
       <div class="hero-left">
         <span class="hero-badge">FORM BUILDER</span>
         <h1>可视化表单设计器</h1>
@@ -24,10 +24,10 @@
           <strong class="value">{{ requiredCount }}</strong>
         </div>
       </div>
-    </header>
+    </div>
 
     <div class="layout">
-      <aside class="toolbox panel">
+      <div class="toolbox panel">
         <div class="panel-title">组件库</div>
 
         <div class="toolbox-group">
@@ -71,7 +71,7 @@
             <span class="tool-desc">{{ tool.desc }}</span>
           </div>
         </div>
-      </aside>
+      </div>
 
       <main class="canvas panel" @dragover.prevent @drop="onCanvasDrop">
         <div class="canvas-header">
@@ -184,7 +184,7 @@
         </el-form>
       </main>
 
-      <aside class="props panel">
+      <div class="props panel">
         <div class="panel-title">属性面板</div>
 
         <div v-if="!activeField" class="props-empty">
@@ -255,7 +255,7 @@
             <el-button size="small" @click="addOption">新增选项</el-button>
           </div>
         </div>
-      </aside>
+      </div>
     </div>
 
     <el-dialog

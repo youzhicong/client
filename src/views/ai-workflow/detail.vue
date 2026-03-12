@@ -29,7 +29,7 @@
     <!-- Detail Content -->
     <div v-else-if="detail" class="detail-content">
       <!-- Hero Section -->
-      <section class="detail-hero">
+      <div class="detail-hero">
         <div class="hero-icon">{{ detail.icon }}</div>
         <div class="hero-info">
           <h1>{{ detail.name }}</h1>
@@ -48,21 +48,21 @@
             </span>
           </div>
         </div>
-      </section>
+      </div>
 
       <!-- Overview Section -->
-      <section class="info-section">
+      <div class="info-section">
         <div class="section-header">
           <span class="section-icon">📋</span>
           <h2>产品概述</h2>
         </div>
         <p class="overview-text">{{ detail.overview }}</p>
-      </section>
+      </div>
 
       <!-- Grid Sections -->
       <div class="info-grid">
         <!-- Target Audience -->
-        <section class="info-card">
+        <div class="info-card">
           <div class="card-header">
             <span class="card-icon">👥</span>
             <h3>目标客户</h3>
@@ -72,10 +72,10 @@
               {{ item }}
             </li>
           </ul>
-        </section>
+        </div>
 
         <!-- Key Features -->
-        <section class="info-card">
+        <div class="info-card">
           <div class="card-header">
             <span class="card-icon">✨</span>
             <h3>核心卖点</h3>
@@ -85,10 +85,10 @@
               {{ item }}
             </li>
           </ul>
-        </section>
+        </div>
 
         <!-- Competitive Advantage -->
-        <section class="info-card">
+        <div class="info-card">
           <div class="card-header">
             <span class="card-icon">🏆</span>
             <h3>竞争优势</h3>
@@ -98,10 +98,10 @@
               {{ item }}
             </li>
           </ul>
-        </section>
+        </div>
 
         <!-- Risks -->
-        <section class="info-card">
+        <div class="info-card">
           <div class="card-header">
             <span class="card-icon">⚠️</span>
             <h3>潜在风险</h3>
@@ -111,48 +111,48 @@
               {{ item }}
             </li>
           </ul>
-        </section>
+        </div>
       </div>
 
       <!-- Production Process -->
-      <section class="info-section">
+      <div class="info-section">
         <div class="section-header">
           <span class="section-icon">🏭</span>
           <h2>生产流程</h2>
         </div>
         <p class="process-text">{{ detail.productionProcess }}</p>
-      </section>
+      </div>
 
       <!-- Cost & Pricing -->
       <div class="cost-grid">
-        <section class="cost-card">
+        <div class="cost-card">
           <div class="cost-header">
             <span class="cost-icon">💰</span>
             <h3>预估成本</h3>
           </div>
           <p class="cost-value">{{ detail.estimatedCost }}</p>
-        </section>
+        </div>
 
-        <section class="cost-card">
+        <div class="cost-card">
           <div class="cost-header">
             <span class="cost-icon">📊</span>
             <h3>定价策略</h3>
           </div>
           <p class="cost-value">{{ detail.pricingStrategy }}</p>
-        </section>
+        </div>
       </div>
 
       <!-- Market Analysis -->
-      <section class="info-section">
+      <div class="info-section">
         <div class="section-header">
           <span class="section-icon">📈</span>
           <h2>市场分析</h2>
         </div>
         <p class="analysis-text">{{ detail.marketAnalysis }}</p>
-      </section>
+      </div>
 
       <!-- Recommendations -->
-      <section class="info-section recommendations">
+      <div class="info-section recommendations">
         <div class="section-header">
           <span class="section-icon">💡</span>
           <h2>发展建议</h2>
@@ -163,7 +163,7 @@
             <span class="rec-text">{{ item }}</span>
           </li>
         </ul>
-      </section>
+      </div>
     </div>
 
     <!-- Error State -->

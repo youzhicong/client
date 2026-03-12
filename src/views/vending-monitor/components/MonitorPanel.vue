@@ -1,12 +1,12 @@
-﻿<template>
+<template>
   <div class="monitor-panel">
-    <section class="panel-card">
-      <header class="card-header">
+    <div class="panel-card">
+      <div class="card-header">
         <h3>设备状态</h3>
         <span :class="['status-badge', data.machine.status]">{{
           statusText
         }}</span>
-      </header>
+      </div>
 
       <div class="card-body">
         <div class="stat-row">
@@ -30,12 +30,12 @@
           <span class="value">{{ data.machine.lastMaintenance }}</span>
         </div>
       </div>
-    </section>
+    </div>
 
-    <section class="panel-card">
-      <header class="card-header">
+    <div class="panel-card">
+      <div class="card-header">
         <h3>销售概览</h3>
-      </header>
+      </div>
 
       <div class="card-body">
         <div class="sales-grid">
@@ -81,13 +81,13 @@
           </div>
         </div>
       </div>
-    </section>
+    </div>
 
-    <section class="panel-card">
-      <header class="card-header">
+    <div class="panel-card">
+      <div class="card-header">
         <h3>库存健康</h3>
         <span class="stock-health">{{ stockRate }}%</span>
-      </header>
+      </div>
 
       <div class="card-body">
         <div class="stock-summary">
@@ -139,15 +139,15 @@
           </div>
         </div>
       </div>
-    </section>
+    </div>
 
-    <section class="panel-card alerts-card">
-      <header class="card-header">
+    <div class="panel-card alerts-card">
+      <div class="card-header">
         <h3>告警信息</h3>
         <span class="alert-count" v-if="warningCount > 0">{{
           warningCount
         }}</span>
-      </header>
+      </div>
 
       <div class="card-body">
         <div v-if="data.alerts.length === 0" class="no-alerts">暂无告警</div>
@@ -162,7 +162,7 @@
           <span class="alert-time">{{ alert.time }}</span>
         </div>
       </div>
-    </section>
+    </div>
   </div>
 </template>
 

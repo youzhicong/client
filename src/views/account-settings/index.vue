@@ -50,7 +50,7 @@
       <el-tabs v-model="activeTab" class="settings-tabs">
         <el-tab-pane label="基本资料" name="profile">
           <div class="tab-layout">
-            <section class="form-panel">
+            <div class="form-panel">
               <el-form label-width="88px">
                 <el-form-item label="姓名">
                   <el-input v-model="profileForm.name" />
@@ -84,9 +84,9 @@
                   >保存资料</el-button
                 >
               </div>
-            </section>
+            </div>
 
-            <aside class="preview-card">
+            <div class="preview-card">
               <img
                 class="preview-avatar"
                 :src="accountStore.profile.avatar"
@@ -99,7 +99,7 @@
                 accountStore.profile.statusLabel
               }}</el-tag>
               <div class="preview-bio">{{ profileForm.bio }}</div>
-            </aside>
+            </div>
           </div>
         </el-tab-pane>
 

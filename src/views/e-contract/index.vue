@@ -1,6 +1,6 @@
 <template>
   <div class="econtract-page">
-    <header class="hero panel">
+    <div class="hero panel">
       <div>
         <span class="hero-badge">E-CONTRACT</span>
         <h1>电子合同签署</h1>
@@ -18,29 +18,29 @@
           size="small"
         />
       </div>
-    </header>
+    </div>
 
-    <section class="stats-grid">
-      <article class="stat panel">
+    <div class="stats-grid">
+      <div class="stat panel">
         <span>合同总数</span>
         <strong>{{ summary.total }}</strong>
-      </article>
-      <article class="stat panel">
+      </div>
+      <div class="stat panel">
         <span>签署中</span>
         <strong>{{ summary.signing }}</strong>
-      </article>
-      <article class="stat panel">
+      </div>
+      <div class="stat panel">
         <span>已驳回</span>
         <strong>{{ summary.rejected }}</strong>
-      </article>
-      <article class="stat panel">
+      </div>
+      <div class="stat panel">
         <span>已完成</span>
         <strong>{{ summary.completed }}</strong>
-      </article>
-    </section>
+      </div>
+    </div>
 
-    <section class="main-grid">
-      <aside class="left panel">
+    <div class="main-grid">
+      <div class="left panel">
         <div class="box-head">
           <h3>合同信息</h3>
           <el-tag v-if="currentDetail">当前：{{ currentDetail.code }}</el-tag>
@@ -109,12 +109,12 @@
         <div v-if="currentDetail?.rejectReason" class="reject-tip">
           <strong>驳回原因：</strong>{{ currentDetail.rejectReason }}
         </div>
-      </aside>
+      </div>
 
-      <section class="right-col">
+      <div class="right-col">
         <ContractFlow :status="currentDetail?.status || 'draft'" />
 
-        <section class="sign-box panel">
+        <div class="sign-box panel">
           <div class="box-head">
             <h3>电子签名</h3>
             <el-tag type="info">当前签署方：{{ signerRoleLabel }}</el-tag>
@@ -149,9 +149,9 @@
               >回填到左侧编辑</el-button
             >
           </div>
-        </section>
+        </div>
 
-        <section class="record-box panel">
+        <div class="record-box panel">
           <div class="box-head">
             <h3>签署记录</h3>
           </div>
@@ -168,11 +168,11 @@
             </el-timeline-item>
           </el-timeline>
           <el-empty v-else description="暂无记录" />
-        </section>
-      </section>
-    </section>
+        </div>
+      </div>
+    </div>
 
-    <section class="table-wrap panel">
+    <div class="table-wrap panel">
       <div class="table-head">
         <div class="filters">
           <el-input
@@ -240,7 +240,7 @@
           @current-change="fetchList"
         />
       </div>
-    </section>
+    </div>
   </div>
 </template>
 

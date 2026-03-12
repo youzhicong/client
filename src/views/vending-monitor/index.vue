@@ -1,9 +1,9 @@
-﻿<template>
+<template>
   <div class="vending-monitor-page">
     <div class="bg-orb orb-a"></div>
     <div class="bg-orb orb-b"></div>
 
-    <header class="page-header panel">
+    <div class="page-header panel">
       <div class="header-info">
         <span class="header-badge">SMART RETAIL</span>
         <h1 class="header-title">智能贩卖机监控中心</h1>
@@ -23,40 +23,40 @@
           {{ refreshing ? '刷新中...' : '立即刷新' }}
         </button>
       </div>
-    </header>
+    </div>
 
-    <section class="stats-grid">
-      <article class="stat-card panel">
+    <div class="stats-grid">
+      <div class="stat-card panel">
         <span class="stat-label">今日销售额</span>
         <strong class="stat-value">{{
           formatCurrency(monitorData.sales.todayRevenue)
         }}</strong>
         <span class="stat-sub">销量 {{ monitorData.sales.todaySales }} 单</span>
-      </article>
+      </div>
 
-      <article class="stat-card panel">
+      <div class="stat-card panel">
         <span class="stat-label">库存健康度</span>
         <strong class="stat-value">{{ stockHealth }}%</strong>
         <span class="stat-sub">低库存 {{ lowStockCount }} 个货道</span>
-      </article>
+      </div>
 
-      <article class="stat-card panel">
+      <div class="stat-card panel">
         <span class="stat-label">设备温度</span>
         <strong class="stat-value"
           >{{ monitorData.machine.temperature.toFixed(1) }}°C</strong
         >
         <span class="stat-sub">运行 {{ uptimeDays }} 天</span>
-      </article>
+      </div>
 
-      <article class="stat-card panel">
+      <div class="stat-card panel">
         <span class="stat-label">当前告警</span>
         <strong class="stat-value">{{ monitorData.alerts.length }}</strong>
         <span class="stat-sub">严重 {{ severeAlertCount }} 条</span>
-      </article>
-    </section>
+      </div>
+    </div>
 
     <div class="main-content">
-      <section class="scene-card panel">
+      <div class="scene-card panel">
         <div class="scene-header">
           <div>
             <h2>{{ monitorData.machine.name }}</h2>
@@ -86,11 +86,11 @@
           </div>
           <span class="updated-time">更新时间：{{ lastUpdatedText }}</span>
         </div>
-      </section>
+      </div>
 
-      <aside class="panel-container panel">
+      <div class="panel-container panel">
         <MonitorPanel :data="monitorData" />
-      </aside>
+      </div>
     </div>
   </div>
 </template>

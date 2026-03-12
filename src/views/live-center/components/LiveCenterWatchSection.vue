@@ -1,6 +1,6 @@
 <template>
-  <section class="watch-grid">
-    <article class="player-card card">
+  <div class="watch-grid">
+    <div class="player-card card">
       <div class="card-head">
         <div>
           <span class="section-kicker">实时观看</span>
@@ -13,7 +13,7 @@
         <LiveCenterPlayerCard :room="selectedRoom" />
 
         <div class="watch-side-grid">
-          <article class="watch-summary-card">
+          <div class="watch-summary-card">
             <span class="section-kicker">直播简介</span>
             <h4>{{ selectedRoom.category }} · {{ selectedRoom.slot }}</h4>
             <p>{{ selectedRoom.summary }}</p>
@@ -25,10 +25,10 @@
                 >{{ tag }}</span
               >
             </div>
-          </article>
+          </div>
 
           <div class="watch-data-grid">
-            <article
+            <div
               v-for="item in liveDataCards"
               :key="item.label"
               class="watch-data-card"
@@ -37,13 +37,13 @@
               <span>{{ item.label }}</span>
               <strong>{{ item.value }}</strong>
               <p>{{ item.foot }}</p>
-            </article>
+            </div>
           </div>
         </div>
       </div>
-    </article>
+    </div>
 
-    <article class="watch-hub card">
+    <div class="watch-hub card">
       <div class="card-head">
         <div>
           <span class="section-kicker">直播房间</span>
@@ -85,18 +85,18 @@
         </div>
 
         <div class="feed-list">
-          <article v-for="item in liveFeed" :key="item.id" class="feed-item">
+          <div v-for="item in liveFeed" :key="item.id" class="feed-item">
             <span class="feed-tone" :class="item.tone">{{ item.action }}</span>
             <div class="feed-content">
               <strong>{{ item.user }}</strong>
               <p>{{ item.highlight }}</p>
             </div>
             <span class="feed-time">{{ item.time }}</span>
-          </article>
+          </div>
         </div>
       </div>
-    </article>
-  </section>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>

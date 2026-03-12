@@ -1,22 +1,22 @@
 <template>
-  <section class="workflow-graph">
-    <header class="graph-header">
+  <div class="workflow-graph">
+    <div class="graph-header">
       <h3>流程可视化</h3>
       <div class="header-right">
         <el-tag :type="statusTagType" effect="light">{{ statusText }}</el-tag>
         <el-tag type="info" effect="plain">驳回次数 {{ rejectCount }}</el-tag>
       </div>
-    </header>
+    </div>
 
     <div class="graph-track">
       <template v-for="(node, index) in nodes" :key="node.key">
-        <article class="graph-node" :class="nodeClassMap[index]">
+        <div class="graph-node" :class="nodeClassMap[index]">
           <div class="node-index">{{ index + 1 }}</div>
           <div class="node-body">
             <h4>{{ node.title }}</h4>
             <p>{{ node.desc }}</p>
           </div>
-        </article>
+        </div>
         <div
           v-if="index < nodes.length - 1"
           class="graph-line"
@@ -27,7 +27,7 @@
         </div>
       </template>
     </div>
-  </section>
+  </div>
 </template>
 
 <script lang="ts" setup>

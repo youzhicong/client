@@ -1,9 +1,9 @@
-﻿<template>
+<template>
   <div class="pc-builder-page">
     <div class="bg-shape shape-a"></div>
     <div class="bg-shape shape-b"></div>
 
-    <header class="hero panel">
+    <div class="hero panel">
       <div class="hero-main">
         <span class="hero-badge">DIY PC</span>
         <h1>自选装机中心</h1>
@@ -32,35 +32,35 @@
           >刷新报价</el-button
         >
       </div>
-    </header>
+    </div>
 
-    <section class="summary-grid">
-      <article class="summary-card panel">
+    <div class="summary-grid">
+      <div class="summary-card panel">
         <span class="label">已选配件</span>
         <strong class="value"
           >{{ selectedParts.length }} / {{ categories.length }}</strong
         >
-      </article>
+      </div>
 
-      <article class="summary-card panel">
+      <div class="summary-card panel">
         <span class="label">预算</span>
         <strong class="value">{{ formatPrice(budget) }}</strong>
-      </article>
+      </div>
 
-      <article class="summary-card panel" :class="budgetStatusClass">
+      <div class="summary-card panel" :class="budgetStatusClass">
         <span class="label">最低整机价</span>
         <strong class="value">{{
           minimumPlan ? formatPrice(minimumPlan.total) : '-'
         }}</strong>
-      </article>
+      </div>
 
-      <article class="summary-card panel">
+      <div class="summary-card panel">
         <span class="label">更新于</span>
         <strong class="value small">{{ updatedAtLabel }}</strong>
-      </article>
-    </section>
+      </div>
+    </div>
 
-    <section class="work-grid">
+    <div class="work-grid">
       <main class="parts-list panel">
         <div class="panel-head">
           <h3>分部件选配</h3>
@@ -68,7 +68,7 @@
         </div>
 
         <div class="category-list" v-if="categories.length">
-          <article
+          <div
             class="category-card"
             v-for="category in categories"
             :key="category.key"
@@ -120,13 +120,13 @@
                 >
               </div>
             </div>
-          </article>
+          </div>
         </div>
 
         <el-empty v-else description="暂无配件数据" />
       </main>
 
-      <aside class="quote-panel panel">
+      <div class="quote-panel panel">
         <div class="panel-head">
           <h3>平台总价对比</h3>
           <span>总价仅用于比价参考</span>
@@ -169,8 +169,8 @@
             </template>
           </el-table-column>
         </AppDataTable>
-      </aside>
-    </section>
+      </div>
+    </div>
   </div>
 </template>
 

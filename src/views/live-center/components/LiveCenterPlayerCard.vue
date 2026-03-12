@@ -1,5 +1,5 @@
 <template>
-  <article class="player-shell">
+  <div class="player-shell">
     <div class="player-stage">
       <div class="player-glow"></div>
       <div class="player-copy">
@@ -21,7 +21,7 @@
         </div>
       </div>
     </div>
-  </article>
+  </div>
 </template>
 
 <script lang="ts" setup>

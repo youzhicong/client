@@ -1,9 +1,9 @@
-﻿<template>
+<template>
   <div class="profile-page">
     <div class="bg-shape shape-a"></div>
     <div class="bg-shape shape-b"></div>
 
-    <header class="hero panel">
+    <div class="hero panel">
       <div class="identity">
         <div class="avatar-shell">
           <img class="avatar" :src="profile.avatar" alt="avatar" />
@@ -40,10 +40,10 @@
           >导出档案</el-button
         >
       </div>
-    </header>
+    </div>
 
-    <section class="metric-grid">
-      <article
+    <div class="metric-grid">
+      <div
         v-for="(item, index) in metrics"
         :key="item.label"
         class="metric-card panel"
@@ -55,11 +55,11 @@
           <span>{{ item.label }}</span>
         </div>
         <span class="metric-delta" :class="item.trend">{{ item.delta }}</span>
-      </article>
-    </section>
+      </div>
+    </div>
 
-    <section class="content-grid">
-      <article class="panel profile-card">
+    <div class="content-grid">
+      <div class="panel profile-card">
         <div class="panel-head">
           <h2>个人资料</h2>
           <el-button link type="primary" @click="onAction('管理资料')"
@@ -96,9 +96,9 @@
             <el-switch v-model="digestEnabled" />
           </div>
         </div>
-      </article>
+      </div>
 
-      <article class="panel security-card">
+      <div class="panel security-card">
         <div class="panel-head">
           <h2>安全中心</h2>
           <el-button link type="primary" @click="onAction('安全策略')"
@@ -134,9 +134,9 @@
             }}</el-button>
           </div>
         </div>
-      </article>
+      </div>
 
-      <article class="panel assets-card">
+      <div class="panel assets-card">
         <div class="panel-head">
           <h2>我的资产</h2>
           <el-button link type="primary" @click="onAction('查看账单')"
@@ -167,9 +167,9 @@
             ></div>
           </div>
         </div>
-      </article>
+      </div>
 
-      <article class="panel timeline-card">
+      <div class="panel timeline-card">
         <div class="panel-head">
           <h2>近期动态</h2>
           <el-button link type="primary" @click="onAction('查看日志')"
@@ -187,8 +187,8 @@
             <el-tag size="small" effect="light">{{ item.tag }}</el-tag>
           </li>
         </ul>
-      </article>
-    </section>
+      </div>
+    </div>
 
     <el-dialog v-model="profileDialogVisible" title="编辑资料" width="560px">
       <el-form label-width="88px">

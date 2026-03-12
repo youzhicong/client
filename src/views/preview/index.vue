@@ -3,7 +3,7 @@
     <div class="bg-shape shape-a"></div>
     <div class="bg-shape shape-b"></div>
 
-    <header class="hero panel">
+    <div class="hero panel">
       <div class="hero-main">
         <span class="hero-badge">ONLINE PREVIEW</span>
         <h1>文件在线预览中心</h1>
@@ -20,9 +20,9 @@
           <span class="value">{{ previewTypeLabel }}</span>
         </div>
       </div>
-    </header>
+    </div>
 
-    <section
+    <div
       class="upload-panel panel"
       :class="{ dragover: dragActive }"
       @dragenter.prevent="onDragEnter"
@@ -70,10 +70,10 @@
           }}</span>
         </div>
       </div>
-    </section>
+    </div>
 
-    <section class="workspace">
-      <aside class="meta-panel panel">
+    <div class="workspace">
+      <div class="meta-panel panel">
         <h3>文件信息</h3>
 
         <div v-if="!file" class="meta-empty">请选择文件后查看详细信息</div>
@@ -100,7 +100,7 @@
             {{ message || '文件已就绪，可直接预览。' }}
           </div>
         </template>
-      </aside>
+      </div>
 
       <main class="preview-panel panel">
         <div class="preview-head">
@@ -149,7 +149,7 @@
           </div>
         </div>
       </main>
-    </section>
+    </div>
   </div>
 </template>
 

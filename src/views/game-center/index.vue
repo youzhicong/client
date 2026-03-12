@@ -1,6 +1,6 @@
 <template>
   <div class="game-center-page">
-    <section class="hero-panel">
+    <div class="hero-panel">
       <div class="hero-copy">
         <p class="hero-kicker">GAME CENTER</p>
         <h1>前端小游戏中心</h1>
@@ -38,10 +38,10 @@
           }}</strong>
         </div>
       </div>
-    </section>
+    </div>
 
-    <section class="game-grid">
-      <article
+    <div class="game-grid">
+      <div
         v-for="game in games"
         :key="game.id"
         class="game-card"
@@ -85,10 +85,10 @@
           </el-button>
           <el-button text @click="goToGame(game.id)"> 打开页面 </el-button>
         </div>
-      </article>
-    </section>
+      </div>
+    </div>
 
-    <section v-if="activeGame" class="playground-panel">
+    <div v-if="activeGame" class="playground-panel">
       <div class="playground-header">
         <div>
           <p class="playground-kicker">NOW PLAYING</p>
@@ -104,9 +104,9 @@
       </div>
 
       <component :is="activeGame.component" :key="activeGame.id" />
-    </section>
+    </div>
 
-    <section v-else class="lobby-panel">
+    <div v-else class="lobby-panel">
       <div class="lobby-copy">
         <p class="playground-kicker">LOBBY</p>
         <h2>先选一个游戏再开玩</h2>
@@ -122,7 +122,7 @@
         <el-button plain @click="goToGame('2048')">开始 2048</el-button>
         <el-button plain @click="goToGame('memory')">开始记忆翻牌</el-button>
       </div>
-    </section>
+    </div>
   </div>
 </template>
 

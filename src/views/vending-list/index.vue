@@ -1,9 +1,9 @@
-﻿<template>
+<template>
   <div class="vending-page">
     <div class="bg-shape shape-a"></div>
     <div class="bg-shape shape-b"></div>
 
-    <header class="hero panel">
+    <div class="hero panel">
       <div>
         <span class="hero-badge">DEVICE OPS</span>
         <h1>贩卖机管理控制台</h1>
@@ -15,35 +15,35 @@
           >新增设备</el-button
         >
       </div>
-    </header>
+    </div>
 
-    <section class="stats-grid">
-      <article class="stat-card panel">
+    <div class="stats-grid">
+      <div class="stat-card panel">
         <span class="label">当前页设备</span>
         <strong class="value">{{ pageStats.total }}</strong>
         <span class="hint">总设备数（当前页）</span>
-      </article>
+      </div>
 
-      <article class="stat-card panel online">
+      <div class="stat-card panel online">
         <span class="label">在线设备</span>
         <strong class="value">{{ pageStats.online }}</strong>
         <span class="hint">状态正常可服务</span>
-      </article>
+      </div>
 
-      <article class="stat-card panel warning">
+      <div class="stat-card panel warning">
         <span class="label">告警设备</span>
         <strong class="value">{{ pageStats.warning }}</strong>
         <span class="hint">建议优先巡检</span>
-      </article>
+      </div>
 
-      <article class="stat-card panel">
+      <div class="stat-card panel">
         <span class="label">今日营收</span>
         <strong class="value">{{ formatCurrency(pageStats.revenue) }}</strong>
         <span class="hint">当前页累计</span>
-      </article>
-    </section>
+      </div>
+    </div>
 
-    <section class="toolbar panel">
+    <div class="toolbar panel">
       <div class="toolbar-left">
         <el-input
           v-model="searchKeyword"
@@ -76,9 +76,9 @@
         <span>在线率：{{ onlineRate }}</span>
         <span>平均温度：{{ averageTemperature }}</span>
       </div>
-    </section>
+    </div>
 
-    <section class="table-panel panel">
+    <div class="table-panel panel">
       <AppDataTable
         :data="tableData"
         v-loading="loading"
@@ -173,7 +173,7 @@
           @current-change="fetchList"
         />
       </div>
-    </section>
+    </div>
 
     <el-dialog
       v-model="dialogVisible"

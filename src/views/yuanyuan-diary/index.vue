@@ -1,9 +1,9 @@
-﻿<template>
+<template>
   <div class="diary-page">
     <div class="bg-shape shape-a"></div>
     <div class="bg-shape shape-b"></div>
 
-    <header class="hero panel">
+    <div class="hero panel">
       <div class="hero-left">
         <span class="hero-badge">YUANYUAN LOG</span>
         <h1>圆圆舔狗日记</h1>
@@ -26,21 +26,17 @@
           <strong>{{ respectAverage }}</strong>
         </div>
       </div>
-    </header>
+    </div>
 
-    <section class="principles-grid">
-      <article
-        class="principle panel"
-        v-for="item in principles"
-        :key="item.title"
-      >
+    <div class="principles-grid">
+      <div class="principle panel" v-for="item in principles" :key="item.title">
         <div class="title">{{ item.title }}</div>
         <p>{{ item.desc }}</p>
-      </article>
-    </section>
+      </div>
+    </div>
 
-    <section class="main-grid">
-      <aside class="editor panel">
+    <div class="main-grid">
+      <div class="editor panel">
         <div class="block-head">
           <h3>新增日记</h3>
           <span>重点记录动作和复盘，不做空泛情绪输出</span>
@@ -120,7 +116,7 @@
             >
           </div>
         </el-form>
-      </aside>
+      </div>
 
       <main class="timeline panel">
         <div class="block-head">
@@ -143,7 +139,7 @@
         </div>
 
         <div v-if="filteredEntries.length" class="entry-list">
-          <article
+          <div
             class="entry-card"
             v-for="item in filteredEntries"
             :key="item.id"
@@ -190,14 +186,14 @@
                 >删除</el-button
               >
             </div>
-          </article>
+          </div>
         </div>
 
         <div v-else class="empty-state">
           暂无记录，先写下你今天的一次真实互动。
         </div>
       </main>
-    </section>
+    </div>
   </div>
 </template>
 
