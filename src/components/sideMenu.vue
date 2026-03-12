@@ -252,6 +252,48 @@ const menuSections: MenuSection[] = [
     ]
   },
   {
+    key: 'live-center',
+    title: '直播模块',
+    icon: Monitor,
+    items: [
+      {
+        index: '/live-center/overview',
+        label: '直播总览',
+        desc: '模块总控台',
+        icon: Monitor,
+        theme: 'theme-live'
+      },
+      {
+        index: '/live-center/data',
+        label: '直播数据',
+        desc: '趋势与大盘',
+        icon: TrendCharts,
+        theme: 'theme-live-data'
+      },
+      {
+        index: '/live-center/rooms',
+        label: '直播间',
+        desc: '观看与切流',
+        icon: View,
+        theme: 'theme-live-room'
+      },
+      {
+        index: '/live-center/monetization',
+        label: '礼物充值',
+        desc: '互动与转化',
+        icon: Promotion,
+        theme: 'theme-live-money'
+      },
+      {
+        index: '/live-center/operations',
+        label: '运营协同',
+        desc: '排班与执行',
+        icon: Setting,
+        theme: 'theme-live-ops'
+      }
+    ]
+  },
+  {
     key: 'tools',
     title: '业务工具',
     icon: Setting,
@@ -370,7 +412,12 @@ const sectionHasActive = (section: MenuSection) => {
   return section.items.some((item) => isActiveMenu(item))
 }
 
-const openedSections = ref<string[]>(['common', 'upload-doc', 'games'])
+const openedSections = ref<string[]>([
+  'common',
+  'upload-doc',
+  'games',
+  'live-center'
+])
 
 const isSectionOpen = (key: string) => {
   return openedSections.value.includes(key)
@@ -659,6 +706,26 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   &.theme-game-memory {
     background: linear-gradient(135deg, #ede9fe 0%, #f5d0fe 100%);
     color: #7e22ce;
+  }
+  &.theme-live {
+    background: linear-gradient(135deg, #ffe4dd 0%, #fff1ea 100%);
+    color: #f97316;
+  }
+  &.theme-live-data {
+    background: linear-gradient(135deg, #fef3c7 0%, #ffedd5 100%);
+    color: #d97706;
+  }
+  &.theme-live-room {
+    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+    color: #7c3aed;
+  }
+  &.theme-live-money {
+    background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+    color: #059669;
+  }
+  &.theme-live-ops {
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+    color: #2563eb;
   }
   &.theme-meal {
     background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);

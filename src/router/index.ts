@@ -100,6 +100,50 @@ const router = createRouter({
           meta: { title: '游戏中心' }
         },
         {
+          path: '/live-center',
+          name: 'live-center',
+          component: () => import('@/views/live-center/index.vue'),
+          redirect: '/live-center/overview',
+          meta: { title: '直播模块' },
+          children: [
+            {
+              path: 'overview',
+              name: 'live-center-overview',
+              component: () =>
+                import('@/views/live-center/pages/LiveCenterOverviewPage.vue'),
+              meta: { title: '直播总览' }
+            },
+            {
+              path: 'data',
+              name: 'live-center-data',
+              component: () =>
+                import('@/views/live-center/pages/LiveCenterDataPage.vue'),
+              meta: { title: '直播数据' }
+            },
+            {
+              path: 'rooms',
+              name: 'live-center-rooms',
+              component: () =>
+                import('@/views/live-center/pages/LiveCenterRoomsPage.vue'),
+              meta: { title: '直播间' }
+            },
+            {
+              path: 'monetization',
+              name: 'live-center-monetization',
+              component: () =>
+                import('@/views/live-center/pages/LiveCenterMonetizationPage.vue'),
+              meta: { title: '礼物充值' }
+            },
+            {
+              path: 'operations',
+              name: 'live-center-operations',
+              component: () =>
+                import('@/views/live-center/pages/LiveCenterOperationsPage.vue'),
+              meta: { title: '运营协同' }
+            }
+          ]
+        },
+        {
           path: '/meal-lottery',
           name: 'meal-lottery',
           component: () => import('@/views/meal-lottery/index.vue'),
