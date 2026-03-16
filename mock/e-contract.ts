@@ -1,5 +1,7 @@
 import type { MockMethod } from 'vite-plugin-mock'
 
+const useBackend = process.env.VITE_USE_BACKEND_FOR_CORE_APIS === 'true'
+
 type ContractStatus =
   | 'draft'
   | 'pending_a'
@@ -186,225 +188,229 @@ const summaryOf = (list: ContractItem[]) => ({
   completed: list.filter((item) => item.status === 'completed').length
 })
 
-export default [
-  {
-    url: '/api/e-contract/list',
-    method: 'get',
-    response: ({ query }: { query: QueryRecord }) => {
-      const keyword = (query.keyword || '').trim().toLowerCase()
-      const status = (query.status || '').trim() as ContractStatus | ''
-      const page = Math.max(1, Number.parseInt(query.page || '1', 10) || 1)
-      const pageSize = Math.max(
-        1,
-        Number.parseInt(query.pageSize || '8', 10) || 8
-      )
+export default (useBackend
+  ? []
+  : [
+      {
+        url: '/api/e-contract/list',
+        method: 'get',
+        response: ({ query }: { query: QueryRecord }) => {
+          const keyword = (query.keyword || '').trim().toLowerCase()
+          const status = (query.status || '').trim() as ContractStatus | ''
+          const page = Math.max(1, Number.parseInt(query.page || '1', 10) || 1)
+          const pageSize = Math.max(
+            1,
+            Number.parseInt(query.pageSize || '8', 10) || 8
+          )
 
-      const filtered = contractStore.filter((item) => {
-        const hitKeyword =
-          !keyword ||
-          [
-            item.code,
-            item.formData.title,
-            item.formData.counterparty,
-            item.createdBy
-          ].some((field) => field.toLowerCase().includes(keyword))
-        const hitStatus = !status || item.status === status
-        return hitKeyword && hitStatus
-      })
+          const filtered = contractStore.filter((item) => {
+            const hitKeyword =
+              !keyword ||
+              [
+                item.code,
+                item.formData.title,
+                item.formData.counterparty,
+                item.createdBy
+              ].some((field) => field.toLowerCase().includes(keyword))
+            const hitStatus = !status || item.status === status
+            return hitKeyword && hitStatus
+          })
 
-      const start = (page - 1) * pageSize
-      const list = filtered.slice(start, start + pageSize).map(toListItem)
-      return {
-        code: 200,
-        message: 'success',
-        data: {
-          list,
-          total: filtered.length,
-          page,
-          pageSize,
-          summary: summaryOf(filtered)
+          const start = (page - 1) * pageSize
+          const list = filtered.slice(start, start + pageSize).map(toListItem)
+          return {
+            code: 200,
+            message: 'success',
+            data: {
+              list,
+              total: filtered.length,
+              page,
+              pageSize,
+              summary: summaryOf(filtered)
+            }
+          }
+        }
+      },
+      {
+        url: '/api/e-contract/detail',
+        method: 'get',
+        response: ({ query }: { query: QueryRecord }) => {
+          const id = Number(query.id)
+          const target = findContract(id)
+          if (!target) return { code: 404, message: '合同不存在' }
+          return { code: 200, message: 'success', data: target }
+        }
+      },
+      {
+        url: '/api/e-contract/create',
+        method: 'post',
+        response: ({ body }: { body: CreatePayload }) => {
+          if (!body?.title || !body?.counterparty || !body?.content) {
+            return { code: 422, message: '请填写完整合同信息' }
+          }
+          const id = nextContractId++
+          const code = `EC-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(id).padStart(3, '0')}`
+          const operator = body.createdBy?.trim() || '合同发起人'
+          const createdAt = now()
+
+          const contract: ContractItem = {
+            id,
+            code,
+            createdBy: operator,
+            status: 'draft',
+            statusLabel: statusLabelMap.draft,
+            currentStep: stepMap.draft,
+            formData: {
+              title: body.title.trim(),
+              counterparty: body.counterparty.trim(),
+              amount: Number(body.amount) || 0,
+              content: body.content.trim()
+            },
+            signatures: {},
+            rejectReason: '',
+            records: [createRecord('create', operator, '创建电子合同')],
+            createdAt,
+            updatedAt: createdAt
+          }
+          contractStore.unshift(contract)
+          return { code: 200, message: '创建成功', data: contract }
+        }
+      },
+      {
+        url: '/api/e-contract/update',
+        method: 'post',
+        response: ({ body }: { body: UpdatePayload }) => {
+          const id = Number(body?.id)
+          if (!id) return { code: 400, message: '缺少合同 ID' }
+          const target = findContract(id)
+          if (!target) return { code: 404, message: '合同不存在' }
+          if (target.status !== 'draft' && target.status !== 'rejected') {
+            return { code: 409, message: '当前状态不可修改' }
+          }
+
+          target.formData = {
+            ...target.formData,
+            ...(body.title !== undefined ? { title: body.title.trim() } : {}),
+            ...(body.counterparty !== undefined
+              ? { counterparty: body.counterparty.trim() }
+              : {}),
+            ...(body.content !== undefined
+              ? { content: body.content.trim() }
+              : {}),
+            ...(body.amount !== undefined
+              ? { amount: Number(body.amount) || 0 }
+              : {})
+          }
+          setStatus(target, 'draft')
+          target.rejectReason = ''
+          target.records.push(
+            createRecord(
+              'update',
+              body.operator?.trim() || '合同发起人',
+              '修改合同内容'
+            )
+          )
+          target.updatedAt = now()
+          return { code: 200, message: '修改成功', data: target }
+        }
+      },
+      {
+        url: '/api/e-contract/submit',
+        method: 'post',
+        response: ({ body }: { body: ActionPayload }) => {
+          const id = Number(body?.id)
+          if (!id) return { code: 400, message: '缺少合同 ID' }
+          const target = findContract(id)
+          if (!target) return { code: 404, message: '合同不存在' }
+          if (target.status !== 'draft' && target.status !== 'rejected') {
+            return { code: 409, message: '当前状态不可提交签署' }
+          }
+
+          target.signatures = {}
+          target.rejectReason = ''
+          setStatus(target, 'pending_a')
+          target.records.push(
+            createRecord(
+              'submit',
+              body.operator?.trim() || '合同发起人',
+              body.comment?.trim() || '提交签署流程'
+            )
+          )
+          target.updatedAt = now()
+          return { code: 200, message: '已提交签署', data: target }
+        }
+      },
+      {
+        url: '/api/e-contract/sign',
+        method: 'post',
+        response: ({ body }: { body: SignPayload }) => {
+          const id = Number(body?.id)
+          const signerRole = body?.signerRole
+          const signerName = body?.operator?.trim() || ''
+          const signatureData = body?.signatureData?.trim() || ''
+          if (!id || !signerRole || !signerName || !signatureData) {
+            return { code: 400, message: '签署参数不完整' }
+          }
+
+          const target = findContract(id)
+          if (!target) return { code: 404, message: '合同不存在' }
+
+          if (target.status === 'pending_a' && signerRole !== 'partyA') {
+            return { code: 409, message: '当前应由甲方签署' }
+          }
+          if (target.status === 'pending_b' && signerRole !== 'partyB') {
+            return { code: 409, message: '当前应由乙方签署' }
+          }
+          if (target.status !== 'pending_a' && target.status !== 'pending_b') {
+            return { code: 409, message: '当前状态不可签署' }
+          }
+
+          const signedAt = now()
+          target.signatures[signerRole] = {
+            signerName,
+            signerRole,
+            signedAt,
+            signatureData
+          }
+
+          if (target.status === 'pending_a') {
+            setStatus(target, 'pending_b')
+          } else {
+            setStatus(target, 'completed')
+          }
+
+          target.records.push(
+            createRecord(
+              'sign',
+              signerName,
+              body.comment?.trim() ||
+                `${signerRole === 'partyA' ? '甲方' : '乙方'}完成签署`
+            )
+          )
+          target.updatedAt = signedAt
+          return { code: 200, message: '签署成功', data: target }
+        }
+      },
+      {
+        url: '/api/e-contract/reject',
+        method: 'post',
+        response: ({ body }: { body: ActionPayload }) => {
+          const id = Number(body?.id)
+          if (!id) return { code: 400, message: '缺少合同 ID' }
+          const target = findContract(id)
+          if (!target) return { code: 404, message: '合同不存在' }
+          if (target.status !== 'pending_a' && target.status !== 'pending_b') {
+            return { code: 409, message: '当前状态不可驳回' }
+          }
+
+          const reason = body.comment?.trim() || '请补充合同条款后重新提交'
+          setStatus(target, 'rejected')
+          target.rejectReason = reason
+          target.records.push(
+            createRecord('reject', body.operator?.trim() || '审批人', reason)
+          )
+          target.updatedAt = now()
+          return { code: 200, message: '已驳回', data: target }
         }
       }
-    }
-  },
-  {
-    url: '/api/e-contract/detail',
-    method: 'get',
-    response: ({ query }: { query: QueryRecord }) => {
-      const id = Number(query.id)
-      const target = findContract(id)
-      if (!target) return { code: 404, message: '合同不存在' }
-      return { code: 200, message: 'success', data: target }
-    }
-  },
-  {
-    url: '/api/e-contract/create',
-    method: 'post',
-    response: ({ body }: { body: CreatePayload }) => {
-      if (!body?.title || !body?.counterparty || !body?.content) {
-        return { code: 422, message: '请填写完整合同信息' }
-      }
-      const id = nextContractId++
-      const code = `EC-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(id).padStart(3, '0')}`
-      const operator = body.createdBy?.trim() || '合同发起人'
-      const createdAt = now()
-
-      const contract: ContractItem = {
-        id,
-        code,
-        createdBy: operator,
-        status: 'draft',
-        statusLabel: statusLabelMap.draft,
-        currentStep: stepMap.draft,
-        formData: {
-          title: body.title.trim(),
-          counterparty: body.counterparty.trim(),
-          amount: Number(body.amount) || 0,
-          content: body.content.trim()
-        },
-        signatures: {},
-        rejectReason: '',
-        records: [createRecord('create', operator, '创建电子合同')],
-        createdAt,
-        updatedAt: createdAt
-      }
-      contractStore.unshift(contract)
-      return { code: 200, message: '创建成功', data: contract }
-    }
-  },
-  {
-    url: '/api/e-contract/update',
-    method: 'post',
-    response: ({ body }: { body: UpdatePayload }) => {
-      const id = Number(body?.id)
-      if (!id) return { code: 400, message: '缺少合同 ID' }
-      const target = findContract(id)
-      if (!target) return { code: 404, message: '合同不存在' }
-      if (target.status !== 'draft' && target.status !== 'rejected') {
-        return { code: 409, message: '当前状态不可修改' }
-      }
-
-      target.formData = {
-        ...target.formData,
-        ...(body.title !== undefined ? { title: body.title.trim() } : {}),
-        ...(body.counterparty !== undefined
-          ? { counterparty: body.counterparty.trim() }
-          : {}),
-        ...(body.content !== undefined ? { content: body.content.trim() } : {}),
-        ...(body.amount !== undefined
-          ? { amount: Number(body.amount) || 0 }
-          : {})
-      }
-      setStatus(target, 'draft')
-      target.rejectReason = ''
-      target.records.push(
-        createRecord(
-          'update',
-          body.operator?.trim() || '合同发起人',
-          '修改合同内容'
-        )
-      )
-      target.updatedAt = now()
-      return { code: 200, message: '修改成功', data: target }
-    }
-  },
-  {
-    url: '/api/e-contract/submit',
-    method: 'post',
-    response: ({ body }: { body: ActionPayload }) => {
-      const id = Number(body?.id)
-      if (!id) return { code: 400, message: '缺少合同 ID' }
-      const target = findContract(id)
-      if (!target) return { code: 404, message: '合同不存在' }
-      if (target.status !== 'draft' && target.status !== 'rejected') {
-        return { code: 409, message: '当前状态不可提交签署' }
-      }
-
-      target.signatures = {}
-      target.rejectReason = ''
-      setStatus(target, 'pending_a')
-      target.records.push(
-        createRecord(
-          'submit',
-          body.operator?.trim() || '合同发起人',
-          body.comment?.trim() || '提交签署流程'
-        )
-      )
-      target.updatedAt = now()
-      return { code: 200, message: '已提交签署', data: target }
-    }
-  },
-  {
-    url: '/api/e-contract/sign',
-    method: 'post',
-    response: ({ body }: { body: SignPayload }) => {
-      const id = Number(body?.id)
-      const signerRole = body?.signerRole
-      const signerName = body?.operator?.trim() || ''
-      const signatureData = body?.signatureData?.trim() || ''
-      if (!id || !signerRole || !signerName || !signatureData) {
-        return { code: 400, message: '签署参数不完整' }
-      }
-
-      const target = findContract(id)
-      if (!target) return { code: 404, message: '合同不存在' }
-
-      if (target.status === 'pending_a' && signerRole !== 'partyA') {
-        return { code: 409, message: '当前应由甲方签署' }
-      }
-      if (target.status === 'pending_b' && signerRole !== 'partyB') {
-        return { code: 409, message: '当前应由乙方签署' }
-      }
-      if (target.status !== 'pending_a' && target.status !== 'pending_b') {
-        return { code: 409, message: '当前状态不可签署' }
-      }
-
-      const signedAt = now()
-      target.signatures[signerRole] = {
-        signerName,
-        signerRole,
-        signedAt,
-        signatureData
-      }
-
-      if (target.status === 'pending_a') {
-        setStatus(target, 'pending_b')
-      } else {
-        setStatus(target, 'completed')
-      }
-
-      target.records.push(
-        createRecord(
-          'sign',
-          signerName,
-          body.comment?.trim() ||
-            `${signerRole === 'partyA' ? '甲方' : '乙方'}完成签署`
-        )
-      )
-      target.updatedAt = signedAt
-      return { code: 200, message: '签署成功', data: target }
-    }
-  },
-  {
-    url: '/api/e-contract/reject',
-    method: 'post',
-    response: ({ body }: { body: ActionPayload }) => {
-      const id = Number(body?.id)
-      if (!id) return { code: 400, message: '缺少合同 ID' }
-      const target = findContract(id)
-      if (!target) return { code: 404, message: '合同不存在' }
-      if (target.status !== 'pending_a' && target.status !== 'pending_b') {
-        return { code: 409, message: '当前状态不可驳回' }
-      }
-
-      const reason = body.comment?.trim() || '请补充合同条款后重新提交'
-      setStatus(target, 'rejected')
-      target.rejectReason = reason
-      target.records.push(
-        createRecord('reject', body.operator?.trim() || '审批人', reason)
-      )
-      target.updatedAt = now()
-      return { code: 200, message: '已驳回', data: target }
-    }
-  }
-] as MockMethod[]
+    ]) as MockMethod[]

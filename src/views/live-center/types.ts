@@ -27,6 +27,7 @@ export interface StreamRoom {
   statusTone: 'live' | 'next' | 'done'
   tags: string[]
   coverTitle: string
+  previewStreamUrl?: string
 }
 
 export interface LiveDataCard {

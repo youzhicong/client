@@ -1,46 +1,50 @@
 <template>
   <div class="settings-page">
-    <!-- Header -->
     <div class="settings-header">
       <div class="header-content">
         <h1>⚙️ AI 设置</h1>
-        <p>配置 AI 服务的 API Key 和模型</p>
+        <p>统一配置工作流和聊天模块共用的模型、API Key 与兼容接口。</p>
       </div>
+      <router-link to="/ai/chat" class="chat-entry">打开聊天模块</router-link>
     </div>
 
-    <!-- Settings Form -->
     <div class="settings-form">
-      <!-- Provider Selection -->
       <div class="form-group">
         <label>选择服务商</label>
         <div class="provider-grid">
           <div
-            v-for="p in providers"
-            :key="p.id"
+            v-for="provider in providers"
+            :key="provider.id"
             class="provider-card"
-            :class="{ active: settings.provider === p.id }"
-            @click="selectProvider(p)"
+            :class="{ active: settings.provider === provider.id }"
+            @click="selectProvider(provider)"
           >
-            <span class="provider-icon">{{ p.icon }}</span>
-            <span class="provider-name">{{ p.name }}</span>
-            <span v-if="p.free" class="free-tag">有免费额度</span>
+            <span class="provider-icon">{{ provider.icon }}</span>
+            <span class="provider-name">{{ provider.name }}</span>
+            <span v-if="provider.free" class="free-tag">有免费额度</span>
           </div>
         </div>
       </div>
 
-      <!-- API Base URL -->
       <div class="form-group">
         <label>API 地址</label>
         <input
           v-model="settings.baseUrl"
           type="text"
           class="form-input"
-          placeholder="https://api.example.com"
+          placeholder="https://api.example.com/v1"
         />
-        <span class="form-hint">不同服务商的 API 地址不同</span>
+        <span class="form-hint">
+          {{
+            currentProvider?.hint ||
+            '支持填写 OpenAI 兼容地址，保存时会自动规范化。'
+          }}
+        </span>
+        <span v-if="resolvedEndpoint" class="form-hint endpoint-hint">
+          实际测试接口：{{ resolvedEndpoint }}
+        </span>
       </div>
 
-      <!-- API Key -->
       <div class="form-group">
         <label>API Key</label>
         <div class="key-input-wrapper">
@@ -50,17 +54,23 @@
             class="form-input"
             placeholder="sk-xxxxxxxxxxxxxxxx"
           />
-          <button class="toggle-btn" @click="showKey = !showKey">
+          <button type="button" class="toggle-btn" @click="showKey = !showKey">
             {{ showKey ? '🙈' : '👁️' }}
           </button>
         </div>
-        <span class="form-hint">请前往服务商控制台获取 API Key</span>
+        <span class="form-hint">请前往服务商控制台获取 API Key。</span>
       </div>
 
-      <!-- Model Selection -->
       <div class="form-group">
-        <label>模型选择</label>
-        <select v-model="settings.model" class="form-select">
+        <label>模型名称</label>
+        <input
+          v-model="settings.model"
+          list="model-options"
+          type="text"
+          class="form-input"
+          placeholder="输入模型名，或从建议列表中选择"
+        />
+        <datalist id="model-options">
           <option
             v-for="model in currentModels"
             :key="model.id"
@@ -68,16 +78,17 @@
           >
             {{ model.name }}
           </option>
-        </select>
-        <span class="form-hint">不同模型价格和能力不同</span>
+        </datalist>
+        <span class="form-hint">
+          可直接手填模型名。LongCat 建议从 `LongCat-Flash-Chat` 开始测试。
+        </span>
       </div>
 
-      <!-- Buttons -->
       <div class="form-actions">
-        <button class="save-btn" @click="saveSettings">
+        <button class="save-btn" @click="handleSaveSettings">
           <span>💾</span> 保存设置
         </button>
-        <button class="test-btn" @click="testConnection">
+        <button class="test-btn" @click="handleTestConnection">
           <span v-if="!testing">🔗</span>
           <span v-else class="spin">⏳</span>
           {{ testing ? '测试中...' : '测试连接' }}
@@ -87,7 +98,6 @@
         </button>
       </div>
 
-      <!-- Test Result -->
       <div
         v-if="testResult"
         class="test-result"
@@ -98,10 +108,26 @@
       </div>
     </div>
 
-    <!-- Help Section -->
     <div class="help-section">
-      <h3>📖 获取 API Key 指南</h3>
+      <h3>📖 接入说明</h3>
       <div class="help-cards">
+        <div class="help-card">
+          <h4>🟠 LongCat</h4>
+          <ol>
+            <li>
+              获取 key 后直接选择 `LongCat`，或手填
+              <code>https://api.longcat.chat/openai</code>
+            </li>
+            <li>模型建议先用 `LongCat-Flash-Chat`</li>
+            <li>测试连接会自动请求 `/openai/v1/chat/completions`</li>
+            <li>
+              文档：
+              <a href="https://docs.longcat.chat/" target="_blank"
+                >docs.longcat.chat</a
+              >
+            </li>
+          </ol>
+        </div>
         <div class="help-card">
           <h4>🔵 DeepSeek</h4>
           <ol>
@@ -117,7 +143,7 @@
           </ol>
         </div>
         <div class="help-card">
-          <h4>🟢 阿里通义千问</h4>
+          <h4>🟢 通义千问</h4>
           <ol>
             <li>
               访问
@@ -150,76 +176,24 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
+  AI_PROVIDERS,
+  getAIChatEndpoint,
+  getAIProviderById,
   getAISettings,
+  normalizeAISettings,
   saveAISettings,
   testAIConnection,
+  type AIProviderOption,
   type AISettings
 } from '@/services/ai'
 
 const showKey = ref(false)
 const testing = ref(false)
 const testResult = ref<{ success: boolean; message: string } | null>(null)
-
-const providers = [
-  {
-    id: 'deepseek',
-    name: 'DeepSeek',
-    icon: '🔵',
-    baseUrl: 'https://api.deepseek.com',
-    models: [
-      { id: 'deepseek-chat', name: 'DeepSeek Chat' },
-      { id: 'deepseek-coder', name: 'DeepSeek Coder' }
-    ],
-    free: true
-  },
-  {
-    id: 'qwen',
-    name: '通义千问',
-    icon: '🟢',
-    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    models: [
-      { id: 'qwen-turbo', name: 'Qwen Turbo' },
-      { id: 'qwen-plus', name: 'Qwen Plus' },
-      { id: 'qwen-max', name: 'Qwen Max' }
-    ],
-    free: true
-  },
-  {
-    id: 'zhipu',
-    name: '智谱 GLM',
-    icon: '🟣',
-    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-    models: [
-      { id: 'glm-4-flash', name: 'GLM-4 Flash (免费)' },
-      { id: 'glm-4', name: 'GLM-4' },
-      { id: 'glm-4-plus', name: 'GLM-4 Plus' }
-    ],
-    free: true
-  },
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    icon: '⚪',
-    baseUrl: 'https://api.openai.com/v1',
-    models: [
-      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
-      { id: 'gpt-4', name: 'GPT-4' },
-      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' }
-    ],
-    free: false
-  },
-  {
-    id: 'custom',
-    name: '自定义',
-    icon: '🔧',
-    baseUrl: '',
-    models: [{ id: 'custom', name: '自定义模型' }],
-    free: false
-  }
-]
+const providers = AI_PROVIDERS
 
 const settings = ref<AISettings>({
   provider: 'deepseek',
@@ -228,39 +202,63 @@ const settings = ref<AISettings>({
   model: 'deepseek-chat'
 })
 
-const currentModels = computed(() => {
-  const provider = providers.find((p) => p.id === settings.value.provider)
-  return provider?.models || []
-})
+const currentProvider = computed(() =>
+  getAIProviderById(settings.value.provider)
+)
+const currentModels = computed(() => currentProvider.value?.models || [])
+const resolvedEndpoint = computed(() => getAIChatEndpoint(settings.value))
 
 onMounted(() => {
-  const saved = getAISettings()
-  if (saved) {
-    settings.value = saved
-  }
+  settings.value = getAISettings()
 })
 
-const selectProvider = (provider: (typeof providers)[0]) => {
-  settings.value.provider = provider.id
-  settings.value.baseUrl = provider.baseUrl
-  const firstModel = provider.models[0]
-  if (firstModel) {
-    settings.value.model = firstModel.id
-  }
+const applyNormalizedSettings = () => {
+  const normalized = normalizeAISettings(settings.value)
+  settings.value = { ...normalized }
+  return normalized
 }
 
-const saveSettings = () => {
-  if (!settings.value.apiKey.trim()) {
+const selectProvider = (provider: AIProviderOption) => {
+  settings.value.provider = provider.id
+  settings.value.baseUrl = provider.baseUrl
+
+  const [firstModel] = provider.models
+  if (firstModel) {
+    settings.value.model = firstModel.id
+  } else {
+    settings.value.model = ''
+  }
+
+  testResult.value = null
+}
+
+const handleSaveSettings = () => {
+  const normalized = applyNormalizedSettings()
+
+  if (!normalized.apiKey) {
     ElMessage.warning('请输入 API Key')
     return
   }
-  saveAISettings(settings.value)
+
+  if (!normalized.model) {
+    ElMessage.warning('请输入模型名称')
+    return
+  }
+
+  saveAISettings(normalized)
   ElMessage.success('设置已保存')
 }
 
-const testConnection = async () => {
-  if (!settings.value.apiKey.trim()) {
+const handleTestConnection = async () => {
+  const normalized = applyNormalizedSettings()
+
+  if (!normalized.apiKey) {
     ElMessage.warning('请先输入 API Key')
+    return
+  }
+
+  if (!normalized.model) {
+    ElMessage.warning('请先输入模型名称')
     return
   }
 
@@ -268,29 +266,29 @@ const testConnection = async () => {
   testResult.value = null
 
   try {
-    const result = await testAIConnection(settings.value)
+    const result = await testAIConnection(normalized)
     testResult.value = result
+
     if (result.success) {
-      ElMessage.success('连接成功！')
+      ElMessage.success('连接成功')
     } else {
       ElMessage.error(result.message)
     }
-  } catch {
-    testResult.value = { success: false, message: '测试失败，请检查网络' }
-    ElMessage.error('测试失败')
   } finally {
     testing.value = false
   }
 }
 
 const resetSettings = () => {
+  settings.value = getAISettings()
+  testResult.value = null
+  localStorage.removeItem('ai-settings')
   settings.value = {
     provider: 'deepseek',
     baseUrl: 'https://api.deepseek.com',
     apiKey: '',
     model: 'deepseek-chat'
   }
-  localStorage.removeItem('ai-settings')
   ElMessage.success('设置已重置')
 }
 </script>
@@ -298,11 +296,15 @@ const resetSettings = () => {
 <style lang="scss" scoped>
 .settings-page {
   padding: 24px;
-  max-width: 900px;
+  max-width: 980px;
   margin: 0 auto;
 }
 
 .settings-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
   margin-bottom: 32px;
 
   h1 {
@@ -317,6 +319,21 @@ const resetSettings = () => {
     color: #64748b;
     font-size: 15px;
   }
+}
+
+.chat-entry {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ecfeff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  color: #0f766e;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .settings-form {
@@ -341,7 +358,7 @@ const resetSettings = () => {
 
 .provider-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
 }
 
@@ -392,8 +409,7 @@ const resetSettings = () => {
   border-radius: 999px;
 }
 
-.form-input,
-.form-select {
+.form-input {
   width: 100%;
   padding: 14px 16px;
   border: 2px solid #e2e8f0;
@@ -414,12 +430,7 @@ const resetSettings = () => {
   }
 }
 
-.form-select {
-  cursor: pointer;
-}
-
 .key-input-wrapper {
-  position: relative;
   display: flex;
   gap: 8px;
 
@@ -447,6 +458,11 @@ const resetSettings = () => {
   margin-top: 8px;
   font-size: 12px;
   color: #94a3b8;
+  line-height: 1.6;
+}
+
+.endpoint-hint {
+  color: #0f766e;
 }
 
 .form-actions {
@@ -477,28 +493,16 @@ const resetSettings = () => {
 .save-btn {
   background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
   color: #fff;
-
-  &:hover {
-    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3);
-  }
 }
 
 .test-btn {
   background: #f1f5f9;
   color: #475569;
-
-  &:hover {
-    background: #e2e8f0;
-  }
 }
 
 .reset-btn {
   background: #fef2f2;
   color: #dc2626;
-
-  &:hover {
-    background: #fee2e2;
-  }
 }
 
 .spin {
@@ -522,6 +526,7 @@ const resetSettings = () => {
   padding: 14px 18px;
   border-radius: 12px;
   font-size: 14px;
+  line-height: 1.6;
 
   &.success {
     background: #ecfdf5;
@@ -538,7 +543,6 @@ const resetSettings = () => {
   font-size: 18px;
 }
 
-/* Help Section */
 .help-section {
   h3 {
     margin: 0 0 20px;
@@ -550,7 +554,7 @@ const resetSettings = () => {
 
 .help-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
 
@@ -575,19 +579,21 @@ const resetSettings = () => {
     line-height: 1.8;
   }
 
-  a {
+  a,
+  code {
     color: #8b5cf6;
-    text-decoration: none;
-
-    &:hover {
-      text-decoration: underline;
-    }
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .provider-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .settings-header {
+    flex-direction: column;
   }
 
   .help-cards {

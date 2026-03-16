@@ -1,5 +1,7 @@
 import type { MockMethod } from 'vite-plugin-mock'
 
+const useBackend = process.env.VITE_USE_BACKEND_FOR_CORE_APIS === 'true'
+
 type AnnouncementStatus = 'draft' | 'published'
 
 interface AnnouncementItem {
@@ -124,149 +126,151 @@ const saveDraft = (item: AnnouncementItem) => {
   item.publishedAt = ''
 }
 
-export default [
-  {
-    url: '/api/announcement/list',
-    method: 'get',
-    response: ({ query }: { query: ListQuery }) => {
-      const keyword = (query.keyword || '').trim().toLowerCase()
-      const status = (query.status || '').trim() as AnnouncementStatus | ''
-      const page = Math.max(1, Number.parseInt(query.page || '1', 10) || 1)
-      const pageSize = Math.max(
-        1,
-        Number.parseInt(query.pageSize || '10', 10) || 10
-      )
-
-      const filtered = announcementStore.filter((item) => {
-        const hitKeyword =
-          !keyword ||
-          [item.title, item.summary, item.author].some((field) =>
-            field.toLowerCase().includes(keyword)
+export default (useBackend
+  ? []
+  : [
+      {
+        url: '/api/announcement/list',
+        method: 'get',
+        response: ({ query }: { query: ListQuery }) => {
+          const keyword = (query.keyword || '').trim().toLowerCase()
+          const status = (query.status || '').trim() as AnnouncementStatus | ''
+          const page = Math.max(1, Number.parseInt(query.page || '1', 10) || 1)
+          const pageSize = Math.max(
+            1,
+            Number.parseInt(query.pageSize || '10', 10) || 10
           )
-        const hitStatus = !status || item.status === status
-        return hitKeyword && hitStatus
-      })
 
-      const start = (page - 1) * pageSize
-      const list = filtered.slice(start, start + pageSize).map(toListItem)
+          const filtered = announcementStore.filter((item) => {
+            const hitKeyword =
+              !keyword ||
+              [item.title, item.summary, item.author].some((field) =>
+                field.toLowerCase().includes(keyword)
+              )
+            const hitStatus = !status || item.status === status
+            return hitKeyword && hitStatus
+          })
 
-      return {
-        code: 200,
-        message: 'success',
-        data: {
-          list,
-          total: filtered.length,
-          page,
-          pageSize,
-          summary: summaryOf(announcementStore)
+          const start = (page - 1) * pageSize
+          const list = filtered.slice(start, start + pageSize).map(toListItem)
+
+          return {
+            code: 200,
+            message: 'success',
+            data: {
+              list,
+              total: filtered.length,
+              page,
+              pageSize,
+              summary: summaryOf(announcementStore)
+            }
+          }
+        }
+      },
+      {
+        url: '/api/announcement/detail',
+        method: 'get',
+        response: ({ query }: { query: QueryRecord }) => {
+          const id = Number(query.id)
+          const target = findAnnouncement(id)
+          if (!target) return { code: 404, message: '公告不存在' }
+
+          if (target.status === 'published') {
+            target.viewCount += 1
+            target.updatedAt = now()
+          }
+
+          return {
+            code: 200,
+            message: 'success',
+            data: target
+          }
+        }
+      },
+      {
+        url: '/api/announcement/create',
+        method: 'post',
+        response: ({ body }: { body: SavePayload }) => {
+          if (
+            !body?.title?.trim() ||
+            !body?.summary?.trim() ||
+            !body?.content?.trim()
+          ) {
+            return { code: 422, message: '请填写完整公告内容' }
+          }
+
+          const createdAt = now()
+          const author = body.author?.trim() || '系统用户'
+          const item: AnnouncementItem = {
+            id: nextId++,
+            title: body.title.trim(),
+            summary: body.summary.trim(),
+            content: body.content.trim(),
+            cover: body.cover?.trim() || '',
+            author,
+            status: 'draft',
+            statusLabel: statusLabelMap.draft,
+            viewCount: 0,
+            createdAt,
+            updatedAt: createdAt,
+            publishedAt: ''
+          }
+          announcementStore.unshift(item)
+          return { code: 200, message: '创建成功', data: item }
+        }
+      },
+      {
+        url: '/api/announcement/update',
+        method: 'post',
+        response: ({ body }: { body: SavePayload }) => {
+          const id = Number(body?.id)
+          if (!id) return { code: 400, message: '缺少公告 ID' }
+          const target = findAnnouncement(id)
+          if (!target) return { code: 404, message: '公告不存在' }
+
+          if (body.title !== undefined) target.title = body.title.trim()
+          if (body.summary !== undefined) target.summary = body.summary.trim()
+          if (body.content !== undefined) target.content = body.content.trim()
+          if (body.cover !== undefined) target.cover = body.cover.trim()
+          if (body.author !== undefined && body.author.trim()) {
+            target.author = body.author.trim()
+          }
+
+          saveDraft(target)
+          return { code: 200, message: '保存成功', data: target }
+        }
+      },
+      {
+        url: '/api/announcement/publish',
+        method: 'post',
+        response: ({ body }: { body: IdPayload }) => {
+          const id = Number(body?.id)
+          if (!id) return { code: 400, message: '缺少公告 ID' }
+          const target = findAnnouncement(id)
+          if (!target) return { code: 404, message: '公告不存在' }
+          if (!target.title || !target.summary || !target.content) {
+            return { code: 422, message: '公告内容不完整，无法发布' }
+          }
+
+          const publishedAt = now()
+          target.status = 'published'
+          target.statusLabel = statusLabelMap.published
+          target.publishedAt = publishedAt
+          target.updatedAt = publishedAt
+
+          return { code: 200, message: '发布成功', data: target }
+        }
+      },
+      {
+        url: '/api/announcement/delete',
+        method: 'post',
+        response: ({ body }: { body: IdPayload }) => {
+          const id = Number(body?.id)
+          if (!id) return { code: 400, message: '缺少公告 ID' }
+          const index = announcementStore.findIndex((item) => item.id === id)
+          if (index < 0) return { code: 404, message: '公告不存在' }
+          announcementStore.splice(index, 1)
+          return { code: 200, message: '删除成功' }
         }
       }
-    }
-  },
-  {
-    url: '/api/announcement/detail',
-    method: 'get',
-    response: ({ query }: { query: QueryRecord }) => {
-      const id = Number(query.id)
-      const target = findAnnouncement(id)
-      if (!target) return { code: 404, message: '公告不存在' }
-
-      if (target.status === 'published') {
-        target.viewCount += 1
-        target.updatedAt = now()
-      }
-
-      return {
-        code: 200,
-        message: 'success',
-        data: target
-      }
-    }
-  },
-  {
-    url: '/api/announcement/create',
-    method: 'post',
-    response: ({ body }: { body: SavePayload }) => {
-      if (
-        !body?.title?.trim() ||
-        !body?.summary?.trim() ||
-        !body?.content?.trim()
-      ) {
-        return { code: 422, message: '请填写完整公告内容' }
-      }
-
-      const createdAt = now()
-      const author = body.author?.trim() || '系统用户'
-      const item: AnnouncementItem = {
-        id: nextId++,
-        title: body.title.trim(),
-        summary: body.summary.trim(),
-        content: body.content.trim(),
-        cover: body.cover?.trim() || '',
-        author,
-        status: 'draft',
-        statusLabel: statusLabelMap.draft,
-        viewCount: 0,
-        createdAt,
-        updatedAt: createdAt,
-        publishedAt: ''
-      }
-      announcementStore.unshift(item)
-      return { code: 200, message: '创建成功', data: item }
-    }
-  },
-  {
-    url: '/api/announcement/update',
-    method: 'post',
-    response: ({ body }: { body: SavePayload }) => {
-      const id = Number(body?.id)
-      if (!id) return { code: 400, message: '缺少公告 ID' }
-      const target = findAnnouncement(id)
-      if (!target) return { code: 404, message: '公告不存在' }
-
-      if (body.title !== undefined) target.title = body.title.trim()
-      if (body.summary !== undefined) target.summary = body.summary.trim()
-      if (body.content !== undefined) target.content = body.content.trim()
-      if (body.cover !== undefined) target.cover = body.cover.trim()
-      if (body.author !== undefined && body.author.trim()) {
-        target.author = body.author.trim()
-      }
-
-      saveDraft(target)
-      return { code: 200, message: '保存成功', data: target }
-    }
-  },
-  {
-    url: '/api/announcement/publish',
-    method: 'post',
-    response: ({ body }: { body: IdPayload }) => {
-      const id = Number(body?.id)
-      if (!id) return { code: 400, message: '缺少公告 ID' }
-      const target = findAnnouncement(id)
-      if (!target) return { code: 404, message: '公告不存在' }
-      if (!target.title || !target.summary || !target.content) {
-        return { code: 422, message: '公告内容不完整，无法发布' }
-      }
-
-      const publishedAt = now()
-      target.status = 'published'
-      target.statusLabel = statusLabelMap.published
-      target.publishedAt = publishedAt
-      target.updatedAt = publishedAt
-
-      return { code: 200, message: '发布成功', data: target }
-    }
-  },
-  {
-    url: '/api/announcement/delete',
-    method: 'post',
-    response: ({ body }: { body: IdPayload }) => {
-      const id = Number(body?.id)
-      if (!id) return { code: 400, message: '缺少公告 ID' }
-      const index = announcementStore.findIndex((item) => item.id === id)
-      if (index < 0) return { code: 404, message: '公告不存在' }
-      announcementStore.splice(index, 1)
-      return { code: 200, message: '删除成功' }
-    }
-  }
-] as MockMethod[]
+    ]) as MockMethod[]

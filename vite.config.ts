@@ -1,5 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import AutoImport from 'unplugin-auto-import/vite'
@@ -11,35 +11,49 @@ import { viteMockServe } from 'vite-plugin-mock'
 import path from 'path'
 
 export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const useMock = env.VITE_USE_MOCK !== 'false'
+  const apiTarget = env.VITE_API_TARGET || 'http://localhost:8080'
+  process.env.VITE_USE_BACKEND_FOR_CORE_APIS =
+    env.VITE_USE_BACKEND_FOR_CORE_APIS || ''
+
   return {
     plugins: [
       vue(),
       vueDevTools(),
       AutoImport({
         imports: ['vue', 'vue-router', 'pinia'],
-        resolvers: [ElementPlusResolver()],
+        resolvers: [ElementPlusResolver()]
       }),
       Components({
         dts: 'src/types/components.d.ts',
-        resolvers: [ElementPlusResolver()],
+        resolvers: [ElementPlusResolver()]
       }),
       createSvgIconsPlugin({
-        iconDirs: [path.resolve(process.cwd(), 'src/icons')],
+        iconDirs: [path.resolve(process.cwd(), 'src/icons')]
       }),
       viteMockServe({
         mockPath: 'mock',
-        enable: mode === 'development',
+        enable: mode === 'development' && useMock
       }),
       mode === 'development' || mode === 'electron'
         ? electron({
-            entry: './src-electron/main.ts',
+            entry: './src-electron/main.ts'
           })
-        : undefined,
+        : undefined
     ],
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
-      },
+        '@': fileURLToPath(new URL('./src', import.meta.url))
+      }
     },
+    server: {
+      proxy: {
+        '/api': {
+          target: apiTarget,
+          changeOrigin: true
+        }
+      }
+    }
   }
 })

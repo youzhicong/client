@@ -29,7 +29,11 @@ import { useLiveCenter } from './useLiveCenter'
 
 const route = useRoute()
 const store = useLiveCenter()
-const isRoomsPage = computed(() => route.name === 'live-center-rooms')
+const isRoomsPage = computed(() =>
+  ['live-center-rooms', 'live-center-room-studio'].includes(
+    String(route.name ?? '')
+  )
+)
 
 provide(liveCenterKey, store)
 

@@ -19,7 +19,12 @@
             基于 GPT 智能分析，为您生成全系列产品创意和商业建议
           </p>
         </div>
-        <button class="settings-btn" @click="goToSettings">⚙️ API 设置</button>
+        <div class="hero-actions">
+          <button class="chat-btn" @click="goToChat">💬 聊天模块</button>
+          <button class="settings-btn" @click="goToSettings">
+            ⚙️ API 设置
+          </button>
+        </div>
       </div>
     </div>
 
@@ -273,7 +278,7 @@ const formatTime = (timestamp: number): string => {
 
 const goToDetail = (product: ProductIdea) => {
   router.push({
-    path: '/ai-workflow/detail',
+    path: '/ai/workflow/detail',
     query: {
       product: encodeURIComponent(JSON.stringify(product)),
       keyword: keyword.value
@@ -282,7 +287,11 @@ const goToDetail = (product: ProductIdea) => {
 }
 
 const goToSettings = () => {
-  router.push('/ai-workflow/settings')
+  router.push('/ai/settings')
+}
+
+const goToChat = () => {
+  router.push('/ai/chat')
 }
 </script>
 
@@ -353,6 +362,11 @@ const goToSettings = () => {
   align-items: flex-start;
 }
 
+.hero-actions {
+  display: flex;
+  gap: 12px;
+}
+
 .hero-badge {
   display: inline-flex;
   align-items: center;
@@ -416,6 +430,7 @@ const goToSettings = () => {
   font-size: 16px;
 }
 
+.chat-btn,
 .settings-btn {
   display: flex;
   align-items: center;
@@ -436,6 +451,10 @@ const goToSettings = () => {
     border-color: rgba(139, 92, 246, 0.6);
     transform: translateY(-2px);
   }
+}
+
+.chat-btn {
+  background: rgba(14, 165, 233, 0.14);
 }
 
 /* Input Section */
@@ -938,6 +957,11 @@ const goToSettings = () => {
     flex-direction: column;
     gap: 16px;
   }
+  .hero-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  .chat-btn,
   .settings-btn {
     align-self: flex-start;
   }

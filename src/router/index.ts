@@ -128,6 +128,13 @@ const router = createRouter({
               meta: { title: '直播间' }
             },
             {
+              path: 'rooms/:roomId',
+              name: 'live-center-room-studio',
+              component: () =>
+                import('@/views/live-center/pages/LiveCenterRoomStudioPage.vue'),
+              meta: { title: '房间预览' }
+            },
+            {
               path: 'monetization',
               name: 'live-center-monetization',
               component: () =>
@@ -180,22 +187,47 @@ const router = createRouter({
           meta: { title: '公告详情' }
         },
         {
-          path: '/ai-workflow',
+          path: '/ai',
+          redirect: '/ai/workflow'
+        },
+        {
+          path: '/ai/workflow',
           name: 'ai-workflow',
           component: () => import('@/views/ai-workflow/index.vue'),
           meta: { title: 'AI 工作流' }
         },
         {
-          path: '/ai-workflow/detail',
+          path: '/ai/workflow/detail',
           name: 'ai-workflow-detail',
           component: () => import('@/views/ai-workflow/detail.vue'),
           meta: { title: '工作流详情' }
         },
         {
-          path: '/ai-workflow/settings',
-          name: 'ai-workflow-settings',
+          path: '/ai/chat',
+          name: 'ai-chat',
+          component: () => import('@/views/ai-chat/index.vue'),
+          meta: { title: 'AI 聊天' }
+        },
+        {
+          path: '/ai/settings',
+          name: 'ai-settings',
           component: () => import('@/views/ai-workflow/settings.vue'),
-          meta: { title: '工作流设置' }
+          meta: { title: 'AI 设置' }
+        },
+        {
+          path: '/ai-workflow',
+          redirect: '/ai/workflow'
+        },
+        {
+          path: '/ai-workflow/detail',
+          redirect: (to) => ({
+            path: '/ai/workflow/detail',
+            query: to.query
+          })
+        },
+        {
+          path: '/ai-workflow/settings',
+          redirect: '/ai/settings'
         },
         {
           path: '/vending-monitor',

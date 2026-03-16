@@ -82,7 +82,8 @@ export const roomList: StreamRoom[] = [
     status: '直播中',
     statusTone: 'live',
     tags: ['主会场', '爆品讲解', '限时券'],
-    coverTitle: 'LIVE COMMERCE HUB'
+    coverTitle: 'LIVE COMMERCE HUB',
+    previewStreamUrl: 'mock://room-main'
   },
   {
     id: 'room-new',
@@ -96,7 +97,8 @@ export const roomList: StreamRoom[] = [
     status: '待开播',
     statusTone: 'next',
     tags: ['新品专场', '试色互动', '收藏转化'],
-    coverTitle: 'NEW ARRIVAL'
+    coverTitle: 'NEW ARRIVAL',
+    previewStreamUrl: 'mock://room-new'
   },
   {
     id: 'room-member',
@@ -110,7 +112,8 @@ export const roomList: StreamRoom[] = [
     status: '已结束',
     statusTone: 'done',
     tags: ['会员回访', '复购转化', '售后答疑'],
-    coverTitle: 'MEMBER LIVE'
+    coverTitle: 'MEMBER LIVE',
+    previewStreamUrl: 'mock://room-member'
   }
 ]
 

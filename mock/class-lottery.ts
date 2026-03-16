@@ -1,5 +1,7 @@
 import type { MockMethod } from 'vite-plugin-mock'
 
+const useBackend = process.env.VITE_USE_BACKEND_FOR_CORE_APIS === 'true'
+
 type StudentItem = {
   id: string
   name: string
@@ -80,46 +82,48 @@ const formatData = () => ({
   updatedAt: new Date(updatedAt).toISOString()
 })
 
-export default [
-  {
-    url: '/api/class-lottery/students',
-    method: 'get',
-    response: () => {
-      return {
-        code: 200,
-        message: 'success',
-        data: formatData()
-      }
-    }
-  },
-  {
-    url: '/api/class-lottery/students',
-    method: 'put',
-    response: ({ body }) => {
-      const payload = (body || {}) as SaveStudentsPayload
-      if (!Array.isArray(payload.students)) {
-        return {
-          code: 400,
-          message: 'students 参数必须是数组'
+export default (useBackend
+  ? []
+  : [
+      {
+        url: '/api/class-lottery/students',
+        method: 'get',
+        response: () => {
+          return {
+            code: 200,
+            message: 'success',
+            data: formatData()
+          }
+        }
+      },
+      {
+        url: '/api/class-lottery/students',
+        method: 'put',
+        response: ({ body }) => {
+          const payload = (body || {}) as SaveStudentsPayload
+          if (!Array.isArray(payload.students)) {
+            return {
+              code: 400,
+              message: 'students 参数必须是数组'
+            }
+          }
+
+          const next = buildStudents(payload.students)
+          if (!next.length) {
+            return {
+              code: 422,
+              message: '学生名单不能为空'
+            }
+          }
+
+          studentStore = next
+          updatedAt = Date.now()
+
+          return {
+            code: 200,
+            message: '保存成功',
+            data: formatData()
+          }
         }
       }
-
-      const next = buildStudents(payload.students)
-      if (!next.length) {
-        return {
-          code: 422,
-          message: '学生名单不能为空'
-        }
-      }
-
-      studentStore = next
-      updatedAt = Date.now()
-
-      return {
-        code: 200,
-        message: '保存成功',
-        data: formatData()
-      }
-    }
-  }
-] as MockMethod[]
+    ]) as MockMethod[]

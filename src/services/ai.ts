@@ -30,32 +30,355 @@ export interface AISettings {
   model: string
 }
 
-/**
- * 获取 AI 设置
- */
-export function getAISettings(): AISettings {
-  const saved = localStorage.getItem('ai-settings')
-  if (saved) {
-    try {
-      return JSON.parse(saved)
-    } catch {
-      // 解析失败使用默认值
+export interface AIModelOption {
+  id: string
+  name: string
+}
+
+export interface AIProviderOption {
+  id: string
+  name: string
+  icon: string
+  baseUrl: string
+  models: AIModelOption[]
+  free: boolean
+  hint?: string
+}
+
+export type AIMessageRole = 'system' | 'user' | 'assistant'
+
+export interface AIMessage {
+  role: AIMessageRole
+  content: string
+}
+
+export interface AIChatOptions {
+  temperature?: number
+  maxTokens?: number
+}
+
+export interface ProductDetail {
+  name: string
+  description: string
+  category: string
+  marketPotential: string
+  icon: string
+  overview: string
+  targetAudience: string[]
+  keyFeatures: string[]
+  productionProcess: string
+  estimatedCost: string
+  pricingStrategy: string
+  marketAnalysis: string
+  competitiveAdvantage: string[]
+  risks: string[]
+  recommendations: string[]
+}
+
+type AICompletionPayload = {
+  choices?: Array<{
+    message?: {
+      content?:
+        | string
+        | Array<{
+            text?: string
+            type?: string
+          }>
     }
+  }>
+}
+
+type AIErrorPayload = {
+  error?: {
+    message?: string
   }
-  // 默认设置 - 优先使用 env 配置
+  message?: string
+}
+
+const AI_SETTINGS_STORAGE_KEY = 'ai-settings'
+const AI_WORKFLOW_HISTORY_KEY = 'ai-workflow-history'
+
+const DEFAULT_AI_SETTINGS: AISettings = {
+  provider: 'deepseek',
+  baseUrl: import.meta.env.VITE_OPENAI_BASE_URL || 'https://api.deepseek.com',
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
+  model: 'deepseek-chat'
+}
+
+export const AI_PROVIDERS: AIProviderOption[] = [
+  {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    icon: '🔵',
+    baseUrl: 'https://api.deepseek.com',
+    models: [
+      { id: 'deepseek-chat', name: 'DeepSeek Chat' },
+      { id: 'deepseek-coder', name: 'DeepSeek Coder' }
+    ],
+    free: true
+  },
+  {
+    id: 'qwen',
+    name: '通义千问',
+    icon: '🟢',
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    models: [
+      { id: 'qwen-turbo', name: 'Qwen Turbo' },
+      { id: 'qwen-plus', name: 'Qwen Plus' },
+      { id: 'qwen-max', name: 'Qwen Max' }
+    ],
+    free: true
+  },
+  {
+    id: 'zhipu',
+    name: '智谱 GLM',
+    icon: '🟣',
+    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    models: [
+      { id: 'glm-4-flash', name: 'GLM-4 Flash (免费)' },
+      { id: 'glm-4', name: 'GLM-4' },
+      { id: 'glm-4-plus', name: 'GLM-4 Plus' }
+    ],
+    free: true
+  },
+  {
+    id: 'longcat',
+    name: 'LongCat',
+    icon: '🟠',
+    baseUrl: 'https://api.longcat.chat/openai',
+    models: [
+      { id: 'LongCat-Flash-Chat', name: 'LongCat Flash Chat' },
+      { id: 'LongCat-Flash-Thinking', name: 'LongCat Flash Thinking' },
+      {
+        id: 'LongCat-Flash-Thinking-2601',
+        name: 'LongCat Flash Thinking 2601'
+      },
+      { id: 'LongCat-Flash-Lite', name: 'LongCat Flash Lite' },
+      { id: 'LongCat-Flash-Omni-2603', name: 'LongCat Flash Omni 2603' }
+    ],
+    free: false,
+    hint: 'LongCat 兼容 OpenAI，推荐地址 https://api.longcat.chat/openai'
+  },
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    icon: '⚪',
+    baseUrl: 'https://api.openai.com/v1',
+    models: [
+      { id: 'gpt-4o-mini', name: 'GPT-4o mini' },
+      { id: 'gpt-4.1-mini', name: 'GPT-4.1 mini' },
+      { id: 'gpt-4.1', name: 'GPT-4.1' }
+    ],
+    free: false
+  },
+  {
+    id: 'custom',
+    name: '自定义',
+    icon: '🔧',
+    baseUrl: '',
+    models: [],
+    free: false,
+    hint: '支持填写 OpenAI 兼容接口地址和任意模型名'
+  }
+]
+
+const trimTrailingSlash = (value: string) => value.trim().replace(/\/+$/, '')
+
+const parseUrl = (value: string) => {
+  try {
+    return new URL(value.trim())
+  } catch {
+    return null
+  }
+}
+
+const resolveBaseUrl = (baseUrl: string, provider = 'custom') => {
+  if (!baseUrl.trim()) return ''
+
+  const parsed = parseUrl(baseUrl)
+  if (!parsed) {
+    return trimTrailingSlash(baseUrl)
+  }
+
+  const hostname = parsed.hostname.toLowerCase()
+  const pathname = trimTrailingSlash(parsed.pathname)
+
+  if (/\/chat\/completions$/i.test(pathname)) {
+    return trimTrailingSlash(
+      `${parsed.origin}${pathname.replace(/\/chat\/completions$/i, '')}`
+    )
+  }
+
+  if (hostname === 'longcat.chat' || hostname === 'www.longcat.chat') {
+    return 'https://api.longcat.chat/openai'
+  }
+
+  if (hostname === 'api.longcat.chat' && (!pathname || pathname === '/')) {
+    return 'https://api.longcat.chat/openai'
+  }
+
+  if (
+    (provider === 'openai' || hostname === 'api.openai.com') &&
+    (!pathname || pathname === '/')
+  ) {
+    return 'https://api.openai.com/v1'
+  }
+
+  return trimTrailingSlash(`${parsed.origin}${pathname}`)
+}
+
+export function normalizeAISettings(settings: AISettings): AISettings {
   return {
-    provider: 'deepseek',
-    baseUrl: import.meta.env.VITE_OPENAI_BASE_URL || 'https://api.deepseek.com',
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
-    model: 'deepseek-chat'
+    provider: settings.provider || 'custom',
+    baseUrl: resolveBaseUrl(settings.baseUrl, settings.provider),
+    apiKey: settings.apiKey.trim(),
+    model: settings.model.trim()
   }
 }
 
 /**
- *  保存 AI 设置
+ * 获取 AI 设置
+ */
+export function getAISettings(): AISettings {
+  const saved = localStorage.getItem(AI_SETTINGS_STORAGE_KEY)
+  if (saved) {
+    try {
+      return normalizeAISettings(JSON.parse(saved))
+    } catch {
+      // 解析失败使用默认值
+    }
+  }
+
+  return normalizeAISettings(DEFAULT_AI_SETTINGS)
+}
+
+/**
+ * 保存 AI 设置
  */
 export function saveAISettings(settings: AISettings): void {
-  localStorage.setItem('ai-settings', JSON.stringify(settings))
+  localStorage.setItem(
+    AI_SETTINGS_STORAGE_KEY,
+    JSON.stringify(normalizeAISettings(settings))
+  )
+}
+
+export function getAIProviderById(providerId: string) {
+  return AI_PROVIDERS.find((item) => item.id === providerId)
+}
+
+export function getAIChatEndpoint(
+  settings: Pick<AISettings, 'baseUrl' | 'provider'>
+) {
+  const baseUrl = resolveBaseUrl(settings.baseUrl, settings.provider)
+
+  if (!baseUrl) return ''
+  if (/\/chat\/completions$/i.test(baseUrl)) return baseUrl
+  if (/\/openai\/v\d+$/i.test(baseUrl)) return `${baseUrl}/chat/completions`
+  if (/\/openai$/i.test(baseUrl)) return `${baseUrl}/v1/chat/completions`
+  if (/\/v\d+$/i.test(baseUrl)) return `${baseUrl}/chat/completions`
+
+  return `${baseUrl}/chat/completions`
+}
+
+const getTextContent = (content: AICompletionPayload['choices']) => {
+  const rawContent = content?.[0]?.message?.content
+
+  if (typeof rawContent === 'string') {
+    return rawContent.trim()
+  }
+
+  if (Array.isArray(rawContent)) {
+    return rawContent
+      .map((item) => item.text?.trim() || '')
+      .filter(Boolean)
+      .join('\n')
+      .trim()
+  }
+
+  return ''
+}
+
+const readErrorMessage = async (response: Response) => {
+  let detail = ''
+
+  try {
+    const data = (await response.json()) as AIErrorPayload
+    detail = data.error?.message || data.message || ''
+  } catch {
+    try {
+      detail = await response.text()
+    } catch {
+      detail = ''
+    }
+  }
+
+  detail = detail.trim()
+
+  if (response.status === 401) {
+    return detail || 'API Key 无效或已过期'
+  }
+
+  if (response.status === 402 || response.status === 429) {
+    return detail || '余额不足、调用频率过高或超出限制'
+  }
+
+  if (response.status === 404) {
+    return detail || '接口不存在，请检查 Base URL 是否填写为兼容接口地址'
+  }
+
+  if (detail) {
+    return `连接失败: ${response.status} ${detail}`
+  }
+
+  return `连接失败: ${response.status}`
+}
+
+async function requestAIChatCompletion(
+  settings: AISettings,
+  messages: AIMessage[],
+  options: AIChatOptions = {}
+) {
+  const normalizedSettings = normalizeAISettings(settings)
+
+  if (!normalizedSettings.baseUrl) {
+    throw new Error('请输入 API 地址')
+  }
+
+  if (!normalizedSettings.apiKey) {
+    throw new Error('请先配置 API Key')
+  }
+
+  if (!normalizedSettings.model) {
+    throw new Error('请输入模型名称')
+  }
+
+  const endpoint = getAIChatEndpoint(normalizedSettings)
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${normalizedSettings.apiKey}`
+    },
+    body: JSON.stringify({
+      model: normalizedSettings.model,
+      messages,
+      temperature: options.temperature,
+      max_tokens: options.maxTokens
+    })
+  })
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response))
+  }
+
+  const data = (await response.json()) as AICompletionPayload
+  const content = getTextContent(data.choices)
+
+  if (!content) {
+    throw new Error('模型返回内容为空，请检查模型名称或接口兼容性')
+  }
+
+  return content
 }
 
 /**
@@ -64,34 +387,41 @@ export function saveAISettings(settings: AISettings): void {
 export async function testAIConnection(
   settings: AISettings
 ): Promise<{ success: boolean; message: string }> {
-  try {
-    const response = await fetch(`${settings.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${settings.apiKey}`
-      },
-      body: JSON.stringify({
-        model: settings.model,
-        messages: [{ role: 'user', content: '你好' }],
-        max_tokens: 10
-      })
-    })
+  const normalizedSettings = normalizeAISettings(settings)
 
-    if (response.ok) {
-      return { success: true, message: 'API 连接成功！' }
-    } else {
-      await response.text()
-      if (response.status === 401) {
-        return { success: false, message: 'API Key 无效' }
-      } else if (response.status === 402 || response.status === 429) {
-        return { success: false, message: '余额不足或超出限制' }
+  try {
+    await requestAIChatCompletion(
+      normalizedSettings,
+      [
+        {
+          role: 'user',
+          content: '你好，请回复“连接成功”。'
+        }
+      ],
+      {
+        temperature: 0,
+        maxTokens: 16
       }
-      return { success: false, message: `连接失败: ${response.status}` }
+    )
+
+    return {
+      success: true,
+      message: `连接成功，当前接口：${getAIChatEndpoint(normalizedSettings)}`
     }
-  } catch {
-    return { success: false, message: '网络错误，请检查 API 地址' }
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : '网络错误，请检查 API 地址'
+    }
   }
+}
+
+export async function chatWithAI(
+  messages: AIMessage[],
+  options: AIChatOptions = {}
+) {
+  return requestAIChatCompletion(getAISettings(), messages, options)
 }
 
 /**
@@ -200,7 +530,6 @@ function getDemoData(keyword: string): GenerationResult {
     ]
   }
 
-  // 如果有匹配的演示数据则返回，否则返回通用数据
   const categories = demoCategories[keyword] || [
     {
       name: '主要产品',
@@ -277,47 +606,23 @@ export async function generateProductIdeas(
 
 请只返回JSON，不要有其他文字。`
 
-  const settings = getAISettings()
-
   try {
-    const response = await fetch(`${settings.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${settings.apiKey}`
-      },
-      body: JSON.stringify({
-        model: settings.model,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
+    const content = await requestAIChatCompletion(
+      getAISettings(),
+      [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      {
         temperature: 0.8,
-        max_tokens: 2000
-      })
-    })
+        maxTokens: 2000
+      }
+    )
 
-    if (!response.ok) {
-      console.warn('API 调用失败，使用演示数据')
-      return getDemoData(keyword)
-    }
-
-    const data = await response.json()
-    const content = data.choices[0]?.message?.content
-
-    if (!content) {
-      return getDemoData(keyword)
-    }
-
-    let parsed
-    try {
-      const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim()
-      parsed = JSON.parse(jsonStr)
-    } catch {
-      return getDemoData(keyword)
-    }
+    const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim()
+    const parsed = JSON.parse(jsonStr) as Pick<GenerationResult, 'categories'>
 
     return {
       keyword,
@@ -325,7 +630,7 @@ export async function generateProductIdeas(
       timestamp: Date.now()
     }
   } catch {
-    console.warn('网络错误，使用演示数据')
+    console.warn('AI 工作流调用失败，使用演示数据')
     return getDemoData(keyword)
   }
 }
@@ -334,7 +639,7 @@ export async function generateProductIdeas(
  * 获取历史记录
  */
 export function getHistory(): GenerationResult[] {
-  const stored = localStorage.getItem('ai-workflow-history')
+  const stored = localStorage.getItem(AI_WORKFLOW_HISTORY_KEY)
   return stored ? JSON.parse(stored) : []
 }
 
@@ -345,7 +650,7 @@ export function saveToHistory(result: GenerationResult): void {
   const history = getHistory()
   history.unshift(result)
   localStorage.setItem(
-    'ai-workflow-history',
+    AI_WORKFLOW_HISTORY_KEY,
     JSON.stringify(history.slice(0, 10))
   )
 }
@@ -354,29 +659,7 @@ export function saveToHistory(result: GenerationResult): void {
  * 清空历史记录
  */
 export function clearHistory(): void {
-  localStorage.removeItem('ai-workflow-history')
-}
-
-/**
- * 产品详情接口
- */
-export interface ProductDetail {
-  name: string
-  description: string
-  category: string
-  marketPotential: string
-  icon: string
-  // 详细信息
-  overview: string
-  targetAudience: string[]
-  keyFeatures: string[]
-  productionProcess: string
-  estimatedCost: string
-  pricingStrategy: string
-  marketAnalysis: string
-  competitiveAdvantage: string[]
-  risks: string[]
-  recommendations: string[]
+  localStorage.removeItem(AI_WORKFLOW_HISTORY_KEY)
 }
 
 /**
@@ -386,21 +669,17 @@ export async function generateProductDetail(
   product: ProductIdea,
   keyword: string
 ): Promise<ProductDetail> {
-  // 生成缓存 key
   const cacheKey = `product-detail-${keyword}-${product.name}`
-
-  // 先检查缓存
   const cached = localStorage.getItem(cacheKey)
+
   if (cached) {
     try {
       const parsed = JSON.parse(cached)
-      // 缓存有效期 7 天
       if (Date.now() - parsed.timestamp < 7 * 24 * 60 * 60 * 1000) {
-        console.log('使用缓存的产品详情')
         return parsed.data
       }
     } catch {
-      // 缓存解析失败，继续请求
+      // ignore cached parse error
     }
   }
 
@@ -427,54 +706,29 @@ export async function generateProductDetail(
 
 请只返回JSON，不要有其他文字。`
 
-  const settings = getAISettings()
-
   try {
-    const response = await fetch(`${settings.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${settings.apiKey}`
-      },
-      body: JSON.stringify({
-        model: settings.model,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
+    const content = await requestAIChatCompletion(
+      getAISettings(),
+      [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      {
         temperature: 0.7,
-        max_tokens: 1500
-      })
-    })
+        maxTokens: 1500
+      }
+    )
 
-    if (!response.ok) {
-      console.warn('API 调用失败，使用演示数据')
-      return getDemoProductDetail(product)
-    }
+    const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim()
+    const parsed = JSON.parse(jsonStr) as Omit<ProductDetail, keyof ProductIdea>
 
-    const data = await response.json()
-    const content = data.choices[0]?.message?.content
-
-    if (!content) {
-      return getDemoProductDetail(product)
-    }
-
-    let parsed
-    try {
-      const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim()
-      parsed = JSON.parse(jsonStr)
-    } catch {
-      return getDemoProductDetail(product)
-    }
-
-    const result = {
+    const result: ProductDetail = {
       ...product,
       ...parsed
     }
 
-    // 保存到缓存
     localStorage.setItem(
       cacheKey,
       JSON.stringify({ data: result, timestamp: Date.now() })
@@ -482,7 +736,7 @@ export async function generateProductDetail(
 
     return result
   } catch {
-    console.warn('网络错误，使用演示数据')
+    console.warn('AI 详情调用失败，使用演示数据')
     return getDemoProductDetail(product)
   }
 }

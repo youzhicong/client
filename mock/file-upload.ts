@@ -1,5 +1,7 @@
 import type { MockMethod } from 'vite-plugin-mock'
 
+const useBackend = process.env.VITE_USE_BACKEND_FOR_CORE_APIS === 'true'
+
 type UploadTaskState = {
   fileHash: string
   fileName: string
@@ -104,161 +106,171 @@ const formatTask = (task: UploadTaskState) => {
   }
 }
 
-export default [
-  {
-    url: '/api/upload/check',
-    method: 'post',
-    response: ({ body }) => {
-      const payload = (body || {}) as UploadPayload
-      const fileHash = toSafeString(payload.fileHash)
+export default (useBackend
+  ? []
+  : [
+      {
+        url: '/api/upload/check',
+        method: 'post',
+        response: ({ body }) => {
+          const payload = (body || {}) as UploadPayload
+          const fileHash = toSafeString(payload.fileHash)
 
-      if (!fileHash) {
-        return { code: 400, message: 'fileHash 不能为空' }
-      }
+          if (!fileHash) {
+            return { code: 400, message: 'fileHash 不能为空' }
+          }
 
-      const task = ensureTask(payload)
+          const task = ensureTask(payload)
 
-      if (task.merged) {
-        return {
-          code: 200,
-          message: '秒传成功',
-          data: {
-            shouldUpload: false,
-            merged: true,
-            uploadedChunks: [],
-            fileUrl: task.fileUrl
+          if (task.merged) {
+            return {
+              code: 200,
+              message: '秒传成功',
+              data: {
+                shouldUpload: false,
+                merged: true,
+                uploadedChunks: [],
+                fileUrl: task.fileUrl
+              }
+            }
+          }
+
+          return {
+            code: 200,
+            message: 'success',
+            data: {
+              shouldUpload: true,
+              merged: false,
+              uploadedChunks: Array.from(task.uploadedChunks).sort(
+                (a, b) => a - b
+              )
+            }
           }
         }
-      }
+      },
+      {
+        url: '/api/upload/chunk',
+        method: 'post',
+        response: async ({ body }) => {
+          await delay(120 + Math.floor(Math.random() * 180))
+          const payload = (body || {}) as UploadPayload & {
+            chunkIndex?: number
+          }
+          const fileHash = toSafeString(payload.fileHash)
 
-      return {
-        code: 200,
-        message: 'success',
-        data: {
-          shouldUpload: true,
-          merged: false,
-          uploadedChunks: Array.from(task.uploadedChunks).sort((a, b) => a - b)
-        }
-      }
-    }
-  },
-  {
-    url: '/api/upload/chunk',
-    method: 'post',
-    response: async ({ body }) => {
-      await delay(120 + Math.floor(Math.random() * 180))
-      const payload = (body || {}) as UploadPayload & { chunkIndex?: number }
-      const fileHash = toSafeString(payload.fileHash)
+          if (!fileHash) {
+            return { code: 400, message: 'fileHash 不能为空' }
+          }
 
-      if (!fileHash) {
-        return { code: 400, message: 'fileHash 不能为空' }
-      }
-
-      const task = ensureTask(payload)
-      const rawChunkIndex = toSafeNumber(payload.chunkIndex, -1)
-      const chunkIndex = Math.min(
-        task.totalChunks - 1,
-        Math.max(0, Math.floor(rawChunkIndex))
-      )
-
-      task.uploadedChunks.add(chunkIndex)
-      task.updatedAt = Date.now()
-
-      const uploadedCount = task.uploadedChunks.size
-
-      return {
-        code: 200,
-        message: 'chunk upload success',
-        data: {
-          uploadedCount,
-          totalChunks: task.totalChunks,
-          uploadedChunks: Array.from(task.uploadedChunks).sort((a, b) => a - b),
-          progress: Number(
-            ((uploadedCount / Math.max(task.totalChunks, 1)) * 100).toFixed(2)
+          const task = ensureTask(payload)
+          const rawChunkIndex = toSafeNumber(payload.chunkIndex, -1)
+          const chunkIndex = Math.min(
+            task.totalChunks - 1,
+            Math.max(0, Math.floor(rawChunkIndex))
           )
-        }
-      }
-    }
-  },
-  {
-    url: '/api/upload/merge',
-    method: 'post',
-    response: ({ body }) => {
-      const payload = (body || {}) as UploadPayload
-      const fileHash = toSafeString(payload.fileHash)
-      if (!fileHash) {
-        return { code: 400, message: 'fileHash 不能为空' }
-      }
 
-      const task = taskStore.get(fileHash)
-      if (!task) {
-        return { code: 404, message: '未找到上传任务' }
-      }
+          task.uploadedChunks.add(chunkIndex)
+          task.updatedAt = Date.now()
 
-      if (task.uploadedChunks.size < task.totalChunks) {
-        return {
-          code: 409,
-          message: '分片未上传完成，无法合并',
-          data: {
-            missingChunks: task.totalChunks - task.uploadedChunks.size
+          const uploadedCount = task.uploadedChunks.size
+
+          return {
+            code: 200,
+            message: 'chunk upload success',
+            data: {
+              uploadedCount,
+              totalChunks: task.totalChunks,
+              uploadedChunks: Array.from(task.uploadedChunks).sort(
+                (a, b) => a - b
+              ),
+              progress: Number(
+                ((uploadedCount / Math.max(task.totalChunks, 1)) * 100).toFixed(
+                  2
+                )
+              )
+            }
           }
         }
-      }
+      },
+      {
+        url: '/api/upload/merge',
+        method: 'post',
+        response: ({ body }) => {
+          const payload = (body || {}) as UploadPayload
+          const fileHash = toSafeString(payload.fileHash)
+          if (!fileHash) {
+            return { code: 400, message: 'fileHash 不能为空' }
+          }
 
-      task.merged = true
-      task.fileUrl = buildFileUrl(task)
-      task.updatedAt = Date.now()
+          const task = taskStore.get(fileHash)
+          if (!task) {
+            return { code: 404, message: '未找到上传任务' }
+          }
 
-      return {
-        code: 200,
-        message: 'merge success',
-        data: {
-          fileHash: task.fileHash,
-          fileName: task.fileName,
-          fileSize: task.fileSize,
-          fileUrl: task.fileUrl,
-          uploadedAt: new Date(task.updatedAt).toISOString()
+          if (task.uploadedChunks.size < task.totalChunks) {
+            return {
+              code: 409,
+              message: '分片未上传完成，无法合并',
+              data: {
+                missingChunks: task.totalChunks - task.uploadedChunks.size
+              }
+            }
+          }
+
+          task.merged = true
+          task.fileUrl = buildFileUrl(task)
+          task.updatedAt = Date.now()
+
+          return {
+            code: 200,
+            message: 'merge success',
+            data: {
+              fileHash: task.fileHash,
+              fileName: task.fileName,
+              fileSize: task.fileSize,
+              fileUrl: task.fileUrl,
+              uploadedAt: new Date(task.updatedAt).toISOString()
+            }
+          }
+        }
+      },
+      {
+        url: '/api/upload/tasks',
+        method: 'get',
+        response: ({ query }) => {
+          const keyword = toSafeString(query?.keyword).toLowerCase()
+
+          const list = Array.from(taskStore.values())
+            .filter((task) => {
+              if (!keyword) return true
+              return (
+                task.fileName.toLowerCase().includes(keyword) ||
+                task.fileHash.toLowerCase().includes(keyword)
+              )
+            })
+            .sort((a, b) => b.updatedAt - a.updatedAt)
+            .map(formatTask)
+
+          return {
+            code: 200,
+            message: 'success',
+            data: {
+              list,
+              total: list.length
+            }
+          }
+        }
+      },
+      {
+        url: '/api/upload/remove/:fileHash',
+        method: 'delete',
+        response: ({ params }) => {
+          const fileHash = toSafeString(params?.fileHash)
+          if (!fileHash) {
+            return { code: 400, message: 'fileHash 不能为空' }
+          }
+          taskStore.delete(fileHash)
+          return { code: 200, message: 'remove success', data: null }
         }
       }
-    }
-  },
-  {
-    url: '/api/upload/tasks',
-    method: 'get',
-    response: ({ query }) => {
-      const keyword = toSafeString(query?.keyword).toLowerCase()
-
-      const list = Array.from(taskStore.values())
-        .filter((task) => {
-          if (!keyword) return true
-          return (
-            task.fileName.toLowerCase().includes(keyword) ||
-            task.fileHash.toLowerCase().includes(keyword)
-          )
-        })
-        .sort((a, b) => b.updatedAt - a.updatedAt)
-        .map(formatTask)
-
-      return {
-        code: 200,
-        message: 'success',
-        data: {
-          list,
-          total: list.length
-        }
-      }
-    }
-  },
-  {
-    url: '/api/upload/remove/:fileHash',
-    method: 'delete',
-    response: ({ params }) => {
-      const fileHash = toSafeString(params?.fileHash)
-      if (!fileHash) {
-        return { code: 400, message: 'fileHash 不能为空' }
-      }
-      taskStore.delete(fileHash)
-      return { code: 200, message: 'remove success', data: null }
-    }
-  }
-] as MockMethod[]
+    ]) as MockMethod[]

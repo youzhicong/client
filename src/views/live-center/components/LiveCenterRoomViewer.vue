@@ -1,6 +1,6 @@
 <template>
-  <div class="douyin-room-shell">
-    <div class="room-command-bar">
+  <div class="live-room-shell">
+    <section class="room-command-bar">
       <div class="room-switcher">
         <button
           v-for="room in rooms"
@@ -10,200 +10,323 @@
           :class="{ active: room.id === selectedRoom.id }"
           @click="emit('select-room', room.id)"
         >
-          <span class="room-chip-dot" :class="room.statusTone"></span>
+          <span class="room-chip-status" :class="room.statusTone"></span>
           <div class="room-chip-copy">
             <strong>{{ room.name }}</strong>
             <small>{{ room.host }} · {{ room.slot }}</small>
           </div>
-          <span class="room-chip-count">{{ room.audience }}</span>
+          <div class="room-chip-metrics">
+            <span>{{ room.status }}</span>
+            <strong>{{ room.audience }}</strong>
+          </div>
         </button>
       </div>
 
       <div class="command-tools">
         <div class="source-input">
-          <el-input v-model="externalLink" placeholder="粘贴直播链接或流地址" />
+          <el-input
+            v-model="externalLink"
+            clearable
+            placeholder="粘贴 m3u8 / flv / mp4 或 mock:// 房间ID"
+          />
         </div>
-        <button type="button" class="command-button ghost" @click="shareRoom">
-          分享
+        <button type="button" class="ghost-button" @click="shareRoom">
+          分享预览
         </button>
-        <button type="button" class="command-button primary" @click="applyLink">
+        <button type="button" class="primary-button" @click="applyLink">
           切换流
         </button>
       </div>
 
-      <div class="command-note">{{ pinNote }}</div>
-    </div>
+      <div class="command-status">
+        <div class="status-copy">
+          <span class="section-kicker">直播态势</span>
+          <strong>{{ statusHeadline }}</strong>
+          <p>{{ pinNote }}</p>
+        </div>
 
-    <div class="douyin-room-layout">
-      <div class="stage-panel">
+        <div class="status-pills">
+          <span class="status-pill" :class="selectedRoom.statusTone">
+            {{ selectedRoom.status }}
+          </span>
+          <span class="status-pill subtle">{{ streamHealth }}</span>
+          <span class="status-pill subtle">{{ latencyLabel }}</span>
+        </div>
+
+        <div class="status-metrics">
+          <div
+            v-for="metric in quickMetrics"
+            :key="metric.label"
+            class="quick-metric"
+          >
+            <span>{{ metric.label }}</span>
+            <strong>{{ metric.value }}</strong>
+            <small>{{ metric.note }}</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="live-room-layout">
+      <section class="stage-panel">
         <div class="stage-screen">
-          <div class="scene-topbar">
-            <button type="button" class="scene-icon back" @click="enterRoom">
-              返回
+          <div class="stage-backdrop">
+            <span>{{ selectedRoom.coverTitle }}</span>
+          </div>
+
+          <div class="stage-topbar">
+            <button
+              type="button"
+              class="ghost-button compact"
+              @click="enterRoom"
+            >
+              进入房间
             </button>
 
-            <div class="anchor-summary">
+            <div class="anchor-card">
               <div class="anchor-avatar">{{ hostInitial }}</div>
               <div class="anchor-copy">
-                <div class="anchor-line">
-                  <strong>{{ selectedRoom.host }}专区</strong>
+                <div class="anchor-title-row">
+                  <strong>{{ selectedRoom.host }}</strong>
                   <span>{{ followerLabel }} 粉丝</span>
                 </div>
-                <div class="anchor-actions">
-                  <button type="button" @click="previewAction('粉丝团')">
-                    粉丝团
-                  </button>
-                  <button type="button" @click="previewAction('会员')">
-                    会员
-                  </button>
-                  <button type="button" @click="shareRoom">···</button>
-                </div>
+                <p>{{ selectedRoom.category }} · {{ selectedRoom.slot }}</p>
               </div>
             </div>
 
-            <span class="scene-rank-badge">{{ sceneRankBadge }}</span>
-          </div>
-
-          <div class="scene-countdown">
-            <div class="scene-countdown-track"></div>
-            <div class="scene-countdown-badge">
-              <span>倒计时</span>
-              <strong>{{ countdownLabel }}</strong>
-            </div>
-          </div>
-
-          <div class="scene-arena">
-            <div class="arena-showcase">
-              <div class="showcase-glow"></div>
-              <div class="showcase-wave wave-a"></div>
-              <div class="showcase-wave wave-b"></div>
-
-              <div
-                v-for="hero in stageHeroes"
-                :key="hero.id"
-                class="hero-card"
-                :class="hero.tone"
-              >
-                <span class="hero-rank">{{ hero.rank }}</span>
-                <div class="hero-portrait">{{ hero.initial }}</div>
-                <strong>{{ hero.title }}</strong>
-                <small>{{ hero.subtitle }}</small>
-              </div>
-            </div>
-
-            <div class="arena-selection">
-              <div class="selection-tabs">
-                <span>忍者</span>
-                <span>通灵兽</span>
-                <span>秘卷</span>
-              </div>
-
-              <div class="selection-grid">
-                <div
-                  v-for="item in rosterItems"
-                  :key="item.id"
-                  class="selection-card"
-                  :class="{ active: item.active }"
-                >
-                  <span class="selection-grade">{{ item.grade }}</span>
-                  <strong>{{ item.label }}</strong>
-                  <small>{{ item.detail }}</small>
-                </div>
-              </div>
-
+            <div class="topbar-actions">
               <button
                 type="button"
-                class="selection-lock"
-                @click="previewAction('锁定阵容')"
+                class="ghost-button compact"
+                @click="previewAction('粉丝团')"
               >
-                锁定阵容
+                粉丝团
+              </button>
+              <button
+                type="button"
+                class="ghost-button compact"
+                @click="previewAction('优惠券')"
+              >
+                优惠券
+              </button>
+              <button
+                type="button"
+                class="ghost-button compact"
+                @click="shareRoom"
+              >
+                分享
               </button>
             </div>
           </div>
 
-          <div class="scene-metrics">
+          <div class="stage-main">
+            <div class="viewer-column">
+              <div class="viewer-stage-card">
+                <div class="viewer-stage-head">
+                  <div>
+                    <span class="section-kicker">直播主画面</span>
+                    <strong>{{ selectedRoom.name }}</strong>
+                  </div>
+                  <span class="sub-badge"
+                    >{{ selectedRoom.host }} · {{ selectedRoom.category }}</span
+                  >
+                </div>
+
+                <div class="viewer-stage-body">
+                  <LiveCenterStreamSurface
+                    :src="streamPreviewUrl"
+                    :room="selectedRoom"
+                  >
+                    <LiveCenterPlayerCard
+                      :room="selectedRoom"
+                      @enter-room="enterRoom"
+                    />
+                  </LiveCenterStreamSurface>
+                </div>
+              </div>
+
+              <div class="hero-stage">
+                <div class="hero-badges">
+                  <span class="live-badge" :class="selectedRoom.statusTone">
+                    {{ selectedRoom.status }}
+                  </span>
+                  <span class="sub-badge"
+                    >实时在线 {{ selectedRoom.audience }}</span
+                  >
+                  <span class="sub-badge">{{ progressHint }}</span>
+                </div>
+
+                <div class="hero-copy">
+                  <span class="section-kicker">当前场次</span>
+                  <h2>{{ selectedRoom.name }}</h2>
+                  <p>{{ selectedRoom.summary }}</p>
+                </div>
+
+                <div class="stage-progress">
+                  <div class="progress-copy">
+                    <strong>直播进度 {{ progressPercent }}%</strong>
+                    <span>
+                      {{ activeSegment?.window ?? selectedRoom.slot }} ·
+                      {{ activeSegment?.goal ?? '保持成交节奏稳定推进' }}
+                    </span>
+                  </div>
+                  <div class="progress-track">
+                    <span
+                      class="progress-bar"
+                      :style="{ width: `${progressPercent}%` }"
+                    ></span>
+                  </div>
+                </div>
+
+                <div class="tag-row">
+                  <span
+                    v-for="tag in selectedRoom.tags"
+                    :key="tag"
+                    class="tag-pill"
+                  >
+                    {{ tag }}
+                  </span>
+                </div>
+
+                <div class="spotlight-card">
+                  <div class="spotlight-head">
+                    <span class="section-kicker">当前主推商品</span>
+                    <span class="spotlight-badge">{{ roomProduct.badge }}</span>
+                  </div>
+                  <strong>{{ roomProduct.name }}</strong>
+                  <p>{{ roomProduct.summary }}</p>
+                  <div class="product-meta">
+                    <div class="product-metric">
+                      <span>到手价</span>
+                      <strong>{{ roomProduct.price }}</strong>
+                    </div>
+                    <div class="product-metric">
+                      <span>已售</span>
+                      <strong>{{ roomProduct.sold }}</strong>
+                    </div>
+                    <div class="product-metric">
+                      <span>库存</span>
+                      <strong>{{ roomProduct.inventory }}</strong>
+                    </div>
+                  </div>
+                  <div class="product-perks">
+                    <span v-for="perk in roomProduct.perks" :key="perk">{{
+                      perk
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <aside class="control-dock">
+              <section class="dock-card">
+                <div class="dock-head">
+                  <span class="section-kicker">节奏脚本</span>
+                  <strong>{{ activeSegment?.label ?? '场控流程' }}</strong>
+                </div>
+                <div class="segment-list">
+                  <button
+                    v-for="segment in sceneSegments"
+                    :key="segment.id"
+                    type="button"
+                    class="segment-item"
+                    :class="{
+                      active: segment.id === activeSegmentId,
+                      [segment.tone]: true
+                    }"
+                    @click="activateSegment(segment)"
+                  >
+                    <div>
+                      <strong>{{ segment.label }}</strong>
+                      <small>{{ segment.window }}</small>
+                    </div>
+                    <span>{{ segment.goal }}</span>
+                  </button>
+                </div>
+              </section>
+
+              <section class="dock-card">
+                <div class="dock-head">
+                  <span class="section-kicker">转化提示</span>
+                  <strong>{{ conversionHint.title }}</strong>
+                </div>
+                <p class="dock-paragraph">{{ conversionHint.detail }}</p>
+                <div class="cue-grid">
+                  <div
+                    v-for="cue in stageCues"
+                    :key="cue.label"
+                    class="cue-card"
+                  >
+                    <span>{{ cue.label }}</span>
+                    <strong>{{ cue.value }}</strong>
+                    <small>{{ cue.note }}</small>
+                  </div>
+                </div>
+              </section>
+
+              <section class="dock-card actions-card">
+                <div class="dock-head">
+                  <span class="section-kicker">快捷动作</span>
+                  <strong>运营动作台</strong>
+                </div>
+                <div class="action-grid">
+                  <button
+                    v-for="action in quickActions"
+                    :key="action"
+                    type="button"
+                    class="action-button"
+                    @click="previewAction(action)"
+                  >
+                    {{ action }}
+                  </button>
+                </div>
+              </section>
+            </aside>
+          </div>
+
+          <div class="floating-strip">
             <div
-              v-for="metric in stageMetrics"
-              :key="metric.label"
-              class="metric-card"
+              v-for="item in stageStats"
+              :key="item.label"
+              class="floating-stat"
             >
-              <span>{{ metric.label }}</span>
-              <strong>{{ metric.value }}</strong>
+              <span>{{ item.label }}</span>
+              <strong>{{ item.value }}</strong>
             </div>
           </div>
+        </div>
 
-          <div class="floating-camera">
-            <span class="camera-tag">主播小窗</span>
-            <strong>{{ selectedRoom.host }}</strong>
-            <small>{{ selectedRoom.category }}</small>
+        <footer class="stage-footer">
+          <div class="footer-product">
+            <span class="section-kicker">商品焦点</span>
+            <strong>{{ roomProduct.name }}</strong>
+            <p>{{ roomProduct.summary }}</p>
           </div>
 
-          <div class="scene-caption">
-            <span class="caption-live">LIVE</span>
-            <p>{{ selectedRoom.name }} · {{ selectedRoom.summary }}</p>
-          </div>
-
-          <div class="gift-ribbon">
+          <div class="footer-scenes">
             <button
               v-for="item in giftRibbon"
               :key="item.gift.id"
               type="button"
-              class="gift-pill"
+              class="footer-chip"
               :class="item.gift.tone"
               @click="previewGift(item.gift)"
             >
-              <span class="gift-pill-icon">{{ item.short }}</span>
+              <span>{{ item.short }}</span>
               <strong>{{ item.gift.name }}</strong>
             </button>
           </div>
-        </div>
+        </footer>
+      </section>
 
-        <div class="stage-footer">
-          <div class="footer-copy">
-            <strong>{{ selectedRoom.name }}</strong>
-            <span>{{ selectedRoom.tags.join(' · ') }}</span>
-          </div>
-
-          <div class="footer-actions">
-            <button
-              type="button"
-              class="footer-button ghost"
-              @click="previewAction('点赞')"
-            >
-              点赞
-            </button>
-            <button
-              type="button"
-              class="footer-button ghost"
-              @click="previewAction('弹幕')"
-            >
-              弹幕
-            </button>
-            <button
-              type="button"
-              class="footer-button primary"
-              @click="enterRoom"
-            >
-              进入直播间
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="interaction-panel">
-        <div class="audience-board">
-          <div class="board-head">
+      <aside class="interaction-panel">
+        <section class="panel-card audience-board">
+          <div class="panel-head">
             <div>
-              <span class="board-kicker">在线观众</span>
-              <h3>{{ audienceHeadline }}</h3>
+              <span class="section-kicker">在线观众</span>
+              <strong>{{ audienceHeadline }}</strong>
+              <p>{{ audienceSubline }}</p>
             </div>
-            <button
-              type="button"
-              class="board-icon"
-              @click="previewAction('侧栏扩展')"
-            >
-              →
-            </button>
           </div>
 
           <div class="rank-tabs">
@@ -219,7 +342,7 @@
             </button>
           </div>
 
-          <div class="rank-list">
+          <div v-if="filteredViewerRanking.length" class="rank-list">
             <div
               v-for="(viewer, index) in filteredViewerRanking"
               :key="viewer.name"
@@ -236,12 +359,44 @@
               <span class="rank-score">{{ viewer.score }}</span>
             </div>
           </div>
-        </div>
+          <div v-else class="empty-state">当前筛选下暂无高活跃观众</div>
+        </section>
 
-        <div class="chat-board">
-          <div class="chat-head">
-            <span>实时弹幕</span>
-            <small>{{ pinNote }}</small>
+        <section class="panel-card insight-board">
+          <div class="panel-head">
+            <div>
+              <span class="section-kicker">运营雷达</span>
+              <strong>{{ conversionHint.title }}</strong>
+              <p>{{ hottestMoment }}</p>
+            </div>
+            <span class="status-pill subtle">{{
+              activeSegment?.label ?? '待机中'
+            }}</span>
+          </div>
+
+          <div class="insight-list">
+            <div
+              v-for="signal in operationSignals"
+              :key="signal.label"
+              class="insight-item"
+              :class="signal.tone"
+            >
+              <div>
+                <strong>{{ signal.label }}</strong>
+                <p>{{ signal.note }}</p>
+              </div>
+              <span>{{ signal.value }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-card chat-board">
+          <div class="panel-head">
+            <div>
+              <span class="section-kicker">实时互动</span>
+              <strong>弹幕与成交播报</strong>
+              <p>{{ pinNote }}</p>
+            </div>
           </div>
 
           <div class="chat-list">
@@ -258,43 +413,102 @@
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         <div class="chat-composer">
-          <div class="composer-field">与大家互动一下...</div>
+          <div class="composer-field">
+            <el-input
+              v-model="draftMessage"
+              maxlength="60"
+              placeholder="发送欢迎词、福利提醒或互动话术"
+              show-word-limit
+              @keyup.enter="sendComposerMessage"
+            />
+          </div>
           <button
             type="button"
-            class="composer-button ghost"
+            class="ghost-button"
             @click="previewAction('表情')"
           >
             表情
           </button>
           <button
             type="button"
-            class="composer-button primary"
-            @click="previewAction('发送')"
+            class="primary-button"
+            @click="sendComposerMessage"
           >
             发送
           </button>
         </div>
-      </div>
+      </aside>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
+import LiveCenterPlayerCard from './LiveCenterPlayerCard.vue'
+import LiveCenterStreamSurface from './LiveCenterStreamSurface.vue'
+import {
+  getStreamKindLabel,
+  normalizeStreamUrl,
+  resolveStreamSource
+} from '../streamUtils'
 import type { GiftItem, LiveFeedItem, StreamRoom } from '../types'
 
 type ViewerTab = 'all' | 'paying' | 'vip'
+type AccentTone = 'rose' | 'amber' | 'aqua' | 'violet'
 
 interface ViewerRankItem {
   name: string
   badge: string
   score: string
   bucket: Exclude<ViewerTab, 'all'>
-  accent: 'rose' | 'amber' | 'aqua'
+  accent: Exclude<AccentTone, 'violet'>
+}
+
+interface RoomProduct {
+  name: string
+  badge: string
+  summary: string
+  price: string
+  sold: string
+  inventory: string
+  discount: string
+  perks: string[]
+}
+
+interface SceneSegment {
+  id: string
+  label: string
+  window: string
+  goal: string
+  progress: number
+  tone: AccentTone
+}
+
+interface SignalItem {
+  label: string
+  value: string
+  note: string
+  tone: AccentTone
+}
+
+interface RoomMetricProfile {
+  interactRate: string
+  cartRate: string
+  stayDuration: string
+  latency: string
+  hourlyGmv: string
+  audienceTrend: string
+  payRate: string
+}
+
+interface ConversionHint {
+  title: string
+  detail: string
 }
 
 const props = defineProps<{
@@ -305,10 +519,11 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ 'select-room': [roomId: string] }>()
+const router = useRouter()
 
 const viewerTabs = [
   { id: 'all', label: '全部' },
-  { id: 'paying', label: '1000贡献用户' },
+  { id: 'paying', label: '高贡献用户' },
   { id: 'vip', label: '高等级用户' }
 ] as const
 
@@ -317,21 +532,21 @@ const viewerRankingMap: Record<string, ViewerRankItem[]> = {
     {
       name: '牡丹反击',
       badge: '荣耀贡献用户',
-      score: '27',
+      score: '27 连击',
       bucket: 'paying',
       accent: 'rose'
     },
     {
       name: '小稚',
       badge: '高等级粉丝',
-      score: '40',
+      score: '40 级',
       bucket: 'vip',
       accent: 'amber'
     },
     {
       name: '洪琪',
       badge: '连送 44 次',
-      score: '44',
+      score: '44 次',
       bucket: 'paying',
       accent: 'aqua'
     }
@@ -340,21 +555,21 @@ const viewerRankingMap: Record<string, ViewerRankItem[]> = {
     {
       name: '樱桃可乐',
       badge: '新品预约用户',
-      score: '18',
+      score: '18 次',
       bucket: 'paying',
       accent: 'rose'
     },
     {
       name: '奶盐桃桃',
       badge: '高等级粉丝',
-      score: '32',
+      score: '32 级',
       bucket: 'vip',
       accent: 'amber'
     },
     {
       name: '云朵卷',
       badge: '试色团成员',
-      score: '21',
+      score: '21 级',
       bucket: 'vip',
       accent: 'aqua'
     }
@@ -363,30 +578,352 @@ const viewerRankingMap: Record<string, ViewerRankItem[]> = {
     {
       name: '晚风星河',
       badge: '会员复购用户',
-      score: '16',
+      score: '16 单',
       bucket: 'paying',
       accent: 'rose'
     },
     {
       name: '青提汽水',
       badge: '高等级会员',
-      score: '29',
+      score: '29 级',
       bucket: 'vip',
       accent: 'amber'
     },
     {
       name: '南桥',
       badge: '权益达人',
-      score: '12',
+      score: '12 单',
       bucket: 'paying',
       accent: 'aqua'
     }
   ]
 }
 
+const roomProductMap: Record<string, RoomProduct> = {
+  'room-main': {
+    name: '鎏金臻萃修护套组',
+    badge: '爆品主推',
+    summary: '主打屏障修护与夜间抗老，适合在福利口播后接支付转化。',
+    price: '￥329',
+    sold: '4,860',
+    inventory: '1,280',
+    discount: '买一送一 + 限时券',
+    perks: ['赠便携面霜', '限时 30 分钟', '支持会员加赠']
+  },
+  'room-new': {
+    name: '柔雾镜面唇釉 07',
+    badge: '新品首发',
+    summary: '适合试色镜头拉近展示，重点引导收藏、预约和色号投票。',
+    price: '￥119',
+    sold: '1,320',
+    inventory: '2,460',
+    discount: '第二支半价',
+    perks: ['试色卡展示', '收藏抽奖', '预约下场提醒']
+  },
+  'room-member': {
+    name: '夜间修护会员礼盒',
+    badge: '复购专属',
+    summary: '主打会员权益回访和复购承接，适合配合回放切片进行口播。',
+    price: '￥269',
+    sold: '920',
+    inventory: '860',
+    discount: '会员券立减 40',
+    perks: ['老客加赠积分', '回放高光承接', '售后答疑入口']
+  }
+}
+
+const roomMetricMap: Record<string, RoomMetricProfile> = {
+  'room-main': {
+    interactRate: '18.4%',
+    cartRate: '9.2%',
+    stayDuration: '12m 18s',
+    latency: '1.2s',
+    hourlyGmv: '￥12.6 万/h',
+    audienceTrend: '+12.8%',
+    payRate: '7.9%'
+  },
+  'room-new': {
+    interactRate: '22.1%',
+    cartRate: '12.6%',
+    stayDuration: '9m 42s',
+    latency: '1.5s',
+    hourlyGmv: '￥6.8 万/h',
+    audienceTrend: '+18.2%',
+    payRate: '5.4%'
+  },
+  'room-member': {
+    interactRate: '11.7%',
+    cartRate: '15.1%',
+    stayDuration: '14m 06s',
+    latency: '0.9s',
+    hourlyGmv: '￥4.2 万/h',
+    audienceTrend: '+6.1%',
+    payRate: '13.2%'
+  }
+}
+
+const roomSegmentMap: Record<string, SceneSegment[]> = {
+  'room-main': [
+    {
+      id: 'main-warmup',
+      label: '开场预热',
+      window: '18:00 - 18:20',
+      goal: '拉高停留和关注',
+      progress: 18,
+      tone: 'aqua'
+    },
+    {
+      id: 'main-hero',
+      label: '爆品讲解',
+      window: '18:20 - 19:10',
+      goal: '聚焦高转化商品',
+      progress: 42,
+      tone: 'rose'
+    },
+    {
+      id: 'main-coupon',
+      label: '福利放量',
+      window: '19:10 - 20:00',
+      goal: '限时券驱动下单',
+      progress: 68,
+      tone: 'amber'
+    },
+    {
+      id: 'main-link',
+      label: '连麦答疑',
+      window: '20:00 - 20:30',
+      goal: '承接犹豫用户',
+      progress: 86,
+      tone: 'violet'
+    }
+  ],
+  'room-new': [
+    {
+      id: 'new-warmup',
+      label: '预约蓄水',
+      window: '20:10 - 20:30',
+      goal: '提前聚集高意向用户',
+      progress: 14,
+      tone: 'aqua'
+    },
+    {
+      id: 'new-show',
+      label: '试色展示',
+      window: '20:30 - 20:50',
+      goal: '强化新品卖点',
+      progress: 38,
+      tone: 'rose'
+    },
+    {
+      id: 'new-poll',
+      label: '弹幕投票',
+      window: '20:50 - 21:10',
+      goal: '拉升收藏和互动',
+      progress: 64,
+      tone: 'amber'
+    },
+    {
+      id: 'new-close',
+      label: '限量收口',
+      window: '21:10 - 21:30',
+      goal: '完成收单闭环',
+      progress: 92,
+      tone: 'violet'
+    }
+  ],
+  'room-member': [
+    {
+      id: 'member-review',
+      label: '回放高光',
+      window: '14:00 - 14:40',
+      goal: '承接回放流量',
+      progress: 34,
+      tone: 'aqua'
+    },
+    {
+      id: 'member-benefit',
+      label: '权益口播',
+      window: '14:40 - 15:10',
+      goal: '提升会员感知',
+      progress: 62,
+      tone: 'rose'
+    },
+    {
+      id: 'member-rebuy',
+      label: '复购转化',
+      window: '15:10 - 15:40',
+      goal: '推动老客下单',
+      progress: 86,
+      tone: 'amber'
+    },
+    {
+      id: 'member-replay',
+      label: '售后答疑',
+      window: '15:40 - 16:00',
+      goal: '完成收尾与沉淀',
+      progress: 100,
+      tone: 'violet'
+    }
+  ]
+}
+
+const roomSignalMap: Record<string, SignalItem[]> = {
+  'room-main': [
+    {
+      label: '弹幕应答率',
+      value: '92%',
+      note: '高频问题建议切到客服预设话术',
+      tone: 'rose'
+    },
+    {
+      label: '商品点击率',
+      value: '28.6%',
+      note: '主推商品卡点击明显高于均值',
+      tone: 'amber'
+    },
+    {
+      label: '关注转化',
+      value: '16.4%',
+      note: '福利口播后 5 分钟效果最佳',
+      tone: 'aqua'
+    }
+  ],
+  'room-new': [
+    {
+      label: '预约留资率',
+      value: '34.1%',
+      note: '新品人群对试色预告响应积极',
+      tone: 'rose'
+    },
+    {
+      label: '收藏触发率',
+      value: '19.8%',
+      note: '建议增加色号投票引导',
+      tone: 'amber'
+    },
+    {
+      label: '互动密度',
+      value: '4.2k/min',
+      note: '试色时镜头切近景效果更好',
+      tone: 'aqua'
+    }
+  ],
+  'room-member': [
+    {
+      label: '复购下单率',
+      value: '13.2%',
+      note: '会员券到期提醒对转化明显',
+      tone: 'rose'
+    },
+    {
+      label: '回放承接率',
+      value: '21.4%',
+      note: '高光切片可继续承接老客',
+      tone: 'amber'
+    },
+    {
+      label: '售后答疑完成率',
+      value: '96%',
+      note: '适合追加权益说明和客服入口',
+      tone: 'aqua'
+    }
+  ]
+}
+
+const conversionHintMap: Record<string, ConversionHint> = {
+  'room-main': {
+    title: '爆品讲解窗口正在放大',
+    detail:
+      '建议在接下来的 12 分钟内连续挂出限时券和买赠信息，当前支付转化高于均值 1.8 个百分点。'
+  },
+  'room-new': {
+    title: '新品用户更依赖试色和弹幕反馈',
+    detail:
+      '优先展示色号对比和上唇镜头，再用预约提醒承接未下单人群，比直接促单更有效。'
+  },
+  'room-member': {
+    title: '老客决策更看重权益说明',
+    detail:
+      '回放承接阶段建议把会员券截止时间、积分返还和售后保障固定挂在画面下方。'
+  }
+}
+
+const quickActionMap: Record<string, string[]> = {
+  'room-main': ['发限时券', '切商品卡', '插入福利口播', '开启连麦'],
+  'room-new': ['上试色卡', '开启预约提醒', '推收藏按钮', '发送色号弹幕'],
+  'room-member': ['推会员券', '播放回放高光', '弹出复购清单', '提醒售后答疑']
+}
+
+const defaultSegmentIdMap: Record<string, string> = {
+  'room-main': 'main-coupon',
+  'room-new': 'new-warmup',
+  'room-member': 'member-replay'
+}
+
+const nowTime = () =>
+  new Date().toLocaleTimeString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+
 const viewerTab = ref<ViewerTab>('all')
 const externalLink = ref('')
 const appliedLink = ref('')
+const draftMessage = ref('')
+const activeSegmentId = ref('')
+const localFeed = ref<LiveFeedItem[]>([])
+
+watch(
+  () => props.selectedRoom.id,
+  (roomId) => {
+    viewerTab.value = 'all'
+    externalLink.value = ''
+    appliedLink.value = ''
+    draftMessage.value = ''
+    localFeed.value = []
+    activeSegmentId.value =
+      defaultSegmentIdMap[roomId] ?? roomSegmentMap[roomId]?.[0]?.id ?? ''
+  },
+  { immediate: true }
+)
+
+const selectedMetrics = computed(
+  () =>
+    roomMetricMap[props.selectedRoom.id] ?? {
+      interactRate: '0%',
+      cartRate: '0%',
+      stayDuration: '0m',
+      latency: '0s',
+      hourlyGmv: '￥0',
+      audienceTrend: '0%',
+      payRate: '0%'
+    }
+)
+
+const roomProduct = computed(
+  () =>
+    roomProductMap[props.selectedRoom.id] ?? {
+      name: '待配置商品',
+      badge: '未配置',
+      summary: '当前房间尚未配置主推商品信息。',
+      price: '-',
+      sold: '-',
+      inventory: '-',
+      discount: '待配置',
+      perks: ['待补充']
+    }
+)
+
+const sceneSegments = computed(
+  () => roomSegmentMap[props.selectedRoom.id] ?? []
+)
+
+const activeSegment = computed(
+  () =>
+    sceneSegments.value.find(
+      (segment) => segment.id === activeSegmentId.value
+    ) ?? sceneSegments.value[0]
+)
 
 const audienceValue = computed(() => {
   const matched = props.selectedRoom.audience.match(/\d+(?:,\d+)*/u)
@@ -407,69 +944,125 @@ const followerLabel = computed(() => {
 
 const audienceHeadline = computed(() => {
   if (audienceValue.value >= 10000) {
-    return `在线观众 · ${(audienceValue.value / 10000).toFixed(1).replace(/\.0$/u, '')}万`
+    return `在线观众 ${(audienceValue.value / 10000).toFixed(1).replace(/\.0$/u, '')}万`
   }
-  return `在线观众 · ${props.selectedRoom.audience}`
+  return `在线观众 ${props.selectedRoom.audience}`
 })
 
-const sceneRankBadge = computed(() =>
-  props.selectedRoom.statusTone === 'live'
-    ? '小店榜 100+'
-    : props.selectedRoom.status
+const audienceSubline = computed(
+  () =>
+    `互动率 ${selectedMetrics.value.interactRate} · 支付转化 ${selectedMetrics.value.payRate} · 趋势 ${selectedMetrics.value.audienceTrend}`
 )
 
-const countdownLabel = computed(() => {
-  if (props.selectedRoom.statusTone === 'live') return '24'
-  if (props.selectedRoom.statusTone === 'next') return '08'
-  return '00'
+const progressPercent = computed(() => activeSegment.value?.progress ?? 0)
+
+const progressHint = computed(() => {
+  if (!activeSegment.value) return '直播排期待配置'
+  return `${activeSegment.value.label} · ${activeSegment.value.window}`
 })
+
+const statusHeadline = computed(() => {
+  if (props.selectedRoom.statusTone === 'live') {
+    return `${props.selectedRoom.host} 正在主讲，成交节奏保持稳定`
+  }
+  if (props.selectedRoom.statusTone === 'next') {
+    return `${props.selectedRoom.host} 场次预热中，建议提前做预约蓄水`
+  }
+  return `${props.selectedRoom.host} 场次已结束，当前进入回放承接模式`
+})
+
+const streamHealth = computed(() => {
+  if (streamPreviewSource.value.kind === 'unsupported') return '流地址待修正'
+  if (hasCustomStream.value) {
+    return `已接入${getStreamKindLabel(streamPreviewSource.value.kind)}`
+  }
+  if (props.selectedRoom.statusTone === 'live') return '1080P 推流正常'
+  if (props.selectedRoom.statusTone === 'next') return '预热素材已就绪'
+  return '回放链路正常'
+})
+
+const latencyLabel = computed(() => `延迟 ${selectedMetrics.value.latency}`)
 
 const pinNote = computed(
   () =>
-    appliedLink.value ||
-    `${props.selectedRoom.host} 正在讲解 ${props.selectedRoom.category}，右侧是观众排行和实时弹幕。`
+    (hasCustomStream.value
+      ? `当前接入外部流：${streamPreviewUrl.value}`
+      : '') ||
+    `${props.selectedRoom.host} 正在讲解 ${props.selectedRoom.category}，当前主推 ${roomProduct.value.name}。`
 )
 
-const stageHeroes = computed(() =>
-  props.rooms.slice(0, 3).map((room, index) => ({
-    id: room.id,
-    rank: `${index + 1}`,
-    initial: room.host.slice(0, 1),
-    title: room.host,
-    subtitle: room.name,
-    tone: ['rose', 'aqua', 'amber'][index] as 'rose' | 'aqua' | 'amber'
-  }))
+const quickMetrics = computed(() => [
+  {
+    label: '互动率',
+    value: selectedMetrics.value.interactRate,
+    note: '点赞、弹幕、关注综合'
+  },
+  {
+    label: '加购率',
+    value: selectedMetrics.value.cartRate,
+    note: '商品点击后加购转化'
+  },
+  {
+    label: '停留时长',
+    value: selectedMetrics.value.stayDuration,
+    note: '当前平均观看停留'
+  }
+])
+
+const defaultStreamUrl = computed(() =>
+  normalizeStreamUrl(props.selectedRoom.previewStreamUrl)
 )
 
-const rosterItems = computed(() => {
-  const labels = [
-    `${props.selectedRoom.host}主控`,
-    props.selectedRoom.category,
-    props.selectedRoom.tags[0] ?? '主会场',
-    props.selectedRoom.tags[1] ?? '互动位',
-    props.selectedRoom.tags[2] ?? '福利位',
-    props.rooms[0]?.host ?? '安可',
-    props.rooms[1]?.host ?? '小桃',
-    props.rooms[2]?.host ?? '陆雨',
-    props.giftItems[0]?.name ?? '超级火箭',
-    props.giftItems[1]?.name ?? '加冕花冠',
-    props.giftItems[2]?.name ?? '爱心气泡',
-    props.giftItems[3]?.name ?? '应援卡'
-  ]
+const customStreamUrl = computed(() => normalizeStreamUrl(appliedLink.value))
 
-  return labels.map((label, index) => ({
-    id: `${label}-${index}`,
-    label,
-    detail: index % 3 === 0 ? '3 星' : index % 3 === 1 ? '2 星' : '1 星',
-    grade: index === 0 ? 'S' : 'A',
-    active: index === 0 || index === 5 || index === 8
-  }))
-})
+const streamPreviewUrl = computed(
+  () => customStreamUrl.value || defaultStreamUrl.value
+)
 
-const stageMetrics = computed(() => [
-  { label: '在线', value: props.selectedRoom.audience },
-  { label: 'GMV', value: props.selectedRoom.gmv },
-  { label: '时段', value: props.selectedRoom.slot }
+const streamPreviewSource = computed(() =>
+  resolveStreamSource(streamPreviewUrl.value)
+)
+
+const hasCustomStream = computed(() => Boolean(customStreamUrl.value))
+
+const conversionHint = computed(
+  () =>
+    conversionHintMap[props.selectedRoom.id] ?? {
+      title: '暂无转化建议',
+      detail: '当前房间缺少可用的转化策略数据。'
+    }
+)
+
+const operationSignals = computed(
+  () => roomSignalMap[props.selectedRoom.id] ?? []
+)
+
+const quickActions = computed(
+  () => quickActionMap[props.selectedRoom.id] ?? ['刷新面板']
+)
+
+const stageCues = computed(() => [
+  {
+    label: '当前脚本',
+    value: activeSegment.value?.label ?? '待配置',
+    note: activeSegment.value?.goal ?? '保持场控稳定'
+  },
+  {
+    label: '主推优惠',
+    value: roomProduct.value.discount,
+    note: '建议保持口播一致'
+  },
+  {
+    label: '小时 GMV',
+    value: selectedMetrics.value.hourlyGmv,
+    note: '按当前节奏预估'
+  }
+])
+
+const stageStats = computed(() => [
+  { label: '场观趋势', value: selectedMetrics.value.audienceTrend },
+  { label: '支付转化', value: selectedMetrics.value.payRate },
+  { label: '主推库存', value: roomProduct.value.inventory }
 ])
 
 const giftRibbon = computed(() =>
@@ -478,8 +1071,6 @@ const giftRibbon = computed(() =>
     short: gift.name.slice(0, 2)
   }))
 )
-
-const visibleFeed = computed(() => props.liveFeed.slice(0, 10))
 
 const filteredViewerRanking = computed(() => {
   const list =
@@ -490,71 +1081,167 @@ const filteredViewerRanking = computed(() => {
   return list.filter((item) => item.bucket === viewerTab.value)
 })
 
+const visibleFeed = computed(() =>
+  [...localFeed.value, ...props.liveFeed].slice(0, 12)
+)
+
+const hottestMoment = computed(() =>
+  activeSegment.value
+    ? `${activeSegment.value.window} 正在执行 ${activeSegment.value.label}`
+    : '等待当前房间进入脚本节奏'
+)
+
 const feedToneLabel = (tone: LiveFeedItem['tone']) => {
-  if (tone === 'gift') return '礼'
-  if (tone === 'order') return '购'
-  if (tone === 'follow') return '粉'
-  return '播'
+  if (tone === 'gift') return '礼物'
+  if (tone === 'order') return '成交'
+  if (tone === 'follow') return '关注'
+  return '播报'
+}
+
+const pushLocalFeed = (item: Omit<LiveFeedItem, 'id' | 'time'>) => {
+  localFeed.value = [
+    {
+      id: `local-${Date.now()}`,
+      time: nowTime(),
+      ...item
+    },
+    ...localFeed.value
+  ].slice(0, 4)
 }
 
 const previewAction = (label: string) => {
-  ElMessage.success(`${label} 已接入直播间交互布局`)
+  pushLocalFeed({
+    user: '运营台',
+    action: '执行动作',
+    highlight: label,
+    tone: 'notice'
+  })
+  ElMessage.success(`${label} 已接入 ${props.selectedRoom.name} 的运营动作台`)
 }
 
 const previewGift = (gift: GiftItem) => {
-  ElMessage.success(`已将 ${gift.name} 放入底部礼物栏`)
+  pushLocalFeed({
+    user: '运营台',
+    action: '挂载礼物',
+    highlight: gift.name,
+    tone: 'gift'
+  })
+  ElMessage.success(
+    `已将 ${gift.name} 加入 ${props.selectedRoom.name} 底部礼物栏`
+  )
 }
 
 const enterRoom = () => {
-  ElMessage.success(`已打开 ${props.selectedRoom.name}`)
+  pushLocalFeed({
+    user: '系统',
+    action: '进入房间',
+    highlight: props.selectedRoom.name,
+    tone: 'notice'
+  })
+  router.push({
+    name: 'live-center-room-studio',
+    params: { roomId: props.selectedRoom.id },
+    query: streamPreviewUrl.value ? { stream: streamPreviewUrl.value } : {}
+  })
 }
 
-const shareRoom = () => {
+const shareRoom = async () => {
+  const shareText = `${props.selectedRoom.name}｜${props.selectedRoom.host}｜${props.selectedRoom.slot}`
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(shareText)
+      ElMessage.success('分享文案已复制到剪贴板')
+      return
+    }
+  } catch {
+    // Clipboard may be unavailable in some environments.
+  }
+
   ElMessage.success(`已生成 ${props.selectedRoom.name} 的分享预览`)
 }
 
 const applyLink = () => {
-  const value = externalLink.value.trim()
+  const value = normalizeStreamUrl(externalLink.value)
   if (!value) {
-    ElMessage.warning('请先输入直播链接')
+    ElMessage.warning('请先输入 m3u8、flv、mp4 或 mock:// 房间ID')
     return
   }
 
-  appliedLink.value = `当前接入外部流：${value}`
+  appliedLink.value = value
+  pushLocalFeed({
+    user: '系统',
+    action: '切换流',
+    highlight: value,
+    tone: 'notice'
+  })
+
+  if (resolveStreamSource(value).kind === 'unsupported') {
+    ElMessage.warning('地址已写入，但它不是 m3u8、flv、mp4 直链')
+    return
+  }
+
   ElMessage.success('已切换到新的直播流')
+}
+
+const activateSegment = (segment: SceneSegment) => {
+  activeSegmentId.value = segment.id
+  ElMessage.success(`已切到 ${segment.label}`)
+}
+
+const sendComposerMessage = () => {
+  const value = draftMessage.value.trim()
+  if (!value) {
+    ElMessage.warning('请输入要发送的话术')
+    return
+  }
+
+  pushLocalFeed({
+    user: '运营台',
+    action: '发送话术',
+    highlight: value,
+    tone: 'notice'
+  })
+  draftMessage.value = ''
+  ElMessage.success('互动话术已发送')
 }
 </script>
 
 <style scoped lang="scss">
-.douyin-room-shell {
-  --room-panel: rgba(40, 42, 58, 0.94);
-  --room-panel-soft: rgba(61, 62, 81, 0.92);
-  --room-border: rgba(255, 255, 255, 0.08);
-  --room-text: #f6f7fb;
-  --room-muted: rgba(255, 255, 255, 0.62);
-  --room-pink: #fe2c55;
-  --room-cyan: #25f4ee;
-  --room-amber: #ffb94d;
-  --room-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+.live-room-shell {
+  --panel-bg: linear-gradient(
+    180deg,
+    rgba(30, 35, 52, 0.96),
+    rgba(17, 21, 35, 0.96)
+  );
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --text-main: #f5f7ff;
+  --text-subtle: rgba(233, 238, 255, 0.68);
+  --rose: #ff5d7c;
+  --amber: #ffca65;
+  --aqua: #66e3db;
+  --violet: #8d7dff;
+  --shadow-lg: 0 28px 70px rgba(4, 10, 24, 0.42);
+  --shadow-sm: 0 14px 30px rgba(4, 10, 24, 0.22);
+  --display-font: 'Bahnschrift', 'Segoe UI', sans-serif;
 
-  position: relative;
   display: grid;
   gap: 18px;
-  color: var(--room-text);
+  color: var(--text-main);
 }
 
-.douyin-room-shell::before {
-  content: '';
-  position: absolute;
-  inset: -10px 0 auto;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.02),
-    rgba(143, 160, 255, 0.42),
-    rgba(255, 255, 255, 0.02)
-  );
-  pointer-events: none;
+.room-command-bar,
+.stage-panel,
+.interaction-panel,
+.panel-card,
+.dock-card,
+.chat-composer {
+  border: 1px solid var(--panel-border);
+  border-radius: 28px;
+  background: var(--panel-bg);
+  box-shadow:
+    var(--shadow-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(18px);
 }
 
 .room-command-bar,
@@ -562,15 +1249,6 @@ const applyLink = () => {
 .interaction-panel {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--room-border);
-  border-radius: 26px;
-  background:
-    linear-gradient(180deg, rgba(54, 56, 76, 0.96), rgba(36, 37, 52, 0.92)),
-    var(--room-panel);
-  box-shadow:
-    var(--room-shadow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(18px);
 }
 
 .room-command-bar::before,
@@ -579,190 +1257,315 @@ const applyLink = () => {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    120deg,
-    rgba(126, 83, 188, 0.08),
-    transparent 42%,
-    rgba(241, 192, 108, 0.08)
-  );
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(102, 227, 219, 0.14),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at top right,
+      rgba(255, 93, 124, 0.16),
+      transparent 26%
+    );
   pointer-events: none;
 }
 
 .room-command-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 14px 18px;
+  gap: 16px;
   padding: 18px;
 }
 
 .room-switcher {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .room-chip {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
   align-items: center;
-  gap: 10px;
-  min-width: 0;
-  padding: 14px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--room-text);
-  text-align: left;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
   cursor: pointer;
+  text-align: left;
   transition:
-    transform 0.18s ease,
-    background 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .room-chip:hover,
-.command-button:hover,
-.gift-pill:hover,
-.footer-button:hover,
-.board-icon:hover,
-.composer-button:hover,
-.selection-lock:hover,
-.anchor-actions button:hover {
-  transform: translateY(-1px);
+.ghost-button:hover,
+.primary-button:hover,
+.action-button:hover,
+.rank-tab:hover,
+.segment-item:hover,
+.footer-chip:hover {
+  transform: translateY(-2px);
 }
 
 .room-chip.active {
-  border-color: rgba(254, 44, 85, 0.34);
-  background: linear-gradient(
-    135deg,
-    rgba(136, 74, 182, 0.32),
-    rgba(48, 74, 111, 0.24)
-  );
+  border-color: rgba(255, 93, 124, 0.34);
+  background:
+    linear-gradient(135deg, rgba(255, 93, 124, 0.16), rgba(102, 227, 219, 0.1)),
+    rgba(255, 255, 255, 0.05);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-    0 16px 26px rgba(0, 0, 0, 0.16);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    var(--shadow-sm);
 }
 
-.room-chip-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.room-chip-status {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
 }
 
-.room-chip-dot.live {
-  background: var(--room-pink);
-  box-shadow: 0 0 0 6px rgba(254, 44, 85, 0.14);
+.room-chip-status.live {
+  background: var(--rose);
+  box-shadow: 0 0 0 8px rgba(255, 93, 124, 0.14);
 }
 
-.room-chip-dot.next {
-  background: var(--room-cyan);
-  box-shadow: 0 0 0 6px rgba(37, 244, 238, 0.12);
+.room-chip-status.next {
+  background: var(--aqua);
+  box-shadow: 0 0 0 8px rgba(102, 227, 219, 0.12);
 }
 
-.room-chip-dot.done {
-  background: var(--room-amber);
-  box-shadow: 0 0 0 6px rgba(255, 185, 77, 0.12);
+.room-chip-status.done {
+  background: var(--amber);
+  box-shadow: 0 0 0 8px rgba(255, 202, 101, 0.12);
 }
 
-.room-chip-copy {
-  min-width: 0;
+.room-chip-copy,
+.room-chip-copy strong,
+.room-chip-copy small,
+.room-chip-metrics span,
+.room-chip-metrics strong {
+  display: block;
 }
 
 .room-chip-copy strong,
-.footer-copy strong,
-.rank-copy strong,
-.chat-meta strong,
-.selection-card strong,
-.metric-card strong {
-  display: block;
+.status-copy strong,
+.hero-copy h2,
+.spotlight-card > strong,
+.dock-head strong,
+.panel-head strong,
+.footer-product strong {
+  font-family: var(--display-font);
+  letter-spacing: 0.02em;
+}
+
+.room-chip-copy strong {
+  font-size: 15px;
 }
 
 .room-chip-copy small,
-.footer-copy span {
-  display: block;
-  margin-top: 5px;
-  color: var(--room-muted);
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.room-chip-metrics span,
+.status-copy p,
+.anchor-copy p,
+.hero-copy p,
+.dock-paragraph,
+.panel-head p,
+.rank-copy small,
+.chat-meta span,
+.product-metric span,
+.floating-stat span,
+.quick-metric small {
+  color: var(--text-subtle);
 }
 
-.room-chip-count {
+.room-chip-copy small {
+  margin-top: 4px;
   font-size: 12px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.76);
+}
+
+.room-chip-metrics {
+  text-align: right;
+}
+
+.room-chip-metrics span {
+  font-size: 11px;
+}
+
+.room-chip-metrics strong {
+  margin-top: 4px;
+  font-size: 14px;
 }
 
 .command-tools {
   display: grid;
-  grid-template-columns: minmax(260px, 360px) auto auto;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
   align-items: center;
 }
 
-.source-input {
+.command-status {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.1fr) auto minmax(0, 1.1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.status-copy {
   min-width: 0;
 }
 
-.command-button,
-.footer-button,
-.composer-button,
-.board-icon,
-.selection-lock,
-.scene-icon,
-.anchor-actions button {
+.status-copy strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.status-copy p {
+  margin: 10px 0 0;
+  line-height: 1.7;
+}
+
+.section-kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.status-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-content: flex-start;
+}
+
+.status-pill,
+.live-badge,
+.sub-badge,
+.spotlight-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-pill.live,
+.live-badge.live {
+  color: #fff;
+  background: linear-gradient(135deg, var(--rose), #ff8a5b);
+}
+
+.status-pill.next,
+.live-badge.next {
+  color: #062326;
+  background: linear-gradient(135deg, var(--aqua), #9cf7f0);
+}
+
+.status-pill.done,
+.live-badge.done {
+  color: #442f05;
+  background: linear-gradient(135deg, var(--amber), #ffe3aa);
+}
+
+.status-pill.subtle,
+.sub-badge {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-main);
+}
+
+.status-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.quick-metric {
+  padding: 14px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.quick-metric span,
+.quick-metric strong,
+.quick-metric small {
+  display: block;
+}
+
+.quick-metric span {
+  font-size: 12px;
+}
+
+.quick-metric strong {
+  margin-top: 10px;
+  font-size: 21px;
+}
+
+.quick-metric small {
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.primary-button,
+.ghost-button,
+.action-button,
+.rank-tab,
+.segment-item,
+.footer-chip {
   border: 0;
   cursor: pointer;
   transition:
-    transform 0.18s ease,
-    background 0.18s ease,
-    box-shadow 0.18s ease,
-    border-color 0.18s ease;
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.command-button,
-.footer-button,
-.composer-button {
-  min-height: 44px;
-  padding: 0 16px;
+.primary-button,
+.ghost-button {
+  min-height: 46px;
+  padding: 0 18px;
   border-radius: 16px;
   font-size: 13px;
   font-weight: 700;
 }
 
-.command-button.primary,
-.footer-button.primary,
-.composer-button.primary,
-.selection-lock {
+.primary-button {
   color: #fff;
-  background: linear-gradient(135deg, var(--room-pink), #ff7a44);
-  box-shadow: 0 14px 28px rgba(254, 44, 85, 0.26);
+  background: linear-gradient(135deg, var(--rose), #ff8a5b);
+  box-shadow: 0 14px 28px rgba(255, 93, 124, 0.28);
 }
 
-.command-button.ghost,
-.footer-button.ghost,
-.composer-button.ghost,
-.board-icon,
-.scene-icon,
-.anchor-actions button {
-  color: var(--room-text);
+.ghost-button {
+  color: inherit;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--room-border);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.command-note {
-  grid-column: 1 / -1;
-  margin: 0;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 13px;
-  line-height: 1.6;
+.ghost-button.compact {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 14px;
 }
 
-.douyin-room-layout {
+.live-room-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: 18px;
   align-items: start;
 }
@@ -774,30 +1577,26 @@ const applyLink = () => {
 
 .stage-screen {
   position: relative;
-  min-height: clamp(640px, 78vh, 860px);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 720px;
+  padding: 22px;
   border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   background:
     radial-gradient(
-      circle at 50% 8%,
-      rgba(255, 255, 255, 0.16),
-      transparent 16%
+      circle at top left,
+      rgba(255, 93, 124, 0.2),
+      transparent 24%
     ),
     radial-gradient(
-      circle at 16% 16%,
-      rgba(180, 64, 208, 0.34),
-      transparent 28%
+      circle at top right,
+      rgba(102, 227, 219, 0.14),
+      transparent 22%
     ),
-    radial-gradient(
-      circle at 78% 14%,
-      rgba(236, 174, 77, 0.14),
-      transparent 18%
-    ),
-    linear-gradient(135deg, #3b314d 0%, #2d283e 48%, #2d2a3b 100%);
+    linear-gradient(135deg, #151a2c 0%, #1b2237 48%, #111728 100%);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-    0 28px 46px rgba(0, 0, 0, 0.24);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    var(--shadow-lg);
 }
 
 .stage-screen::before {
@@ -805,1041 +1604,949 @@ const applyLink = () => {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 36px 36px;
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 34px 34px;
+  opacity: 0.22;
   pointer-events: none;
 }
 
-.stage-screen::after {
-  content: '';
+.stage-backdrop {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(
-      circle at 50% 0%,
-      rgba(255, 255, 255, 0.08),
-      transparent 22%
-    ),
-    linear-gradient(180deg, transparent 58%, rgba(15, 11, 23, 0.28) 100%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 28px;
   pointer-events: none;
 }
 
-.scene-topbar,
-.scene-countdown,
-.scene-metrics,
-.floating-camera,
-.scene-caption,
-.gift-ribbon {
-  position: absolute;
-  z-index: 2;
+.stage-backdrop span {
+  font-family: var(--display-font);
+  font-size: clamp(42px, 8vw, 88px);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.05);
+  text-align: right;
 }
 
-.scene-topbar {
-  top: 18px;
-  left: 18px;
-  right: 18px;
+.stage-topbar,
+.stage-main,
+.floating-strip {
+  position: relative;
+  z-index: 1;
+}
+
+.stage-topbar {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.scene-icon.back {
-  min-width: 52px;
-  min-height: 38px;
-  padding: 0 14px;
-  border-radius: 18px;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.anchor-summary {
-  display: flex;
+  gap: 16px;
   align-items: center;
-  gap: 12px;
-  min-width: 0;
-  margin-right: auto;
+  justify-content: space-between;
+}
+
+.anchor-card {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 .anchor-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #ffffff, #c2c6ff);
-  color: #2a2940;
-  font-size: 22px;
-  font-weight: 800;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
-}
-
-.anchor-copy {
-  min-width: 0;
-}
-
-.anchor-line {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.anchor-line span,
-.camera-tag,
-.board-kicker,
-.chat-head small {
-  color: rgba(255, 255, 255, 0.68);
-  font-size: 12px;
-}
-
-.anchor-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.anchor-actions button {
-  min-height: 30px;
-  padding: 0 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.scene-rank-badge,
-.caption-live {
-  display: inline-flex;
-  align-items: center;
-  min-height: 34px;
-  padding: 0 14px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.scene-rank-badge {
-  background: rgba(17, 18, 28, 0.56);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.scene-countdown {
-  top: 98px;
-  left: 18px;
-  right: 18px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  height: 20px;
-  border-radius: 999px;
-  overflow: visible;
-}
-
-.scene-countdown-track {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    90deg,
-    rgba(168, 191, 93, 0.92) 0 72%,
-    rgba(209, 206, 161, 0.54) 72% 100%
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 4px 16px rgba(0, 0, 0, 0.12);
-}
-
-.scene-countdown-badge {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 10px;
-  min-height: 50px;
-  margin-right: 12px;
-  padding: 0 18px;
-  border-radius: 18px;
-  background: rgba(43, 34, 58, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow:
-    0 16px 28px rgba(0, 0, 0, 0.26),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.scene-countdown-badge span {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.scene-countdown-badge strong {
-  color: #ffd54a;
-  font-size: 34px;
-  line-height: 1;
-}
-
-.scene-arena {
-  position: absolute;
-  inset: 128px 18px 138px;
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
-  gap: 20px;
-  align-items: stretch;
-  z-index: 1;
-}
-
-.arena-showcase,
-.arena-selection {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 22px;
-}
-
-.arena-showcase {
-  padding: 28px 18px 24px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  align-items: end;
-  background:
-    linear-gradient(180deg, rgba(122, 42, 144, 0.94), rgba(58, 26, 83, 0.9)),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent);
-  box-shadow: inset 0 -40px 64px rgba(15, 8, 30, 0.38);
-}
-
-.showcase-glow,
-.showcase-wave {
-  position: absolute;
-  pointer-events: none;
-}
-
-.showcase-glow {
-  inset: 22px 10% auto;
-  height: 180px;
-  border-radius: 999px;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.22),
-    transparent 72%
-  );
-}
-
-.showcase-wave {
-  left: -4%;
-  right: -4%;
-  height: 18px;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    rgba(162, 226, 81, 0.72),
-    rgba(209, 233, 128, 0.42)
-  );
-}
-
-.wave-a {
-  top: 12%;
-}
-
-.wave-b {
-  bottom: 11%;
-}
-
-.hero-card {
-  position: relative;
-  z-index: 1;
-  min-height: 332px;
-  padding: 18px 18px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 24px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  background: linear-gradient(
-    180deg,
-    rgba(19, 19, 28, 0.12),
-    rgba(16, 14, 24, 0.74)
-  );
-  box-shadow:
-    inset 0 -78px 110px rgba(0, 0, 0, 0.3),
-    0 16px 28px rgba(0, 0, 0, 0.16);
-}
-
-.hero-card::before {
-  content: '';
-  position: absolute;
-  left: 22px;
-  right: 22px;
-  top: 18px;
-  bottom: 110px;
-  border-radius: 48px 48px 0 0;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.24),
-    rgba(21, 20, 33, 0.08)
-  );
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-}
-
-.hero-card::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 46px;
-  height: 42px;
-  background: linear-gradient(
-    90deg,
-    rgba(118, 136, 57, 0.22),
-    rgba(165, 192, 78, 0.42),
-    rgba(118, 136, 57, 0.22)
-  );
-  opacity: 0.52;
-}
-
-.hero-card.rose::before {
-  background: linear-gradient(
-    180deg,
-    rgba(47, 58, 72, 0.96),
-    rgba(180, 58, 46, 0.84)
-  );
-}
-
-.hero-card.aqua::before {
-  background: linear-gradient(
-    180deg,
-    rgba(231, 234, 238, 0.98),
-    rgba(62, 95, 128, 0.84)
-  );
-}
-
-.hero-card.amber::before {
-  background: linear-gradient(
-    180deg,
-    rgba(184, 87, 63, 0.94),
-    rgba(96, 38, 43, 0.84)
-  );
-}
-
-.hero-rank {
-  position: absolute;
-  left: 16px;
-  bottom: 72px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #ffea68, #ff8a00);
-  color: #5b2200;
-  font-size: 30px;
-  font-weight: 900;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
-}
-
-.hero-portrait {
-  position: absolute;
-  top: 22px;
-  left: 18px;
-  z-index: 1;
   width: 52px;
   height: 52px;
   border-radius: 18px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(30, 19, 45, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(14px);
-  font-size: 28px;
+  background: linear-gradient(135deg, #ffffff, #9feae3);
+  color: #102032;
+  font-size: 24px;
   font-weight: 800;
 }
 
-.hero-card strong,
-.hero-card small {
-  position: relative;
-  z-index: 1;
+.anchor-title-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.hero-card strong {
-  margin-top: auto;
-  font-size: 30px;
-  letter-spacing: 0.02em;
+.anchor-title-row strong {
+  font-size: 16px;
 }
 
-.hero-card small {
-  margin-top: 8px;
-  color: rgba(255, 255, 255, 0.76);
-  font-size: 14px;
+.anchor-title-row span {
+  color: var(--text-subtle);
+  font-size: 12px;
 }
 
-.arena-selection {
-  padding: 20px 18px 18px;
+.anchor-copy p {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stage-main {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.84fr);
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.viewer-column {
+  display: grid;
   gap: 16px;
+  min-width: 0;
+}
+
+.viewer-stage-card {
+  padding: 16px;
+  border-radius: 24px;
   background:
     linear-gradient(
       180deg,
-      rgba(229, 218, 184, 0.98),
-      rgba(220, 202, 158, 0.98)
+      rgba(255, 255, 255, 0.07),
+      rgba(255, 255, 255, 0.03)
     ),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.06), transparent);
-  color: #3d2f17;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.36);
+    rgba(7, 11, 20, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
-.selection-tabs {
-  display: inline-grid;
-  justify-content: start;
+.viewer-stage-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.viewer-stage-head strong {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--display-font);
+  font-size: 22px;
+}
+
+.viewer-stage-body {
+  overflow: hidden;
+  border-radius: 20px;
+  background: rgba(6, 10, 18, 0.78);
+}
+
+.viewer-stage-body :deep(.stream-surface) {
+  min-height: 440px;
+  border-radius: 20px;
+}
+
+.viewer-stage-body :deep(.player-shell) {
+  min-height: 440px;
+  height: 100%;
+  border: 0;
+  border-radius: 20px;
+  box-shadow: none;
+}
+
+.viewer-stage-body :deep(.player-stage) {
+  min-height: 440px;
+}
+
+.viewer-stage-body :deep(.stream-video),
+.viewer-stage-body :deep(.stream-placeholder),
+.viewer-stage-body :deep(.stream-state) {
+  min-height: 440px;
+  height: 440px;
+}
+
+.hero-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: space-between;
+  min-height: 0;
+}
+
+.hero-badges,
+.tag-row,
+.product-perks {
+  display: flex;
   gap: 10px;
-  font-size: 14px;
-  font-weight: 800;
-  color: #6a5522;
+  flex-wrap: wrap;
 }
 
-.selection-grid {
+.hero-copy h2 {
+  margin: 12px 0 0;
+  font-size: clamp(34px, 4vw, 52px);
+  line-height: 1.04;
+}
+
+.hero-copy p {
+  max-width: 560px;
+  margin: 14px 0 0;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.stage-progress,
+.spotlight-card,
+.dock-card,
+.panel-card,
+.chat-composer {
+  border-radius: 24px;
+}
+
+.stage-progress {
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.progress-copy {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.progress-copy strong {
+  font-size: 20px;
+}
+
+.progress-copy span {
+  color: var(--text-subtle);
+  font-size: 13px;
+}
+
+.progress-track {
+  position: relative;
+  margin-top: 14px;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.progress-bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--aqua), var(--rose));
+  box-shadow: 0 0 24px rgba(255, 93, 124, 0.4);
+}
+
+.tag-pill,
+.product-perks span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 12px;
+}
+
+.spotlight-card {
+  margin-top: auto;
+  padding: 20px;
+  background:
+    linear-gradient(
+      140deg,
+      rgba(255, 93, 124, 0.16),
+      rgba(102, 227, 219, 0.08)
+    ),
+    rgba(16, 20, 32, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-sm);
+}
+
+.spotlight-head,
+.dock-head,
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.spotlight-head {
+  margin-bottom: 12px;
+}
+
+.spotlight-badge {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.spotlight-card > strong {
+  display: block;
+  font-size: 24px;
+}
+
+.spotlight-card > p {
+  margin: 10px 0 0;
+  max-width: 520px;
+  color: var(--text-subtle);
+  line-height: 1.7;
+}
+
+.product-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.product-metric {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.product-metric span,
+.product-metric strong {
+  display: block;
+}
+
+.product-metric strong {
+  margin-top: 8px;
+  font-size: 18px;
+}
+
+.product-perks {
+  margin-top: 16px;
+}
+
+.control-dock {
+  display: grid;
+  gap: 16px;
+}
+
+.dock-card {
+  padding: 18px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0.03)
+    ),
+    rgba(7, 11, 20, 0.42);
+}
+
+.dock-head strong {
+  font-size: 18px;
+}
+
+.dock-paragraph {
+  margin: 14px 0 0;
+  line-height: 1.7;
+}
+
+.segment-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.segment-item {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: inherit;
+}
+
+.segment-item > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.segment-item strong {
+  font-size: 14px;
+}
+
+.segment-item small,
+.segment-item span {
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+
+.segment-item.active {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.segment-item.rose.active {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 93, 124, 0.2),
+    rgba(255, 255, 255, 0.04)
+  );
+}
+
+.segment-item.amber.active {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 202, 101, 0.2),
+    rgba(255, 255, 255, 0.04)
+  );
+}
+
+.segment-item.aqua.active {
+  background: linear-gradient(
+    135deg,
+    rgba(102, 227, 219, 0.2),
+    rgba(255, 255, 255, 0.04)
+  );
+}
+
+.segment-item.violet.active {
+  background: linear-gradient(
+    135deg,
+    rgba(141, 125, 255, 0.2),
+    rgba(255, 255, 255, 0.04)
+  );
+}
+
+.cue-grid,
+.action-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.cue-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cue-card {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cue-card span,
+.cue-card strong,
+.cue-card small,
+.floating-stat span,
+.floating-stat strong {
+  display: block;
+}
+
+.cue-card strong {
+  margin-top: 10px;
+  font-size: 16px;
+}
+
+.cue-card small {
+  margin-top: 8px;
+  color: var(--text-subtle);
+  line-height: 1.6;
+}
+
+.action-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.action-button {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.floating-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.floating-stat {
+  padding: 14px 16px;
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.07),
+      rgba(255, 255, 255, 0.03)
+    ),
+    rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-sm);
+}
+
+.floating-stat strong {
+  margin-top: 10px;
+  font-size: 18px;
+}
+
+.stage-footer {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.1fr);
+  gap: 16px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.footer-product,
+.footer-scenes {
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.footer-product p {
+  margin: 10px 0 0;
+  color: var(--text-subtle);
+  line-height: 1.7;
+}
+
+.footer-scenes {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
-.selection-card {
-  min-height: 98px;
-  padding: 10px 12px;
-  border-radius: 18px;
-  border: 1px solid rgba(96, 67, 12, 0.18);
-  background: rgba(255, 250, 235, 0.72);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.46),
-    0 8px 18px rgba(109, 88, 43, 0.08);
-}
-
-.selection-card.active {
-  border-color: rgba(233, 132, 17, 0.52);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 239, 177, 0.98),
-    rgba(255, 228, 122, 0.82)
-  );
-}
-
-.selection-grade {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 14px;
-  background: rgba(85, 32, 110, 0.92);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.selection-card strong {
-  margin-top: 12px;
-  font-size: 14px;
-  line-height: 1.3;
-}
-
-.selection-card small {
-  display: block;
-  margin-top: 8px;
-  color: rgba(61, 47, 23, 0.72);
-  font-size: 12px;
-}
-
-.selection-lock {
-  justify-self: center;
-  min-width: 196px;
-  min-height: 54px;
-  padding: 0 24px;
-  border-radius: 18px;
-  font-size: 18px;
-  font-weight: 900;
-}
-
-.scene-metrics {
-  right: 26px;
-  bottom: 112px;
+.footer-chip {
   display: grid;
-  gap: 10px;
-}
-
-.metric-card {
-  min-width: 148px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: rgba(96, 88, 74, 0.54);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px);
-  box-shadow:
-    0 14px 26px rgba(0, 0, 0, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-.metric-card span {
-  display: block;
-  color: rgba(255, 255, 255, 0.62);
-  font-size: 11px;
-}
-
-.metric-card strong {
-  margin-top: 8px;
-  font-size: 20px;
-}
-
-.floating-camera {
-  left: 18px;
-  bottom: 112px;
-  width: 136px;
-  aspect-ratio: 3 / 4;
-  padding: 14px;
-  border-radius: 22px;
-  display: grid;
-  align-content: end;
-  gap: 6px;
-  background:
-    linear-gradient(180deg, rgba(102, 46, 48, 0.08), rgba(21, 14, 20, 0.88)),
-    radial-gradient(
-      circle at 50% 22%,
-      rgba(255, 255, 255, 0.18),
-      transparent 34%
-    );
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 18px 30px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.floating-camera strong {
-  font-size: 18px;
-}
-
-.floating-camera small {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 12px;
-}
-
-.scene-caption {
-  left: 170px;
-  bottom: 112px;
-  right: 194px;
-  display: grid;
-  gap: 10px;
-}
-
-.caption-live {
-  justify-self: start;
-  color: #fff;
-  background: linear-gradient(135deg, var(--room-pink), #ff8a45);
-}
-
-.scene-caption p {
-  margin: 0;
-  max-width: 540px;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 20px;
-  line-height: 1.55;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.28);
-}
-
-.gift-ribbon {
-  left: 14px;
-  right: 14px;
-  bottom: 14px;
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-
-.gift-pill {
-  flex: 0 0 auto;
-  min-width: 116px;
-  min-height: 88px;
-  padding: 14px 14px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  display: grid;
-  justify-items: center;
   gap: 8px;
+  align-content: center;
+  min-height: 88px;
+  padding: 14px;
+  border-radius: 18px;
+  text-align: left;
   color: #fff;
-  background: rgba(46, 47, 66, 0.88);
-  cursor: pointer;
-  transition:
-    transform 0.18s ease,
-    background 0.18s ease;
 }
 
-.gift-pill.rose {
+.footer-chip span,
+.footer-chip strong {
+  display: block;
+}
+
+.footer-chip.rose {
   background: linear-gradient(
-    180deg,
-    rgba(255, 132, 163, 0.98),
-    rgba(118, 56, 98, 0.9)
+    135deg,
+    rgba(255, 93, 124, 0.9),
+    rgba(255, 140, 120, 0.72)
   );
 }
 
-.gift-pill.amber {
+.footer-chip.amber {
+  color: #2c1d00;
   background: linear-gradient(
-    180deg,
-    rgba(255, 206, 112, 0.98),
-    rgba(120, 79, 32, 0.92)
+    135deg,
+    rgba(255, 202, 101, 0.96),
+    rgba(255, 233, 178, 0.8)
   );
 }
 
-.gift-pill.aqua {
+.footer-chip.aqua {
+  color: #082528;
   background: linear-gradient(
-    180deg,
-    rgba(111, 243, 239, 0.98),
-    rgba(37, 98, 121, 0.92)
+    135deg,
+    rgba(102, 227, 219, 0.96),
+    rgba(180, 252, 244, 0.78)
   );
 }
 
-.gift-pill.violet {
+.footer-chip.violet {
   background: linear-gradient(
-    180deg,
-    rgba(206, 155, 255, 0.98),
-    rgba(88, 62, 132, 0.92)
+    135deg,
+    rgba(141, 125, 255, 0.94),
+    rgba(195, 186, 255, 0.72)
   );
 }
 
-.gift-pill-icon {
+.interaction-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.panel-card {
+  padding: 18px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0.03)
+    ),
+    rgba(7, 11, 20, 0.46);
+}
+
+.panel-head strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 22px;
+}
+
+.panel-head p {
+  margin: 8px 0 0;
+  line-height: 1.6;
+}
+
+.rank-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.rank-tab {
+  min-height: 40px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rank-tab.active {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 93, 124, 0.22),
+    rgba(102, 227, 219, 0.12)
+  );
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.rank-list,
+.insight-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.rank-row {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rank-index {
+  width: 24px;
+  text-align: center;
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rank-avatar {
   width: 38px;
   height: 38px;
   border-radius: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.22);
-  font-size: 14px;
   font-weight: 800;
-}
-
-.stage-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-top: 16px;
-  padding: 0 4px;
-}
-
-.footer-copy strong {
-  font-size: 18px;
-}
-
-.footer-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.interaction-panel {
-  position: sticky;
-  top: 20px;
-  min-height: clamp(640px, 78vh, 860px);
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 14px;
-  background:
-    linear-gradient(180deg, rgba(68, 69, 92, 0.96), rgba(43, 44, 63, 0.96)),
-    rgba(50, 51, 68, 0.96);
-}
-
-.audience-board,
-.chat-board,
-.chat-composer {
-  border: 1px solid var(--room-border);
-  border-radius: 20px;
-  background:
-    linear-gradient(180deg, rgba(78, 79, 104, 0.5), rgba(58, 59, 79, 0.72)),
-    var(--room-panel-soft);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.audience-board,
-.chat-board {
-  padding: 18px 16px;
-}
-
-.board-head,
-.chat-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.board-head h3 {
-  margin: 6px 0 0;
-  font-size: 28px;
-}
-
-.board-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 16px;
-  font-size: 18px;
-  line-height: 1;
-}
-
-.rank-tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 16px;
-}
-
-.rank-tab {
-  min-height: 34px;
-  padding: 0 12px;
-  border: 1px solid var(--room-border);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.72);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 700;
-  transition:
-    background 0.18s ease,
-    color 0.18s ease,
-    border-color 0.18s ease;
-}
-
-.rank-tab.active {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.rank-list {
-  display: grid;
-  gap: 12px;
-  margin-top: 18px;
-}
-
-.rank-row {
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.rank-index {
-  width: 18px;
-  color: #ff5d5d;
-  font-size: 24px;
-  font-weight: 800;
-  text-align: center;
-}
-
-.rank-row:nth-child(2) .rank-index {
-  color: #ffb04d;
-}
-
-.rank-row:nth-child(3) .rank-index {
-  color: #67d7ff;
-}
-
-.rank-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  font-weight: 800;
-  color: #1f2131;
-  background: rgba(255, 255, 255, 0.92);
 }
 
 .rank-avatar.rose {
-  background: linear-gradient(135deg, #ffe0e8, #ff8eae);
+  background: rgba(255, 93, 124, 0.18);
+  color: #ffd4dd;
 }
 
 .rank-avatar.amber {
-  background: linear-gradient(135deg, #fff0cd, #ffc86b);
+  background: rgba(255, 202, 101, 0.18);
+  color: #ffeab8;
 }
 
 .rank-avatar.aqua {
-  background: linear-gradient(135deg, #d9fffd, #6ff3ef);
+  background: rgba(102, 227, 219, 0.18);
+  color: #d4fffa;
 }
 
-.rank-copy {
-  min-width: 0;
-}
-
-.rank-copy small,
 .rank-score {
-  color: rgba(255, 255, 255, 0.68);
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.empty-state {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-subtle);
+  text-align: center;
   font-size: 13px;
 }
 
+.insight-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.insight-item strong,
+.insight-item p {
+  display: block;
+}
+
+.insight-item strong {
+  font-size: 14px;
+}
+
+.insight-item p {
+  margin: 6px 0 0;
+  color: var(--text-subtle);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.insight-item > span {
+  font-family: var(--display-font);
+  font-size: 20px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.insight-item.rose {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 93, 124, 0.14),
+    rgba(255, 255, 255, 0.03)
+  );
+}
+
+.insight-item.amber {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 202, 101, 0.14),
+    rgba(255, 255, 255, 0.03)
+  );
+}
+
+.insight-item.aqua {
+  background: linear-gradient(
+    135deg,
+    rgba(102, 227, 219, 0.14),
+    rgba(255, 255, 255, 0.03)
+  );
+}
+
+.insight-item.violet {
+  background: linear-gradient(
+    135deg,
+    rgba(141, 125, 255, 0.14),
+    rgba(255, 255, 255, 0.03)
+  );
+}
+
 .chat-board {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 14px;
-}
-
-.chat-head span {
-  font-size: 16px;
-  font-weight: 800;
-}
-
-.chat-head small {
-  max-width: 168px;
-  text-align: right;
-  line-height: 1.5;
 }
 
 .chat-list {
-  min-height: 0;
-  overflow: auto;
   display: grid;
-  gap: 14px;
+  gap: 12px;
+  margin-top: 16px;
+  max-height: 460px;
+  overflow-y: auto;
   padding-right: 4px;
 }
 
 .chat-item {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 12px;
-  align-items: flex-start;
+  gap: 10px;
+  align-items: start;
 }
 
 .chat-badge {
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 800;
+  min-width: 44px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .chat-badge.gift {
-  background: linear-gradient(135deg, #ffb257, #fe2c55);
+  background: rgba(255, 93, 124, 0.18);
+  color: #ffd7df;
 }
 
 .chat-badge.order {
-  background: linear-gradient(135deg, #25f4ee, #4699ff);
+  background: rgba(255, 202, 101, 0.18);
+  color: #ffe8b0;
 }
 
 .chat-badge.follow {
-  background: linear-gradient(135deg, #7d9eff, #b371ff);
+  background: rgba(102, 227, 219, 0.18);
+  color: #d4fffa;
 }
 
 .chat-badge.notice {
-  background: linear-gradient(135deg, #fe2c55, #ff8a45);
+  background: rgba(141, 125, 255, 0.18);
+  color: #e2dcff;
 }
 
 .chat-bubble {
-  padding: 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  background: rgba(255, 255, 255, 0.06);
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .chat-meta {
   display: flex;
-  align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
-}
-
-.chat-meta span {
-  color: rgba(255, 255, 255, 0.56);
-  font-size: 11px;
+  gap: 12px;
+  align-items: baseline;
 }
 
 .chat-bubble p {
   margin: 8px 0 0;
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 13px;
   line-height: 1.6;
 }
 
 .chat-composer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 10px;
-  padding: 14px;
-}
-
-.composer-field {
-  min-height: 50px;
-  padding: 0 14px;
-  border-radius: 16px;
-  display: flex;
+  gap: 12px;
   align-items: center;
-  color: rgba(255, 255, 255, 0.54);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--room-border);
+  padding: 16px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0.03)
+    ),
+    rgba(7, 11, 20, 0.46);
 }
 
-:deep(.el-input__wrapper) {
-  min-height: 44px;
+.source-input,
+.composer-field {
+  min-width: 0;
+}
+
+.source-input :deep(.el-input__wrapper),
+.composer-field :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: none;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-:deep(.el-input__inner) {
-  color: #fff;
+.source-input :deep(.el-input__inner),
+.composer-field :deep(.el-input__inner),
+.composer-field :deep(.el-input__count) {
+  color: var(--text-main);
 }
 
-:deep(.el-input__inner::placeholder) {
-  color: rgba(255, 255, 255, 0.42);
+.source-input :deep(.el-input__inner::placeholder),
+.composer-field :deep(.el-input__inner::placeholder) {
+  color: var(--text-subtle);
 }
 
-@media (max-width: 1500px) {
-  .douyin-room-layout {
-    grid-template-columns: minmax(0, 1fr) 320px;
-  }
-
-  .scene-arena {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .hero-card {
-    min-height: 260px;
-  }
-}
-
-@media (max-width: 1240px) {
-  .room-command-bar,
-  .douyin-room-layout {
+@media (max-width: 1400px) {
+  .live-room-layout {
     grid-template-columns: 1fr;
   }
 
-  .command-tools {
-    grid-template-columns: 1fr auto auto;
-  }
-
   .interaction-panel {
-    position: static;
-    min-height: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
   }
 
-  .scene-caption {
-    right: 24px;
-  }
-
-  .stage-footer {
-    flex-direction: column;
-    align-items: flex-start;
+  .chat-board,
+  .chat-composer {
+    grid-column: 1 / -1;
   }
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1180px) {
+  .room-switcher,
+  .status-metrics,
+  .cue-grid,
+  .footer-scenes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .command-status,
+  .stage-main,
+  .stage-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 820px) {
   .room-switcher,
   .command-tools,
+  .rank-tabs,
+  .action-grid,
+  .product-meta,
+  .floating-strip,
+  .interaction-panel,
   .chat-composer {
     grid-template-columns: 1fr;
   }
 
-  .stage-footer {
+  .stage-topbar {
+    flex-direction: column;
     align-items: flex-start;
   }
 
-  .scene-topbar {
-    flex-wrap: wrap;
+  .hero-copy h2 {
+    font-size: 32px;
   }
 
-  .scene-rank-badge {
-    margin-left: auto;
+  .status-copy strong,
+  .panel-head strong {
+    font-size: 20px;
   }
 
-  .scene-countdown {
-    top: 124px;
-  }
-
-  .scene-arena {
-    inset: 150px 14px 154px;
-    gap: 14px;
-  }
-
-  .arena-showcase {
-    grid-template-columns: 1fr;
-  }
-
-  .selection-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .scene-caption {
-    left: 24px;
-    right: 24px;
-    bottom: 126px;
-  }
-
-  .floating-camera,
-  .scene-metrics {
-    display: none;
-  }
-}
-
-@media (max-width: 720px) {
-  .room-command-bar,
-  .stage-panel,
-  .interaction-panel {
-    padding: 12px;
-    border-radius: 20px;
-  }
-
-  .stage-screen {
-    min-height: 720px;
-  }
-
-  .scene-countdown {
-    top: 116px;
-  }
-
-  .anchor-summary {
-    width: 100%;
-  }
-
-  .anchor-actions {
-    flex-wrap: wrap;
-  }
-
-  .selection-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .scene-caption p {
-    font-size: 16px;
-  }
-
-  .gift-ribbon {
-    gap: 8px;
-  }
-
-  .gift-pill {
-    min-width: 96px;
-  }
-
-  .footer-actions {
-    width: 100%;
-  }
-
-  .footer-button,
-  .composer-button,
-  .selection-lock {
-    width: 100%;
+  .viewer-stage-body :deep(.player-shell),
+  .viewer-stage-body :deep(.player-stage),
+  .viewer-stage-body :deep(.stream-video),
+  .viewer-stage-body :deep(.stream-placeholder),
+  .viewer-stage-body :deep(.stream-state) {
+    min-height: 300px;
+    height: 300px;
   }
 }
 </style>

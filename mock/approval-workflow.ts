@@ -1,5 +1,7 @@
 import type { MockMethod } from 'vite-plugin-mock'
 
+const useBackend = process.env.VITE_USE_BACKEND_FOR_CORE_APIS === 'true'
+
 type WorkflowStatus = 'pending' | 'rejected' | 'modified' | 'approved'
 type WorkflowAction = 'start' | 'approve' | 'reject' | 'modify' | 'resubmit'
 
@@ -122,208 +124,212 @@ const summaryOf = (list: WorkflowInstance[]) => {
 const findWorkflow = (id: number) =>
   workflowStore.find((item) => item.id === id)
 
-export default [
-  {
-    url: '/api/approval-workflow/instances',
-    method: 'get',
-    response: ({ query }: { query: QueryRecord }) => {
-      const keyword = (query.keyword || '').trim().toLowerCase()
-      const status = (query.status || '').trim() as WorkflowStatus | ''
-      const page = Math.max(1, Number.parseInt(query.page || '1', 10) || 1)
-      const pageSize = Math.max(
-        1,
-        Number.parseInt(query.pageSize || '8', 10) || 8
-      )
-
-      const filtered = workflowStore.filter((item) => {
-        const hitKeyword =
-          !keyword ||
-          [item.code, item.applicant, item.formData.title].some((field) =>
-            field.toLowerCase().includes(keyword)
+export default (useBackend
+  ? []
+  : [
+      {
+        url: '/api/approval-workflow/instances',
+        method: 'get',
+        response: ({ query }: { query: QueryRecord }) => {
+          const keyword = (query.keyword || '').trim().toLowerCase()
+          const status = (query.status || '').trim() as WorkflowStatus | ''
+          const page = Math.max(1, Number.parseInt(query.page || '1', 10) || 1)
+          const pageSize = Math.max(
+            1,
+            Number.parseInt(query.pageSize || '8', 10) || 8
           )
-        const hitStatus = !status || item.status === status
-        return hitKeyword && hitStatus
-      })
 
-      const start = (page - 1) * pageSize
-      const list = filtered.slice(start, start + pageSize).map((item) => ({
-        id: item.id,
-        code: item.code,
-        applicant: item.applicant,
-        title: item.formData.title,
-        type: item.formData.type,
-        amount: item.formData.amount,
-        status: item.status,
-        statusLabel: statusLabelMap[item.status],
-        currentStep: item.currentStep,
-        rejectCount: item.rejectCount,
-        updatedAt: item.updatedAt
-      }))
+          const filtered = workflowStore.filter((item) => {
+            const hitKeyword =
+              !keyword ||
+              [item.code, item.applicant, item.formData.title].some((field) =>
+                field.toLowerCase().includes(keyword)
+              )
+            const hitStatus = !status || item.status === status
+            return hitKeyword && hitStatus
+          })
 
-      return {
-        code: 200,
-        message: 'success',
-        data: {
-          list,
-          total: filtered.length,
-          page,
-          pageSize,
-          summary: summaryOf(filtered)
+          const start = (page - 1) * pageSize
+          const list = filtered.slice(start, start + pageSize).map((item) => ({
+            id: item.id,
+            code: item.code,
+            applicant: item.applicant,
+            title: item.formData.title,
+            type: item.formData.type,
+            amount: item.formData.amount,
+            status: item.status,
+            statusLabel: statusLabelMap[item.status],
+            currentStep: item.currentStep,
+            rejectCount: item.rejectCount,
+            updatedAt: item.updatedAt
+          }))
+
+          return {
+            code: 200,
+            message: 'success',
+            data: {
+              list,
+              total: filtered.length,
+              page,
+              pageSize,
+              summary: summaryOf(filtered)
+            }
+          }
+        }
+      },
+      {
+        url: '/api/approval-workflow/detail/:id',
+        method: 'get',
+        response: ({
+          query,
+          params
+        }: {
+          query?: QueryRecord
+          params?: QueryRecord
+        }) => {
+          const id = Number(params?.id || query?.id)
+          const target = findWorkflow(id)
+          if (!target) {
+            return {
+              code: 404,
+              message: '流程不存在'
+            }
+          }
+          return {
+            code: 200,
+            message: 'success',
+            data: target
+          }
+        }
+      },
+      {
+        url: '/api/approval-workflow/start',
+        method: 'post',
+        response: ({ body }: { body: StartPayload }) => {
+          if (!body?.title || !body?.type || !body?.amount || !body?.reason) {
+            return {
+              code: 422,
+              message: '请填写完整申请信息'
+            }
+          }
+
+          const id = nextWorkflowId++
+          const code = `WF-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(
+            id
+          ).padStart(3, '0')}`
+          const applicant = body.applicant?.trim() || '匿名申请人'
+          const createdAt = now()
+
+          const workflow: WorkflowInstance = {
+            id,
+            code,
+            applicant,
+            status: 'pending',
+            currentStep: '主管审批',
+            rejectCount: 0,
+            formData: {
+              title: body.title.trim(),
+              type: body.type.trim(),
+              amount: Number(body.amount) || 0,
+              reason: body.reason.trim()
+            },
+            records: [createRecord('start', applicant, '发起审批')],
+            createdAt,
+            updatedAt: createdAt
+          }
+
+          workflowStore.unshift(workflow)
+
+          return {
+            code: 200,
+            message: '流程已发起',
+            data: workflow
+          }
+        }
+      },
+      {
+        url: '/api/approval-workflow/action',
+        method: 'post',
+        response: ({ body }: { body: ActionPayload }) => {
+          const id = Number(body?.id)
+          const action = body?.action
+          const operator = body?.operator?.trim() || '系统用户'
+          const comment = body?.comment?.trim() || ''
+
+          if (!id || !action) {
+            return {
+              code: 400,
+              message: '缺少必要参数'
+            }
+          }
+
+          const target = findWorkflow(id)
+          if (!target) {
+            return {
+              code: 404,
+              message: '流程不存在'
+            }
+          }
+
+          if (action === 'approve') {
+            if (target.status !== 'pending') {
+              return { code: 409, message: '当前流程不可审批通过' }
+            }
+            target.status = 'approved'
+            target.currentStep = '审批完成'
+            target.records.push(
+              createRecord('approve', operator, comment || '审批通过')
+            )
+          } else if (action === 'reject') {
+            if (target.status !== 'pending') {
+              return { code: 409, message: '当前流程不可驳回' }
+            }
+            target.status = 'rejected'
+            target.currentStep = '申请人修改'
+            target.rejectCount += 1
+            target.records.push(
+              createRecord('reject', operator, comment || '审批驳回')
+            )
+          } else if (action === 'modify') {
+            if (target.status !== 'rejected' && target.status !== 'modified') {
+              return { code: 409, message: '当前流程不可修改' }
+            }
+            target.status = 'modified'
+            target.currentStep = '申请人修改'
+            target.formData = {
+              ...target.formData,
+              ...(body.patchData || {}),
+              amount:
+                Number(body.patchData?.amount ?? target.formData.amount) || 0
+            }
+            target.records.push(
+              createRecord('modify', operator, comment || '申请人已修改')
+            )
+          } else if (action === 'resubmit') {
+            if (target.status !== 'rejected' && target.status !== 'modified') {
+              return { code: 409, message: '当前流程不可重新提交' }
+            }
+            target.formData = {
+              ...target.formData,
+              ...(body.patchData || {}),
+              amount:
+                Number(body.patchData?.amount ?? target.formData.amount) || 0
+            }
+            target.status = 'pending'
+            target.currentStep = '主管审批'
+            target.records.push(
+              createRecord('resubmit', operator, comment || '修改后重新提交')
+            )
+          } else {
+            return { code: 400, message: '未知操作' }
+          }
+
+          target.updatedAt = now()
+          return {
+            code: 200,
+            message: '操作成功',
+            data: target
+          }
         }
       }
-    }
-  },
-  {
-    url: '/api/approval-workflow/detail/:id',
-    method: 'get',
-    response: ({
-      query,
-      params
-    }: {
-      query?: QueryRecord
-      params?: QueryRecord
-    }) => {
-      const id = Number(params?.id || query?.id)
-      const target = findWorkflow(id)
-      if (!target) {
-        return {
-          code: 404,
-          message: '流程不存在'
-        }
-      }
-      return {
-        code: 200,
-        message: 'success',
-        data: target
-      }
-    }
-  },
-  {
-    url: '/api/approval-workflow/start',
-    method: 'post',
-    response: ({ body }: { body: StartPayload }) => {
-      if (!body?.title || !body?.type || !body?.amount || !body?.reason) {
-        return {
-          code: 422,
-          message: '请填写完整申请信息'
-        }
-      }
-
-      const id = nextWorkflowId++
-      const code = `WF-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(
-        id
-      ).padStart(3, '0')}`
-      const applicant = body.applicant?.trim() || '匿名申请人'
-      const createdAt = now()
-
-      const workflow: WorkflowInstance = {
-        id,
-        code,
-        applicant,
-        status: 'pending',
-        currentStep: '主管审批',
-        rejectCount: 0,
-        formData: {
-          title: body.title.trim(),
-          type: body.type.trim(),
-          amount: Number(body.amount) || 0,
-          reason: body.reason.trim()
-        },
-        records: [createRecord('start', applicant, '发起审批')],
-        createdAt,
-        updatedAt: createdAt
-      }
-
-      workflowStore.unshift(workflow)
-
-      return {
-        code: 200,
-        message: '流程已发起',
-        data: workflow
-      }
-    }
-  },
-  {
-    url: '/api/approval-workflow/action',
-    method: 'post',
-    response: ({ body }: { body: ActionPayload }) => {
-      const id = Number(body?.id)
-      const action = body?.action
-      const operator = body?.operator?.trim() || '系统用户'
-      const comment = body?.comment?.trim() || ''
-
-      if (!id || !action) {
-        return {
-          code: 400,
-          message: '缺少必要参数'
-        }
-      }
-
-      const target = findWorkflow(id)
-      if (!target) {
-        return {
-          code: 404,
-          message: '流程不存在'
-        }
-      }
-
-      if (action === 'approve') {
-        if (target.status !== 'pending') {
-          return { code: 409, message: '当前流程不可审批通过' }
-        }
-        target.status = 'approved'
-        target.currentStep = '审批完成'
-        target.records.push(
-          createRecord('approve', operator, comment || '审批通过')
-        )
-      } else if (action === 'reject') {
-        if (target.status !== 'pending') {
-          return { code: 409, message: '当前流程不可驳回' }
-        }
-        target.status = 'rejected'
-        target.currentStep = '申请人修改'
-        target.rejectCount += 1
-        target.records.push(
-          createRecord('reject', operator, comment || '审批驳回')
-        )
-      } else if (action === 'modify') {
-        if (target.status !== 'rejected' && target.status !== 'modified') {
-          return { code: 409, message: '当前流程不可修改' }
-        }
-        target.status = 'modified'
-        target.currentStep = '申请人修改'
-        target.formData = {
-          ...target.formData,
-          ...(body.patchData || {}),
-          amount: Number(body.patchData?.amount ?? target.formData.amount) || 0
-        }
-        target.records.push(
-          createRecord('modify', operator, comment || '申请人已修改')
-        )
-      } else if (action === 'resubmit') {
-        if (target.status !== 'rejected' && target.status !== 'modified') {
-          return { code: 409, message: '当前流程不可重新提交' }
-        }
-        target.formData = {
-          ...target.formData,
-          ...(body.patchData || {}),
-          amount: Number(body.patchData?.amount ?? target.formData.amount) || 0
-        }
-        target.status = 'pending'
-        target.currentStep = '主管审批'
-        target.records.push(
-          createRecord('resubmit', operator, comment || '修改后重新提交')
-        )
-      } else {
-        return { code: 400, message: '未知操作' }
-      }
-
-      target.updatedAt = now()
-      return {
-        code: 200,
-        message: '操作成功',
-        data: target
-      }
-    }
-  }
-] as MockMethod[]
+    ]) as MockMethod[]

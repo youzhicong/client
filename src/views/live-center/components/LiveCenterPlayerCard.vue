@@ -17,7 +17,9 @@
         </div>
         <div class="player-overlay-bottom">
           <span>主播：{{ room.host }}</span>
-          <el-button type="primary" plain>进入房间</el-button>
+          <el-button type="primary" plain @click="emit('enter-room')">
+            进入房间
+          </el-button>
         </div>
       </div>
     </div>
@@ -29,6 +31,10 @@ import type { StreamRoom } from '../types'
 
 defineProps<{
   room: StreamRoom
+}>()
+
+const emit = defineEmits<{
+  'enter-room': []
 }>()
 </script>
 

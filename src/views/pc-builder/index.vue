@@ -80,7 +80,7 @@
 
             <el-select
               :model-value="selectedMap[category.key]"
-              @change="(val) => updateSelection(category.key, String(val))"
+              @change="handleSelectionChange(category.key, $event)"
               filterable
               class="option-select"
             >
@@ -306,6 +306,13 @@ const updateSelection = (categoryKey: string, optionId: string) => {
     ...selectedMap.value,
     [categoryKey]: optionId
   }
+}
+
+const handleSelectionChange = (
+  categoryKey: string,
+  value: string | number | boolean
+) => {
+  updateSelection(categoryKey, String(value))
 }
 
 const applyCheapestPreset = () => {

@@ -134,7 +134,7 @@ const shortcuts = [
     icon: '🤖',
     title: 'AI 设置',
     desc: '配置模型、API Key 和连接测试。',
-    path: '/ai-workflow/settings'
+    path: '/ai/settings'
   }
 ]
 
@@ -172,7 +172,7 @@ const faqs: FaqItem[] = [
     answer:
       '进入 AI 工作流设置页，填写 Base URL、API Key 和模型信息后保存即可。',
     category: 'AI',
-    path: '/ai-workflow/settings'
+    path: '/ai/settings'
   }
 ]
 

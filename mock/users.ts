@@ -1,5 +1,7 @@
 import type { MockMethod, RespThisType } from 'vite-plugin-mock'
 
+const useBackend = process.env.VITE_USE_BACKEND_FOR_CORE_APIS === 'true'
+
 type UserStatus = 'active' | 'invited' | 'disabled'
 
 interface UserItem {
@@ -251,176 +253,183 @@ const getSummary = (list: UserItem[]) => {
 const getRoleOptions = () =>
   Array.from(new Set(userStore.map((item) => item.role)))
 
-export default [
-  {
-    url: '/api/users/list',
-    method: 'get',
-    response: ({ query }: { query: QueryRecord }) => {
-      const {
-        keyword = '',
-        role = '',
-        status = '',
-        page = '1',
-        pageSize = '8'
-      } = query
-      const keywordValue = keyword.trim().toLowerCase()
+export default (useBackend
+  ? []
+  : [
+      {
+        url: '/api/users/list',
+        method: 'get',
+        response: ({ query }: { query: QueryRecord }) => {
+          const {
+            keyword = '',
+            role = '',
+            status = '',
+            page = '1',
+            pageSize = '8'
+          } = query
+          const keywordValue = keyword.trim().toLowerCase()
 
-      const filtered = userStore.filter((item) => {
-        const hitKeyword =
-          !keywordValue ||
-          [item.name, item.email, item.department].some((field) =>
-            field.toLowerCase().includes(keywordValue)
+          const filtered = userStore.filter((item) => {
+            const hitKeyword =
+              !keywordValue ||
+              [item.name, item.email, item.department].some((field) =>
+                field.toLowerCase().includes(keywordValue)
+              )
+            const hitRole = !role || item.role === role
+            const hitStatus = !status || item.status === status
+            return hitKeyword && hitRole && hitStatus
+          })
+
+          const currentPage = Math.max(1, Number.parseInt(page, 10) || 1)
+          const size = Math.max(1, Number.parseInt(pageSize, 10) || 8)
+          const start = (currentPage - 1) * size
+          const end = start + size
+
+          return {
+            code: 200,
+            message: 'success',
+            data: {
+              list: filtered.slice(start, end),
+              total: filtered.length,
+              page: currentPage,
+              pageSize: size,
+              roleOptions: getRoleOptions(),
+              summary: getSummary(filtered)
+            }
+          }
+        }
+      },
+      {
+        url: '/api/users/add',
+        method: 'post',
+        response: ({ body }: { body: Partial<UserItem> }) => {
+          if (!body?.name || !body?.email || !body?.department || !body?.role) {
+            return { code: 422, message: '请填写完整用户信息' }
+          }
+
+          if (userStore.some((item) => item.email === body.email)) {
+            return { code: 409, message: '邮箱已存在' }
+          }
+
+          const id = nextUserId++
+          const user: UserItem = {
+            id,
+            code: createUserCode(id),
+            name: body.name.trim(),
+            email: body.email.trim(),
+            department: body.department.trim(),
+            location: (body.location || '未设置').trim(),
+            role: body.role.trim(),
+            status: (body.status || 'invited') as UserStatus,
+            lastActive: '刚刚',
+            joinedAt: today(),
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=user-${id}`,
+            online: false
+          }
+
+          userStore.unshift(user)
+          return { code: 200, message: '添加成功', data: user }
+        }
+      },
+      {
+        url: '/api/users/update',
+        method: 'put',
+        response: ({ body }: { body: Partial<UserItem> & { id?: number } }) => {
+          if (!body?.id) return { code: 400, message: '缺少用户 ID' }
+
+          const index = userStore.findIndex(
+            (item) => item.id === Number(body.id)
           )
-        const hitRole = !role || item.role === role
-        const hitStatus = !status || item.status === status
-        return hitKeyword && hitRole && hitStatus
-      })
+          if (index < 0) return { code: 404, message: '用户不存在' }
 
-      const currentPage = Math.max(1, Number.parseInt(page, 10) || 1)
-      const size = Math.max(1, Number.parseInt(pageSize, 10) || 8)
-      const start = (currentPage - 1) * size
-      const end = start + size
+          if (
+            body.email &&
+            userStore.some(
+              (item) => item.id !== body.id && item.email === body.email
+            )
+          ) {
+            return { code: 409, message: '邮箱已存在' }
+          }
 
-      return {
-        code: 200,
-        message: 'success',
-        data: {
-          list: filtered.slice(start, end),
-          total: filtered.length,
-          page: currentPage,
-          pageSize: size,
-          roleOptions: getRoleOptions(),
-          summary: getSummary(filtered)
+          userStore[index] = {
+            ...userStore[index],
+            ...body,
+            id: Number(body.id)
+          }
+
+          return { code: 200, message: '修改成功', data: userStore[index] }
+        }
+      },
+      {
+        url: '/api/users/delete/:id',
+        method: 'delete',
+        response: ({ query }: { query: QueryRecord }) => {
+          const id = Number(query.id)
+          const index = userStore.findIndex((item) => item.id === id)
+          if (index < 0) return { code: 404, message: '用户不存在' }
+          userStore.splice(index, 1)
+          return { code: 200, message: '删除成功', data: null }
+        }
+      },
+      {
+        url: '/api/users/visit/register',
+        method: 'post',
+        response: function (this: RespThisType, { body, headers }) {
+          const ip = getIpFromContext(this, headers)
+          const userAgent = String(
+            this.req.headers['user-agent'] || headers['user-agent'] || 'unknown'
+          )
+          const payload = (body || {}) as {
+            visitorName?: string
+            path?: string
+          }
+          const visitorName = payload.visitorName?.trim() || '匿名访问'
+          const path = payload.path?.trim() || '/'
+
+          const now = new Date().toISOString()
+          const log: VisitLogItem = {
+            id: nextVisitId++,
+            visitorName,
+            ip,
+            userAgent,
+            path,
+            visitedAt: now
+          }
+          visitLogs.unshift(log)
+          visitLogs = visitLogs.slice(0, 200)
+
+          const user = userStore.find((item) => item.name === visitorName)
+          if (user) {
+            user.online = true
+            user.lastActive = '刚刚'
+          }
+
+          return {
+            code: 200,
+            message: '记录成功',
+            data: log
+          }
+        }
+      },
+      {
+        url: '/api/users/visit/logs',
+        method: 'get',
+        response: ({ query }: { query: QueryRecord }) => {
+          const page = Math.max(1, Number.parseInt(query.page || '1', 10) || 1)
+          const pageSize = Math.max(
+            1,
+            Number.parseInt(query.pageSize || '20', 10) || 20
+          )
+          const start = (page - 1) * pageSize
+          const end = start + pageSize
+          return {
+            code: 200,
+            message: 'success',
+            data: {
+              list: visitLogs.slice(start, end),
+              total: visitLogs.length
+            }
+          }
         }
       }
-    }
-  },
-  {
-    url: '/api/users/add',
-    method: 'post',
-    response: ({ body }: { body: Partial<UserItem> }) => {
-      if (!body?.name || !body?.email || !body?.department || !body?.role) {
-        return { code: 422, message: '请填写完整用户信息' }
-      }
-
-      if (userStore.some((item) => item.email === body.email)) {
-        return { code: 409, message: '邮箱已存在' }
-      }
-
-      const id = nextUserId++
-      const user: UserItem = {
-        id,
-        code: createUserCode(id),
-        name: body.name.trim(),
-        email: body.email.trim(),
-        department: body.department.trim(),
-        location: (body.location || '未设置').trim(),
-        role: body.role.trim(),
-        status: (body.status || 'invited') as UserStatus,
-        lastActive: '刚刚',
-        joinedAt: today(),
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=user-${id}`,
-        online: false
-      }
-
-      userStore.unshift(user)
-      return { code: 200, message: '添加成功', data: user }
-    }
-  },
-  {
-    url: '/api/users/update',
-    method: 'put',
-    response: ({ body }: { body: Partial<UserItem> & { id?: number } }) => {
-      if (!body?.id) return { code: 400, message: '缺少用户 ID' }
-
-      const index = userStore.findIndex((item) => item.id === Number(body.id))
-      if (index < 0) return { code: 404, message: '用户不存在' }
-
-      if (
-        body.email &&
-        userStore.some(
-          (item) => item.id !== body.id && item.email === body.email
-        )
-      ) {
-        return { code: 409, message: '邮箱已存在' }
-      }
-
-      userStore[index] = {
-        ...userStore[index],
-        ...body,
-        id: Number(body.id)
-      }
-
-      return { code: 200, message: '修改成功', data: userStore[index] }
-    }
-  },
-  {
-    url: '/api/users/delete/:id',
-    method: 'delete',
-    response: ({ query }: { query: QueryRecord }) => {
-      const id = Number(query.id)
-      const index = userStore.findIndex((item) => item.id === id)
-      if (index < 0) return { code: 404, message: '用户不存在' }
-      userStore.splice(index, 1)
-      return { code: 200, message: '删除成功', data: null }
-    }
-  },
-  {
-    url: '/api/users/visit/register',
-    method: 'post',
-    response: function (this: RespThisType, { body, headers }) {
-      const ip = getIpFromContext(this, headers)
-      const userAgent = String(
-        this.req.headers['user-agent'] || headers['user-agent'] || 'unknown'
-      )
-      const payload = (body || {}) as { visitorName?: string; path?: string }
-      const visitorName = payload.visitorName?.trim() || '匿名访问'
-      const path = payload.path?.trim() || '/'
-
-      const now = new Date().toISOString()
-      const log: VisitLogItem = {
-        id: nextVisitId++,
-        visitorName,
-        ip,
-        userAgent,
-        path,
-        visitedAt: now
-      }
-      visitLogs.unshift(log)
-      visitLogs = visitLogs.slice(0, 200)
-
-      const user = userStore.find((item) => item.name === visitorName)
-      if (user) {
-        user.online = true
-        user.lastActive = '刚刚'
-      }
-
-      return {
-        code: 200,
-        message: '记录成功',
-        data: log
-      }
-    }
-  },
-  {
-    url: '/api/users/visit/logs',
-    method: 'get',
-    response: ({ query }: { query: QueryRecord }) => {
-      const page = Math.max(1, Number.parseInt(query.page || '1', 10) || 1)
-      const pageSize = Math.max(
-        1,
-        Number.parseInt(query.pageSize || '20', 10) || 20
-      )
-      const start = (page - 1) * pageSize
-      const end = start + pageSize
-      return {
-        code: 200,
-        message: 'success',
-        data: {
-          list: visitLogs.slice(start, end),
-          total: visitLogs.length
-        }
-      }
-    }
-  }
-] as MockMethod[]
+    ]) as MockMethod[]

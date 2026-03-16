@@ -357,18 +357,41 @@ const menuSections: MenuSection[] = [
     ]
   },
   {
-    key: 'ai-visual',
-    title: 'AI 与可视化',
+    key: 'ai-center',
+    title: 'AI 模块',
     icon: MagicStick,
     items: [
       {
-        index: '/ai-workflow',
+        index: '/ai/workflow',
         label: 'AI工作流',
         desc: '产品创意生成',
         icon: MagicStick,
         theme: 'theme-ai',
-        matchPaths: ['/ai-workflow']
+        matchPaths: ['/ai/workflow']
       },
+      {
+        index: '/ai/chat',
+        label: '聊天模块',
+        desc: '模型对话测试',
+        icon: ChatDotRound,
+        theme: 'theme-ai-chat',
+        matchPaths: ['/ai/chat']
+      },
+      {
+        index: '/ai/settings',
+        label: 'AI设置',
+        desc: '模型与接口配置',
+        icon: Setting,
+        theme: 'theme-ai-settings',
+        matchPaths: ['/ai/settings']
+      }
+    ]
+  },
+  {
+    key: 'visual-center',
+    title: '可视化模块',
+    icon: View,
+    items: [
       {
         index: '/vending-monitor',
         label: '3D贩卖机',
@@ -416,7 +439,8 @@ const openedSections = ref<string[]>([
   'common',
   'upload-doc',
   'games',
-  'live-center'
+  'live-center',
+  'ai-center'
 ])
 
 const isSectionOpen = (key: string) => {
@@ -742,6 +766,14 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   &.theme-ai {
     background: linear-gradient(135deg, #f5f3ff 0%, #fdf2f8 100%);
     color: #8b5cf6;
+  }
+  &.theme-ai-chat {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    color: #ea580c;
+  }
+  &.theme-ai-settings {
+    background: linear-gradient(135deg, #ecfeff 0%, #e0f2fe 100%);
+    color: #0f766e;
   }
   &.theme-monitor {
     background: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 100%);
