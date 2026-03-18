@@ -1,8 +1,4 @@
-export interface ApiResult<T> {
-  code: number
-  message: string
-  data: T
-}
+import { request } from '@/utils/request'
 
 export type UserStatus = 'active' | 'invited' | 'disabled'
 
@@ -79,65 +75,35 @@ export interface RegisterVisitPayload {
   path?: string
 }
 
-const requestJson = async <T>(url: string, init?: RequestInit) => {
-  const response = await fetch(url, init)
-  return (await response.json()) as ApiResult<T>
-}
-
-const buildQuery = (params: Record<string, string | number | undefined>) => {
-  const search = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value === undefined || value === '') return
-    search.append(key, String(value))
-  })
-  return search.toString()
-}
-
 export const getUserList = (query: UserListQuery = {}) => {
-  const search = buildQuery({
+  return request<UserListResult>('/users/list', 'GET', {
     keyword: query.keyword?.trim(),
     role: query.role,
     status: query.status || undefined,
     page: query.page ?? 1,
     pageSize: query.pageSize ?? 8
   })
-  return requestJson<UserListResult>(`/api/users/list?${search}`)
 }
 
 export const createUser = (payload: UserUpsertPayload) => {
-  return requestJson<UserItem>('/api/users/add', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+  return request<UserItem>('/users/add', 'POST', payload)
 }
 
 export const updateUser = (payload: UserUpsertPayload & { id: number }) => {
-  return requestJson<UserItem>('/api/users/update', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+  return request<UserItem>('/users/update', 'PUT', payload)
 }
 
 export const deleteUserById = (id: number) => {
-  return requestJson<null>(`/api/users/delete/${id}`, {
-    method: 'DELETE'
-  })
+  return request<null>(`/users/delete/${id}`, 'DELETE')
 }
 
 export const registerVisit = (payload: RegisterVisitPayload) => {
-  return requestJson<VisitLogItem>('/api/users/visit/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+  return request<VisitLogItem>('/users/visit/register', 'POST', payload)
 }
 
 export const getVisitLogs = (query: VisitLogQuery = {}) => {
-  const search = buildQuery({
+  return request<VisitLogResult>('/users/visit/logs', 'GET', {
     page: query.page ?? 1,
     pageSize: query.pageSize ?? 20
   })
-  return requestJson<VisitLogResult>(`/api/users/visit/logs?${search}`)
 }

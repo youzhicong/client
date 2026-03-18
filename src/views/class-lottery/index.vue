@@ -6,7 +6,7 @@
           <p class="hero-kicker">CLASSROOM RANDOM CALL</p>
           <h1>上课抽奖提问</h1>
           <p>
-            先导入学生名单（会通过 mock
+            先导入学生名单（会通过后端
             接口保存），老师点击抽奖即可随机点名提问，支持本轮不重复。
           </p>
         </div>
@@ -373,7 +373,7 @@ const syncStudentsFromServer = async () => {
   loadingStudents.value = true
   try {
     const response = await getClassStudents()
-    if (response.code !== 200) {
+    if (response.code !== 10000) {
       throw new Error(response.message || '获取学生名单失败')
     }
 
@@ -405,7 +405,7 @@ const saveNameList = async (names: string[], successText?: string) => {
   savingStudents.value = true
   try {
     const response = await saveClassStudents(normalizeList(names))
-    if (response.code !== 200) {
+    if (response.code !== 10000) {
       throw new Error(response.message || '保存学生名单失败')
     }
 

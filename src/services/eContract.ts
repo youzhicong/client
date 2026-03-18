@@ -1,3 +1,5 @@
+import { request } from '@/utils/request'
+
 export type ContractStatus =
   | 'draft'
   | 'pending_a'
@@ -67,12 +69,6 @@ export interface ContractSummary {
   completed: number
 }
 
-interface ApiResult<T> {
-  code: number
-  message: string
-  data: T
-}
-
 export interface ContractListResult {
   list: ContractListItem[]
   total: number
@@ -108,70 +104,35 @@ export interface ContractSignPayload extends ContractActionPayload {
   signatureData: string
 }
 
-const requestJson = async <T>(url: string, init?: RequestInit) => {
-  const response = await fetch(url, init)
-  return (await response.json()) as ApiResult<T>
-}
-
-const buildQuery = (params: Record<string, string | number | undefined>) => {
-  const query = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value === undefined || value === '') return
-    query.append(key, String(value))
-  })
-  return query.toString()
-}
-
 export const getContractList = (query: ContractListQuery = {}) => {
-  const search = buildQuery({
+  return request<ContractListResult>('/e-contract/list', 'GET', {
     keyword: query.keyword?.trim(),
     status: query.status || undefined,
     page: query.page ?? 1,
     pageSize: query.pageSize ?? 8
   })
-  return requestJson<ContractListResult>(`/api/e-contract/list?${search}`)
 }
 
 export const getContractDetail = (id: number) => {
-  return requestJson<ContractItem>(`/api/e-contract/detail?id=${id}`)
+  return request<ContractItem>('/e-contract/detail', 'GET', { id })
 }
 
 export const createContract = (payload: CreateContractPayload) => {
-  return requestJson<ContractItem>('/api/e-contract/create', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+  return request<ContractItem>('/e-contract/create', 'POST', payload)
 }
 
 export const updateContract = (payload: UpdateContractPayload) => {
-  return requestJson<ContractItem>('/api/e-contract/update', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+  return request<ContractItem>('/e-contract/update', 'POST', payload)
 }
 
 export const submitContract = (payload: ContractActionPayload) => {
-  return requestJson<ContractItem>('/api/e-contract/submit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+  return request<ContractItem>('/e-contract/submit', 'POST', payload)
 }
 
 export const rejectContract = (payload: ContractActionPayload) => {
-  return requestJson<ContractItem>('/api/e-contract/reject', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+  return request<ContractItem>('/e-contract/reject', 'POST', payload)
 }
 
 export const signContract = (payload: ContractSignPayload) => {
-  return requestJson<ContractItem>('/api/e-contract/sign', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+  return request<ContractItem>('/e-contract/sign', 'POST', payload)
 }

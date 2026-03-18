@@ -164,7 +164,7 @@ const fetchList = async () => {
       page: pagination.page,
       pageSize: pagination.pageSize
     })
-    if (res.code !== 200) {
+    if (res.code !== 10000) {
       ElMessage.error(res.message || '获取公告列表失败')
       return
     }
@@ -213,7 +213,7 @@ const goDetail = (id: number) => {
 const handlePublish = async (id: number) => {
   try {
     const res = await publishAnnouncement(id)
-    if (res.code !== 200) {
+    if (res.code !== 10000) {
       ElMessage.error(res.message || '发布失败')
       return
     }
@@ -239,7 +239,7 @@ const handleDelete = async (id: number) => {
 
   try {
     const res = await deleteAnnouncement(id)
-    if (res.code !== 200) {
+    if (res.code !== 10000) {
       ElMessage.error(res.message || '删除失败')
       return
     }

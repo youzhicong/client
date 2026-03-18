@@ -97,12 +97,31 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import VendingMachine3D from './components/VendingMachine3D.vue'
 import MonitorPanel from './components/MonitorPanel.vue'
-import { mockMonitorData, updateMockData } from './mockData'
-import type { MonitorData } from './types'
+import { getVendingMonitor, type VendingMonitorData as MonitorData } from '@/services/vending'
 
-const monitorData = ref<MonitorData>({ ...mockMonitorData })
+const route = useRoute()
+const monitorData = ref<MonitorData>({
+  machine: {
+    id: '',
+    name: '',
+    location: '',
+    status: 'offline',
+    temperature: 0,
+    uptime: 0,
+    lastMaintenance: ''
+  },
+  products: [],
+  sales: {
+    todaySales: 0,
+    todayRevenue: 0,
+    weekSales: [],
+    topProducts: []
+  },
+  alerts: []
+})
 const refreshing = ref(false)
 const lastUpdated = ref(new Date())
 let updateInterval: ReturnType<typeof setInterval>
@@ -157,23 +176,27 @@ const lastUpdatedText = computed(() =>
 
 const formatCurrency = (value: number) => `￥${value.toLocaleString('zh-CN')}`
 
-const applyDataUpdate = () => {
-  monitorData.value = updateMockData(monitorData.value)
+const fetchMonitorData = async () => {
+  const machineId =
+    typeof route.query.id === 'string' ? route.query.id.trim() : ''
+  const response = await getVendingMonitor(machineId || undefined)
+  if (response.code !== 10000) return
+  monitorData.value = response.data
   lastUpdated.value = new Date()
 }
 
 const refreshData = () => {
   refreshing.value = true
-  window.setTimeout(() => {
-    applyDataUpdate()
+  void fetchMonitorData().finally(() => {
     refreshing.value = false
-  }, 380)
+  })
 }
 
 onMounted(() => {
+  void fetchMonitorData()
   updateInterval = setInterval(() => {
-    applyDataUpdate()
-  }, 5000)
+    void fetchMonitorData()
+  }, 30000)
 })
 
 onUnmounted(() => {

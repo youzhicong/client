@@ -12,7 +12,7 @@ import path from 'path'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const useMock = env.VITE_USE_MOCK !== 'false'
+  const useMock = env.VITE_USE_MOCK === 'true'
   const apiTarget = env.VITE_API_TARGET || 'http://localhost:8080'
   process.env.VITE_USE_BACKEND_FOR_CORE_APIS =
     env.VITE_USE_BACKEND_FOR_CORE_APIS || ''

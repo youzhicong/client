@@ -654,7 +654,7 @@ const uploadSingleChunk = async (task: LocalTask, chunkIndex: number) => {
         controller.signal
       )
 
-      if (result.code !== 200) {
+      if (result.code !== 10000) {
         throw new Error(result.message || '分片上传失败')
       }
 
@@ -726,7 +726,7 @@ const startTask = async (task: LocalTask) => {
       totalChunks: task.totalChunks
     })
 
-    if (checkResult.code !== 200) {
+    if (checkResult.code !== 10000) {
       throw new Error(checkResult.message || '上传校验失败')
     }
 
@@ -767,7 +767,7 @@ const startTask = async (task: LocalTask) => {
       totalChunks: task.totalChunks
     })
 
-    if (mergeResult.code !== 200) {
+    if (mergeResult.code !== 10000) {
       throw new Error(mergeResult.message || '分片合并失败')
     }
 
@@ -848,7 +848,7 @@ const refreshServerTasks = async () => {
   serverLoading.value = true
   try {
     const result = await getUploadTasks(serverKeyword.value)
-    if (result.code === 200) {
+    if (result.code === 10000) {
       serverTasks.value = result.data.list
       return
     }
@@ -868,7 +868,7 @@ const removeServerTask = (fileHash: string) => {
   })
     .then(async () => {
       const result = await removeUploadTask(fileHash)
-      if (result.code === 200) {
+      if (result.code === 10000) {
         ElMessage.success('删除成功')
         await refreshServerTasks()
       } else {

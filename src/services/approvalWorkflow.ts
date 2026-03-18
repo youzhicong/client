@@ -1,3 +1,5 @@
+import { request } from '@/utils/request'
+
 export type WorkflowStatus = 'pending' | 'rejected' | 'modified' | 'approved'
 export type WorkflowAction =
   | 'start'
@@ -64,12 +66,6 @@ export interface WorkflowListResult {
   summary: WorkflowSummary
 }
 
-interface ApiResult<T> {
-  code: number
-  message: string
-  data: T
-}
-
 export interface WorkflowListQuery {
   keyword?: string
   status?: WorkflowStatus | ''
@@ -89,48 +85,23 @@ export interface WorkflowActionPayload {
   patchData?: Partial<WorkflowFormData>
 }
 
-const requestJson = async <T>(url: string, init?: RequestInit) => {
-  const response = await fetch(url, init)
-  return (await response.json()) as ApiResult<T>
-}
-
-const buildQuery = (params: Record<string, string | number | undefined>) => {
-  const query = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value === undefined || value === '') return
-    query.set(key, String(value))
-  })
-  return query.toString()
-}
-
 export const getWorkflowList = (query: WorkflowListQuery = {}) => {
-  const queryText = buildQuery({
+  return request<WorkflowListResult>('/approval-workflow/instances', 'GET', {
     keyword: query.keyword?.trim(),
     status: query.status || undefined,
     page: query.page ?? 1,
     pageSize: query.pageSize ?? 8
   })
-  return requestJson<WorkflowListResult>(
-    `/api/approval-workflow/instances?${queryText}`
-  )
 }
 
 export const getWorkflowDetail = (id: number) => {
-  return requestJson<WorkflowInstance>(`/api/approval-workflow/detail/${id}`)
+  return request<WorkflowInstance>(`/approval-workflow/detail/${id}`, 'GET')
 }
 
 export const startWorkflow = (payload: StartWorkflowPayload) => {
-  return requestJson<WorkflowInstance>('/api/approval-workflow/start', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+  return request<WorkflowInstance>('/approval-workflow/start', 'POST', payload)
 }
 
 export const runWorkflowAction = (payload: WorkflowActionPayload) => {
-  return requestJson<WorkflowInstance>('/api/approval-workflow/action', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+  return request<WorkflowInstance>('/approval-workflow/action', 'POST', payload)
 }

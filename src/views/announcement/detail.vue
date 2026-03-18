@@ -87,7 +87,7 @@ const fetchDetail = async () => {
   loading.value = true
   try {
     const res = await getAnnouncementDetail(id)
-    if (res.code !== 200) {
+    if (res.code !== 10000) {
       ElMessage.error(res.message || '获取详情失败')
       return
     }

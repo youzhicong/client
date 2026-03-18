@@ -9,20 +9,15 @@
         <span class="hero-kicker">DIGITAL OPS</span>
         <h1 class="hero-title">数字化运营驾驶舱</h1>
         <p class="hero-desc">
-          聚合访问、转化、区域与服务稳定性，帮助你在一个页面完成全局判断。
+          聚合访问、转化、区域和服务稳定性，帮助你在一个页面完成全局判断。
         </p>
       </div>
 
       <div class="hero-right">
-        <div class="hero-stat">
-          <span class="stat-label">今日访问</span>
-          <strong class="stat-value">28,640</strong>
-          <span class="stat-delta up">+8.4%</span>
-        </div>
-        <div class="hero-stat">
-          <span class="stat-label">平均转化率</span>
-          <strong class="stat-value">4.7%</strong>
-          <span class="stat-delta up">+0.6%</span>
+        <div v-for="item in heroStats" :key="item.label" class="hero-stat">
+          <span class="stat-label">{{ item.label }}</span>
+          <strong class="stat-value">{{ item.value }}</strong>
+          <span class="stat-delta" :class="item.deltaTone">{{ item.delta }}</span>
         </div>
       </div>
     </div>
@@ -44,7 +39,7 @@
     </div>
 
     <div class="charts-grid">
-      <div class="panel chart-panel trend-panel">
+      <div class="panel chart-panel">
         <div class="card-header">
           <h3>近七日访问趋势</h3>
           <span class="card-subtitle">UV / PV 双轴对比</span>
@@ -52,7 +47,7 @@
         <div ref="lineChartRef" class="chart-box"></div>
       </div>
 
-      <div class="panel chart-panel source-panel">
+      <div class="panel chart-panel">
         <div class="card-header">
           <h3>流量来源结构</h3>
           <span class="card-subtitle">渠道贡献占比</span>
@@ -60,11 +55,7 @@
         <div class="source-body">
           <div ref="pieChartRef" class="chart-box pie-box"></div>
           <div class="source-list">
-            <div
-              v-for="item in channelData"
-              :key="item.name"
-              class="source-item"
-            >
+            <div v-for="item in channelData" :key="item.name" class="source-item">
               <span class="dot" :style="{ background: item.color }"></span>
               <span class="name">{{ item.name }}</span>
               <span class="value">{{ item.value }}%</span>
@@ -73,7 +64,7 @@
         </div>
       </div>
 
-      <div class="panel chart-panel region-panel">
+      <div class="panel chart-panel">
         <div class="card-header">
           <h3>区域活跃分布</h3>
           <span class="card-subtitle">Top 5 城市</span>
@@ -81,7 +72,7 @@
         <div ref="barChartRef" class="chart-box"></div>
       </div>
 
-      <div class="panel chart-panel health-panel">
+      <div class="panel chart-panel">
         <div class="card-header">
           <h3>业务健康度</h3>
           <span class="card-subtitle">关键指标监测</span>
@@ -119,127 +110,73 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import * as echarts from 'echarts'
-
-type KpiCard = {
-  label: string
-  value: string
-  trend: string
-  trendTone: 'up' | 'down'
-  tag: string
-  tone: 'teal' | 'orange' | 'navy' | 'green'
-}
-
-type HealthMetric = {
-  label: string
-  value: string
-  progress: number
-  trend: string
-  trendTone: 'up' | 'down'
-  color: string
-}
-
-type ChannelItem = {
-  name: string
-  value: number
-  color: string
-}
+import {
+  getHomeDashboard,
+  type HomeChannelItem,
+  type HomeHealthMetric,
+  type HomeHeroStat,
+  type HomeKpiCard,
+  type HomeRegionItem
+} from '@/services/homeDashboard'
 
 const lineChartRef = ref<HTMLDivElement | null>(null)
 const pieChartRef = ref<HTMLDivElement | null>(null)
 const barChartRef = ref<HTMLDivElement | null>(null)
 
+const heroStats = ref<HomeHeroStat[]>([])
+const weekDays = ref<string[]>([])
+const uvData = ref<number[]>([])
+const pvData = ref<number[]>([])
+const channelData = ref<HomeChannelItem[]>([])
+const regionData = ref<HomeRegionItem[]>([])
+const kpiCards = ref<HomeKpiCard[]>([])
+const healthMetrics = ref<HomeHealthMetric[]>([])
+
 let lineChart: echarts.ECharts | null = null
 let pieChart: echarts.ECharts | null = null
 let barChart: echarts.ECharts | null = null
 
-const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-const uvData = [8200, 9320, 9010, 10420, 11920, 12800, 13100]
-const pvData = [15200, 16800, 16000, 17600, 19800, 20600, 21400]
+const renderCharts = () => {
+  lineChart?.setOption({
+    xAxis: { data: weekDays.value },
+    series: [
+      { name: 'UV', data: uvData.value },
+      { name: 'PV', data: pvData.value }
+    ]
+  })
 
-const channelData: ChannelItem[] = [
-  { name: '自然搜索', value: 42, color: '#0f9d92' },
-  { name: '广告投放', value: 24, color: '#ef7f38' },
-  { name: '社媒引流', value: 18, color: '#2f7de1' },
-  { name: '私域复访', value: 16, color: '#22c55e' }
-]
+  pieChart?.setOption({
+    series: [
+      {
+        data: channelData.value.map((item) => ({
+          value: item.value,
+          name: item.name,
+          itemStyle: { color: item.color }
+        }))
+      }
+    ]
+  })
 
-const regionData = [
-  { name: '上海', value: 1820 },
-  { name: '北京', value: 1760 },
-  { name: '深圳', value: 1580 },
-  { name: '杭州', value: 1320 },
-  { name: '成都', value: 980 }
-]
+  barChart?.setOption({
+    yAxis: { data: regionData.value.map((item) => item.name) },
+    series: [{ data: regionData.value.map((item) => item.value) }]
+  })
+}
 
-const kpiCards: KpiCard[] = [
-  {
-    label: '新增用户',
-    value: '3,286',
-    trend: '+12.4% 较昨日',
-    trendTone: 'up',
-    tag: 'Acq',
-    tone: 'teal'
-  },
-  {
-    label: '付费订单',
-    value: '1,092',
-    trend: '+5.8% 较昨日',
-    trendTone: 'up',
-    tag: 'Pay',
-    tone: 'orange'
-  },
-  {
-    label: '系统可用性',
-    value: '99.93%',
-    trend: '-0.02% 较昨日',
-    trendTone: 'down',
-    tag: 'SLA',
-    tone: 'navy'
-  },
-  {
-    label: '告警处理时效',
-    value: '14m',
-    trend: '-1.8m 较昨日',
-    trendTone: 'up',
-    tag: 'Ops',
-    tone: 'green'
-  }
-]
+const loadDashboard = async () => {
+  const response = await getHomeDashboard()
+  if (response.code !== 10000) return
 
-const healthMetrics: HealthMetric[] = [
-  {
-    label: '活跃用户规模',
-    value: '12,980',
-    progress: 84,
-    trend: '+6.2%',
-    trendTone: 'up',
-    color: 'linear-gradient(90deg, #0f9d92, #11c5b8)'
-  },
-  {
-    label: '订单完成率',
-    value: '91.4%',
-    progress: 91,
-    trend: '+2.1%',
-    trendTone: 'up',
-    color: 'linear-gradient(90deg, #2f7de1, #57a1ff)'
-  },
-  {
-    label: '异常告警数量',
-    value: '4',
-    progress: 28,
-    trend: '-1.3%',
-    trendTone: 'up',
-    color: 'linear-gradient(90deg, #ef7f38, #f7b267)'
-  },
-  {
-    label: '平均响应时延',
-    value: '238ms',
-    progress: 66,
-    trend: '-0.8%',
-    trendTone: 'up',
-    color: 'linear-gradient(90deg, #22c55e, #5dd47f)'
-  }
-]
+  heroStats.value = response.data.heroStats
+  weekDays.value = response.data.weekDays
+  uvData.value = response.data.uvData
+  pvData.value = response.data.pvData
+  channelData.value = response.data.channelData
+  regionData.value = response.data.regionData
+  kpiCards.value = response.data.kpiCards
+  healthMetrics.value = response.data.healthMetrics
+  renderCharts()
+}
 
 const initLineChart = () => {
   if (!lineChartRef.value) return
@@ -263,7 +200,7 @@ const initLineChart = () => {
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: weekDays,
+      data: weekDays.value,
       axisLine: { lineStyle: { color: '#cfe0e0' } },
       axisLabel: { color: '#5f7880' },
       axisTick: { show: false }
@@ -279,7 +216,7 @@ const initLineChart = () => {
         name: 'UV',
         type: 'line',
         smooth: true,
-        data: uvData,
+        data: uvData.value,
         symbol: 'circle',
         symbolSize: 7,
         lineStyle: { width: 3, color: '#0f9d92' },
@@ -295,7 +232,7 @@ const initLineChart = () => {
         name: 'PV',
         type: 'line',
         smooth: true,
-        data: pvData,
+        data: pvData.value,
         symbol: 'circle',
         symbolSize: 7,
         lineStyle: { width: 3, color: '#ef7f38' },
@@ -328,7 +265,7 @@ const initPieChart = () => {
           borderWidth: 3,
           borderColor: '#ffffff'
         },
-        data: channelData.map((item) => ({
+        data: channelData.value.map((item) => ({
           value: item.value,
           name: item.name,
           itemStyle: { color: item.color }
@@ -374,7 +311,7 @@ const initBarChart = () => {
     },
     yAxis: {
       type: 'category',
-      data: regionData.map((item) => item.name),
+      data: regionData.value.map((item) => item.name),
       axisLabel: { color: '#49656b' },
       axisTick: { show: false },
       axisLine: { show: false }
@@ -382,7 +319,7 @@ const initBarChart = () => {
     series: [
       {
         type: 'bar',
-        data: regionData.map((item) => item.value),
+        data: regionData.value.map((item) => item.value),
         barWidth: 16,
         itemStyle: {
           borderRadius: 12,
@@ -412,6 +349,7 @@ onMounted(() => {
   initLineChart()
   initPieChart()
   initBarChart()
+  void loadDashboard()
   window.addEventListener('resize', handleResize)
 })
 
@@ -495,11 +433,11 @@ onUnmounted(() => {
 }
 
 .hero-panel {
-  padding: 24px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
   gap: 16px;
+  align-items: center;
+  padding: 24px;
 }
 
 .hero-kicker {
@@ -564,6 +502,10 @@ onUnmounted(() => {
 
 .stat-delta.up {
   color: #15803d;
+}
+
+.stat-delta.down {
+  color: #b91c1c;
 }
 
 .kpi-strip {
@@ -660,11 +602,6 @@ onUnmounted(() => {
   padding: 18px;
   display: flex;
   flex-direction: column;
-}
-
-.region-panel,
-.health-panel {
-  min-height: 300px;
 }
 
 .card-header {
@@ -811,6 +748,7 @@ onUnmounted(() => {
   .hero-right {
     width: 100%;
     min-width: 0;
+    grid-template-columns: 1fr;
   }
 
   .kpi-strip {
@@ -819,10 +757,6 @@ onUnmounted(() => {
 
   .source-body {
     grid-template-columns: 1fr;
-  }
-
-  .source-list {
-    padding: 0 6px 10px;
   }
 }
 </style>

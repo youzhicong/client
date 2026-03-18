@@ -3,6 +3,7 @@
     <LiveCenterRoomViewer
       :gift-items="giftItems"
       :live-feed="liveFeed"
+      :room-detail="selectedRoomDetail"
       :rooms="roomList"
       :selected-room="selectedRoom"
       @select-room="selectRoom"
@@ -12,6 +13,6 @@
 <script lang="ts" setup>
 import LiveCenterRoomViewer from '../components/LiveCenterRoomViewer.vue'
 import { useLiveCenterContext } from '../liveCenterContext'
-const { giftItems, liveFeed, roomList, selectedRoom, selectRoom } =
+const { giftItems, liveFeed, roomList, selectedRoom, selectedRoomDetail, selectRoom } =
   useLiveCenterContext()
 </script>

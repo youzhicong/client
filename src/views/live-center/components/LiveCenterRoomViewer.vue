@@ -456,7 +456,7 @@ import {
   normalizeStreamUrl,
   resolveStreamSource
 } from '../streamUtils'
-import type { GiftItem, LiveFeedItem, StreamRoom } from '../types'
+import type { GiftItem, LiveFeedItem, LiveRoomDetail, StreamRoom } from '../types'
 
 type ViewerTab = 'all' | 'paying' | 'vip'
 type AccentTone = 'rose' | 'amber' | 'aqua' | 'violet'
@@ -514,6 +514,7 @@ interface ConversionHint {
 const props = defineProps<{
   giftItems: GiftItem[]
   liveFeed: LiveFeedItem[]
+  roomDetail: LiveRoomDetail | null
   rooms: StreamRoom[]
   selectedRoom: StreamRoom
 }>()
@@ -882,14 +883,16 @@ watch(
     draftMessage.value = ''
     localFeed.value = []
     activeSegmentId.value =
-      defaultSegmentIdMap[roomId] ?? roomSegmentMap[roomId]?.[0]?.id ?? ''
+      props.roomDetail?.defaultSegmentId ??
+      props.roomDetail?.sceneSegments[0]?.id ??
+      ''
   },
   { immediate: true }
 )
 
 const selectedMetrics = computed(
   () =>
-    roomMetricMap[props.selectedRoom.id] ?? {
+    props.roomDetail?.metrics ?? {
       interactRate: '0%',
       cartRate: '0%',
       stayDuration: '0m',
@@ -902,7 +905,7 @@ const selectedMetrics = computed(
 
 const roomProduct = computed(
   () =>
-    roomProductMap[props.selectedRoom.id] ?? {
+    props.roomDetail?.roomProduct ?? {
       name: '待配置商品',
       badge: '未配置',
       summary: '当前房间尚未配置主推商品信息。',
@@ -915,7 +918,7 @@ const roomProduct = computed(
 )
 
 const sceneSegments = computed(
-  () => roomSegmentMap[props.selectedRoom.id] ?? []
+  () => props.roomDetail?.sceneSegments ?? []
 )
 
 const activeSegment = computed(
@@ -1027,14 +1030,14 @@ const hasCustomStream = computed(() => Boolean(customStreamUrl.value))
 
 const conversionHint = computed(
   () =>
-    conversionHintMap[props.selectedRoom.id] ?? {
+    props.roomDetail?.conversionHint ?? {
       title: '暂无转化建议',
       detail: '当前房间缺少可用的转化策略数据。'
     }
 )
 
 const operationSignals = computed(
-  () => roomSignalMap[props.selectedRoom.id] ?? []
+  () => props.roomDetail?.signals ?? []
 )
 
 const quickActions = computed(
@@ -1073,10 +1076,7 @@ const giftRibbon = computed(() =>
 )
 
 const filteredViewerRanking = computed(() => {
-  const list =
-    viewerRankingMap[props.selectedRoom.id] ??
-    viewerRankingMap['room-main'] ??
-    []
+  const list = props.roomDetail?.viewerRanking ?? []
   if (viewerTab.value === 'all') return list
   return list.filter((item) => item.bucket === viewerTab.value)
 })

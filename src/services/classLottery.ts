@@ -1,8 +1,4 @@
-export interface ApiResult<T> {
-  code: number
-  message: string
-  data: T
-}
+import { request } from '@/utils/request'
 
 export interface ClassStudent {
   id: string
@@ -15,19 +11,14 @@ export interface ClassStudentListResult {
   updatedAt: string
 }
 
-async function requestJson<T>(url: string, init?: RequestInit) {
-  const response = await fetch(url, init)
-  return (await response.json()) as ApiResult<T>
-}
-
 export const getClassStudents = () => {
-  return requestJson<ClassStudentListResult>('/api/class-lottery/students')
+  return request<ClassStudentListResult>('/class-lottery/students', 'GET')
 }
 
 export const saveClassStudents = (students: string[]) => {
-  return requestJson<ClassStudentListResult>('/api/class-lottery/students', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ students })
-  })
+  return request<ClassStudentListResult>(
+    '/class-lottery/students',
+    'PUT',
+    { students }
+  )
 }

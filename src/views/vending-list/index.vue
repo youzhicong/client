@@ -275,7 +275,13 @@ import {
   type FormRules
 } from 'element-plus'
 import { useRouter } from 'vue-router'
-import type { VendingMachine } from './types'
+import {
+  createVendingMachine,
+  deleteVendingMachine,
+  getVendingList,
+  updateVendingMachine,
+  type VendingMachine
+} from '@/services/vending'
 
 const router = useRouter()
 
@@ -393,19 +399,15 @@ const rowClassName = ({ row }: { row: unknown }) => {
 const fetchList = async () => {
   loading.value = true
   try {
-    const params = new URLSearchParams({
-      page: String(pagination.page),
-      pageSize: String(pagination.pageSize)
+    const response = await getVendingList({
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      keyword: searchKeyword.value.trim(),
+      status: filterStatus.value as VendingMachine['status'] | ''
     })
+    const data = response
 
-    if (searchKeyword.value.trim())
-      params.append('keyword', searchKeyword.value.trim())
-    if (filterStatus.value) params.append('status', filterStatus.value)
-
-    const res = await fetch(`/api/vending/list?${params.toString()}`)
-    const data = await res.json()
-
-    if (data.code === 200) {
+    if (data.code === 10000) {
       tableData.value = data.data.list
       pagination.total = data.data.total
     } else {
@@ -465,11 +467,9 @@ const handleDelete = (row: VendingMachine) => {
   )
     .then(async () => {
       try {
-        const res = await fetch(`/api/vending/delete/${row.id}`, {
-          method: 'DELETE'
-        })
-        const data = await res.json()
-        if (data.code === 200) {
+        const response = await deleteVendingMachine(row.id)
+        const data = response
+        if (data.code === 10000) {
           ElMessage.success('删除成功')
           await fetchList()
         } else {
@@ -490,17 +490,21 @@ const handleSubmit = async () => {
 
   submitLoading.value = true
   try {
-    const url = isEdit.value ? '/api/vending/update' : '/api/vending/add'
-    const method = isEdit.value ? 'PUT' : 'POST'
+    const response = isEdit.value
+      ? await updateVendingMachine({
+          id: formData.id,
+          name: formData.name,
+          location: formData.location,
+          status: formData.status
+        })
+      : await createVendingMachine({
+          name: formData.name,
+          location: formData.location,
+          status: formData.status
+        })
+    const data = response
 
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    })
-    const data = await res.json()
-
-    if (data.code === 200) {
+    if (data.code === 10000) {
       ElMessage.success(isEdit.value ? '修改成功' : '添加成功')
       dialogVisible.value = false
       await fetchList()
@@ -517,7 +521,7 @@ const handleSubmit = async () => {
 const goToMonitor = (machine: VendingMachine) => {
   detailVisible.value = false
   if (!machine.id) return
-  router.push('/vending-monitor')
+  router.push({ path: '/vending-monitor', query: { id: machine.id } })
 }
 
 onMounted(() => {

@@ -256,7 +256,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Delete, Plus, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { Fund } from './types'
+import { addFund, deleteFund, getFundList, type FundItem as Fund } from '@/services/fund'
 
 const loading = ref(false)
 const fundList = ref<Fund[]>([])
@@ -372,10 +372,10 @@ const fetchFundList = async () => {
   if (loading.value) return
   loading.value = true
   try {
-    const res = await fetch('/api/fund/list')
-    const data = await res.json()
-    if (data.code === 200 && Array.isArray(data.data)) {
-      fundList.value = data.data
+    const response = await getFundList()
+    const data = response
+    if (response.code === 10000 && Array.isArray(response.data)) {
+      fundList.value = response.data
       lastUpdatedAt.value = new Date()
       refreshSeconds.value = 60
     } else {
@@ -401,17 +401,13 @@ const handleAddFund = async () => {
   }
 
   try {
-    const res = await fetch('/api/fund/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        code,
-        shares: newFund.value.shares,
-        cost: newFund.value.cost
-      })
+    const response = await addFund({
+      code,
+      shares: newFund.value.shares,
+      cost: newFund.value.cost
     })
-    const data = await res.json()
-    if (data.code === 200) {
+    const data = response
+    if (data.code === 10000) {
       ElMessage.success('基金已加入持仓')
       newFund.value.code = ''
       await fetchFundList()
@@ -435,13 +431,9 @@ const handleDelete = (fund: Fund) => {
   )
     .then(async () => {
       try {
-        const res = await fetch('/api/fund/delete', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code: fund.code })
-        })
-        const data = await res.json()
-        if (data.code === 200) {
+        const response = await deleteFund({ code: fund.code })
+        const data = response
+        if (data.code === 10000) {
           fundList.value = fundList.value.filter(
             (item) => item.code !== fund.code
           )

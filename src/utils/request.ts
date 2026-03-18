@@ -1,6 +1,6 @@
 import { useUserStore } from '@/stores'
 import router from '@/router'
-import axios, { AxiosError, type Method } from 'axios'
+import axios, { AxiosError, type AxiosRequestConfig, type Method } from 'axios'
 
 // 1. 新axios实例，基础配置
 const baseURL = import.meta.env.VITE_DEV_SERVER_URL //基地址
@@ -59,11 +59,14 @@ type Data<T> = {
 export const request = <T>(
   url: string,
   method: Method = 'get',
-  submitData?: object
+  submitData?: object,
+  config?: AxiosRequestConfig
 ) => {
+  const dataKey = method.toLowerCase() === 'get' ? 'params' : 'data'
   return instance.request<T, Data<T>>({
     url,
     method,
-    [method.toLowerCase() === 'get' ? 'params' : 'data']: submitData
+    ...config,
+    [dataKey]: submitData
   })
 }

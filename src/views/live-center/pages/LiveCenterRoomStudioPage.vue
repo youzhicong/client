@@ -251,7 +251,7 @@ watch(
   () => route.params.roomId,
   (roomId) => {
     const id = String(roomId ?? '')
-    const matched = roomList.find((item) => item.id === id)
+    const matched = roomList.value.find((item) => item.id === id)
     if (!matched) {
       router.replace('/live-center/rooms')
       return

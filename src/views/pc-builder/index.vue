@@ -155,7 +155,7 @@
         </div>
 
         <AppDataTable
-          :data="selectedParts"
+          :data="selectedPartRows"
           size="small"
           border
           class="mini-table"
@@ -177,37 +177,13 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-
-type Platform = 'jd' | 'tmall' | 'pdd'
-
-type PartPrice = {
-  platform: Platform
-  price: number
-  url: string
-}
-
-type PartOption = {
-  id: string
-  name: string
-  specs: string
-  score: number
-  prices: PartPrice[]
-}
-
-type PartCategory = {
-  key: string
-  label: string
-  options: PartOption[]
-}
-
-type PcBuilderResponse = {
-  code: number
-  message: string
-  data: {
-    updatedAt: string
-    categories: PartCategory[]
-  }
-}
+import {
+  getPcBuilderParts,
+  type PartCategory,
+  type PartOption,
+  type PartPlatform as Platform,
+  type PartPrice
+} from '@/services/pcBuilder'
 
 type SelectedPart = PartOption & {
   categoryKey: string
@@ -280,6 +256,10 @@ const selectedParts = computed<SelectedPart[]>(() => {
     })
     .filter((item): item is SelectedPart => Boolean(item))
 })
+
+const selectedPartRows = computed<Record<string, unknown>[]>(() =>
+  selectedParts.value.map((item) => ({ ...item }))
+)
 
 const platformLabel = (platform: Platform) => {
   if (platform === 'jd') return '京东'
@@ -369,10 +349,10 @@ const applyBalancedPreset = () => {
 const fetchParts = async () => {
   loading.value = true
   try {
-    const res = await fetch('/api/pc-builder/prices')
-    const data: PcBuilderResponse = await res.json()
+    const response = await getPcBuilderParts()
+    const data = response
 
-    if (data.code !== 200) {
+    if (data.code !== 10000) {
       ElMessage.error(data.message || '加载失败')
       return
     }

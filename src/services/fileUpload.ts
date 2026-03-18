@@ -1,8 +1,4 @@
-export interface ApiResult<T> {
-  code: number
-  message: string
-  data: T
-}
+import { request } from '@/utils/request'
 
 export interface CheckUploadPayload {
   fileHash: string
@@ -67,48 +63,29 @@ export interface UploadServerTaskListResult {
   total: number
 }
 
-async function requestJson<T>(url: string, init?: RequestInit) {
-  const response = await fetch(url, init)
-  return (await response.json()) as ApiResult<T>
-}
-
 export const checkUpload = (payload: CheckUploadPayload) => {
-  return requestJson<CheckUploadResult>('/api/upload/check', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+  return request<CheckUploadResult>('/upload/check', 'POST', payload)
 }
 
 export const uploadChunk = (
   payload: UploadChunkPayload,
   signal?: AbortSignal
 ) => {
-  return requestJson<UploadChunkResult>('/api/upload/chunk', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+  return request<UploadChunkResult>('/upload/chunk', 'POST', payload, {
     signal
   })
 }
 
 export const mergeUpload = (payload: MergeUploadPayload) => {
-  return requestJson<MergeUploadResult>('/api/upload/merge', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+  return request<MergeUploadResult>('/upload/merge', 'POST', payload)
 }
 
 export const getUploadTasks = (keyword?: string) => {
-  const query = keyword?.trim()
-    ? `?keyword=${encodeURIComponent(keyword.trim())}`
-    : ''
-  return requestJson<UploadServerTaskListResult>(`/api/upload/tasks${query}`)
+  return request<UploadServerTaskListResult>('/upload/tasks', 'GET', {
+    keyword: keyword?.trim() || undefined
+  })
 }
 
 export const removeUploadTask = (fileHash: string) => {
-  return requestJson<null>(`/api/upload/remove/${fileHash}`, {
-    method: 'DELETE'
-  })
+  return request<null>(`/upload/remove/${fileHash}`, 'DELETE')
 }
