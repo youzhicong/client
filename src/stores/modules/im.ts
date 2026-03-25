@@ -35,7 +35,8 @@ export const useImStore = defineStore('im', () => {
     conversations.value.reduce((sum, item) => sum + (item.unread || 0), 0)
   )
 
-  const messageLoaded = (convId: string) => loadedMessageIds.value.includes(convId)
+  const messageLoaded = (convId: string) =>
+    loadedMessageIds.value.includes(convId)
 
   const rememberLoaded = (convId: string) => {
     if (!messageLoaded(convId)) {
@@ -45,14 +46,14 @@ export const useImStore = defineStore('im', () => {
 
   const loadMessages = async (convId: string) => {
     const response = await getConversationMessages(convId)
-    if (response.code !== 10000) return
+    if (response.code !== 200) return
     messages[convId] = response.data.list
     rememberLoaded(convId)
   }
 
   const loadBootstrap = async () => {
     const response = await getImBootstrap()
-    if (response.code !== 10000) return
+    if (response.code !== 200) return
 
     currentUser.value = response.data.currentUser
     conversations.value = response.data.conversations
@@ -133,7 +134,7 @@ export const useImStore = defineStore('im', () => {
       fileName
     }).catch(() => null)
 
-    if (!response || response.code !== 10000) {
+    if (!response || response.code !== 200) {
       tempMessage.status = 'read' as MessageStatus
       return
     }

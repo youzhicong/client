@@ -181,8 +181,7 @@ import {
   getPcBuilderParts,
   type PartCategory,
   type PartOption,
-  type PartPlatform as Platform,
-  type PartPrice
+  type PartPlatform as Platform
 } from '@/services/pcBuilder'
 
 type SelectedPart = PartOption & {
@@ -352,7 +351,7 @@ const fetchParts = async () => {
     const response = await getPcBuilderParts()
     const data = response
 
-    if (data.code !== 10000) {
+    if (data.code !== 200) {
       ElMessage.error(data.message || '加载失败')
       return
     }

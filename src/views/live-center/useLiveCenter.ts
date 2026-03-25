@@ -120,7 +120,7 @@ export const useLiveCenter = () => {
     loading.value = true
     try {
       const response = await getLiveCenterDashboard()
-      if (response.code !== 10000) {
+      if (response.code !== 200) {
         ElMessage.error(response.message || '直播中心数据加载失败')
         return
       }
@@ -170,7 +170,7 @@ export const useLiveCenter = () => {
         roomId: selectedRoom.value.id,
         giftId: selectedGiftId.value
       })
-      if (response.code !== 10000) {
+      if (response.code !== 200) {
         ElMessage.error(response.message || '送礼失败')
         return
       }
@@ -195,7 +195,7 @@ export const useLiveCenter = () => {
         roomId: selectedRoom.value.id,
         packageId: selectedPackageId.value
       })
-      if (response.code !== 10000) {
+      if (response.code !== 200) {
         ElMessage.error(response.message || '充值失败')
         return
       }

@@ -407,7 +407,7 @@ const fetchList = async () => {
     })
     const data = response
 
-    if (data.code === 10000) {
+    if (data.code === 200) {
       tableData.value = data.data.list
       pagination.total = data.data.total
     } else {
@@ -469,7 +469,7 @@ const handleDelete = (row: VendingMachine) => {
       try {
         const response = await deleteVendingMachine(row.id)
         const data = response
-        if (data.code === 10000) {
+        if (data.code === 200) {
           ElMessage.success('删除成功')
           await fetchList()
         } else {
@@ -504,7 +504,7 @@ const handleSubmit = async () => {
         })
     const data = response
 
-    if (data.code === 10000) {
+    if (data.code === 200) {
       ElMessage.success(isEdit.value ? '修改成功' : '添加成功')
       dialogVisible.value = false
       await fetchList()

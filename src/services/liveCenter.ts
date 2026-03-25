@@ -6,10 +6,7 @@ import type {
 } from '@/views/live-center/types'
 
 export const getLiveCenterDashboard = () => {
-  return request<LiveCenterDashboardSnapshot>(
-    '/live-center/dashboard',
-    'GET'
-  )
+  return request<LiveCenterDashboardSnapshot>('/live-center/dashboard', 'GET')
 }
 
 export const sendLiveCenterGift = (payload: LiveCenterMonetizationPayload) => {

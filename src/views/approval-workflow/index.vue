@@ -398,7 +398,7 @@ const fetchList = async () => {
       pageSize: pagination.pageSize
     })
 
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.error(res.message || '获取列表失败')
       return
     }
@@ -432,7 +432,7 @@ const fetchList = async () => {
 const selectWorkflow = async (id: number) => {
   selectedWorkflowId.value = id
   const res = await getWorkflowDetail(id)
-  if (res.code !== 10000) {
+  if (res.code !== 200) {
     ElMessage.error(res.message || '获取流程详情失败')
     return
   }
@@ -477,7 +477,7 @@ const startNewWorkflow = async () => {
       amount: Number(formData.amount),
       reason: formData.reason
     })
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.error(res.message || '发起流程失败')
       return
     }
@@ -517,7 +517,7 @@ const runCurrentAction = async (
           : undefined
     })
 
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.error(res.message || '操作失败')
       return
     }

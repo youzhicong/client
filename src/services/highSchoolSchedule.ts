@@ -50,10 +50,7 @@ export interface ScheduleImportPayload {
 }
 
 export const getScheduleList = () => {
-  return request<ScheduleListResult>(
-    '/high-school-schedule/courses',
-    'GET'
-  )
+  return request<ScheduleListResult>('/high-school-schedule/courses', 'GET')
 }
 
 export const createScheduleCourse = (payload: ScheduleCoursePayload) => {

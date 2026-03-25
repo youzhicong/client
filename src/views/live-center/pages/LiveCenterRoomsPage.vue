@@ -13,6 +13,12 @@
 <script lang="ts" setup>
 import LiveCenterRoomViewer from '../components/LiveCenterRoomViewer.vue'
 import { useLiveCenterContext } from '../liveCenterContext'
-const { giftItems, liveFeed, roomList, selectedRoom, selectedRoomDetail, selectRoom } =
-  useLiveCenterContext()
+const {
+  giftItems,
+  liveFeed,
+  roomList,
+  selectedRoom,
+  selectedRoomDetail,
+  selectRoom
+} = useLiveCenterContext()
 </script>

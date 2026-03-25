@@ -373,7 +373,7 @@ const syncStudentsFromServer = async () => {
   loadingStudents.value = true
   try {
     const response = await getClassStudents()
-    if (response.code !== 10000) {
+    if (response.code !== 200) {
       throw new Error(response.message || '获取学生名单失败')
     }
 
@@ -405,7 +405,7 @@ const saveNameList = async (names: string[], successText?: string) => {
   savingStudents.value = true
   try {
     const response = await saveClassStudents(normalizeList(names))
-    if (response.code !== 10000) {
+    if (response.code !== 200) {
       throw new Error(response.message || '保存学生名单失败')
     }
 

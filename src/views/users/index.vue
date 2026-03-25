@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="user-list-page">
     <el-card class="hero-card" shadow="never">
       <div class="hero-content">
@@ -394,7 +394,7 @@ const fetchUsers = async () => {
       pageSize: pagination.pageSize
     })
 
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.error(res.message || '获取用户列表失败')
       return
     }
@@ -501,7 +501,7 @@ const submitUser = async () => {
         role: formData.role,
         status: formData.status
       })
-      if (res.code !== 10000) {
+      if (res.code !== 200) {
         ElMessage.error(res.message || '编辑失败')
         return
       }
@@ -515,7 +515,7 @@ const submitUser = async () => {
         role: formData.role,
         status: formData.status
       })
-      if (res.code !== 10000) {
+      if (res.code !== 200) {
         ElMessage.error(res.message || '新增失败')
         return
       }
@@ -539,7 +539,7 @@ const removeUser = (user: UserItem) => {
   })
     .then(async () => {
       const res = await deleteUserById(user.id)
-      if (res.code !== 10000) {
+      if (res.code !== 200) {
         ElMessage.error(res.message || '删除失败')
         return
       }
@@ -564,7 +564,7 @@ const toggleStatus = async (user: UserItem) => {
     role: user.role,
     status: nextStatus
   })
-  if (res.code !== 10000) {
+  if (res.code !== 200) {
     ElMessage.error(res.message || '状态切换失败')
     return
   }
@@ -635,7 +635,7 @@ const handleExport = async () => {
       pageSize: 5000
     })
 
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.error(res.message || '导出失败')
       return
     }
@@ -697,7 +697,7 @@ const registerCurrentVisit = async () => {
       path: window.location.pathname
     })
 
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.warning(res.message || '访问记录写入失败')
       return
     }
@@ -714,7 +714,7 @@ const refreshVisitLogs = async () => {
   visitLoading.value = true
   try {
     const res = await getVisitLogs({ page: 1, pageSize: 20 })
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.error(res.message || '获取访问记录失败')
       return
     }

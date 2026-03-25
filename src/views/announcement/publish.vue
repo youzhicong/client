@@ -110,7 +110,7 @@ const validateForm = async () => {
 
 const loadDetail = async (id: number) => {
   const res = await getAnnouncementDetail(id)
-  if (res.code !== 10000) {
+  if (res.code !== 200) {
     ElMessage.error(res.message || '获取公告详情失败')
     return
   }
@@ -137,7 +137,7 @@ const save = async () => {
       id: editId.value,
       ...payload
     })
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.error(res.message || '保存失败')
       return null
     }
@@ -145,7 +145,7 @@ const save = async () => {
   }
 
   const res = await createAnnouncement(payload)
-  if (res.code !== 10000) {
+  if (res.code !== 200) {
     ElMessage.error(res.message || '创建失败')
     return null
   }
@@ -177,7 +177,7 @@ const publishNow = async () => {
     const data = await save()
     if (!data) return
     const publishRes = await publishAnnouncement(data.id)
-    if (publishRes.code !== 10000) {
+    if (publishRes.code !== 200) {
       ElMessage.error(publishRes.message || '发布失败')
       return
     }

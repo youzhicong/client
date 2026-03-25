@@ -16,9 +16,7 @@ export const getClassStudents = () => {
 }
 
 export const saveClassStudents = (students: string[]) => {
-  return request<ClassStudentListResult>(
-    '/class-lottery/students',
-    'PUT',
-    { students }
-  )
+  return request<ClassStudentListResult>('/class-lottery/students', 'PUT', {
+    students
+  })
 }

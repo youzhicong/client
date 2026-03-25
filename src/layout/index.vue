@@ -61,7 +61,7 @@ onMounted(async () => {
       visitorName: resolveVisitorName(),
       path: window.location.pathname
     })
-    if (res.code === 10000) {
+    if (res.code === 200) {
       sessionStorage.setItem(VISIT_SESSION_KEY, '1')
       sessionStorage.setItem(VISIT_IP_KEY, res.data.ip)
     }

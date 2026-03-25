@@ -17,7 +17,9 @@
         <div v-for="item in heroStats" :key="item.label" class="hero-stat">
           <span class="stat-label">{{ item.label }}</span>
           <strong class="stat-value">{{ item.value }}</strong>
-          <span class="stat-delta" :class="item.deltaTone">{{ item.delta }}</span>
+          <span class="stat-delta" :class="item.deltaTone">{{
+            item.delta
+          }}</span>
         </div>
       </div>
     </div>
@@ -55,7 +57,11 @@
         <div class="source-body">
           <div ref="pieChartRef" class="chart-box pie-box"></div>
           <div class="source-list">
-            <div v-for="item in channelData" :key="item.name" class="source-item">
+            <div
+              v-for="item in channelData"
+              :key="item.name"
+              class="source-item"
+            >
               <span class="dot" :style="{ background: item.color }"></span>
               <span class="name">{{ item.name }}</span>
               <span class="value">{{ item.value }}%</span>
@@ -165,7 +171,7 @@ const renderCharts = () => {
 
 const loadDashboard = async () => {
   const response = await getHomeDashboard()
-  if (response.code !== 10000) return
+  if (response.code !== 200) return
 
   heroStats.value = response.data.heroStats
   weekDays.value = response.data.weekDays

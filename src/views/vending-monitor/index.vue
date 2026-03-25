@@ -100,7 +100,10 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import VendingMachine3D from './components/VendingMachine3D.vue'
 import MonitorPanel from './components/MonitorPanel.vue'
-import { getVendingMonitor, type VendingMonitorData as MonitorData } from '@/services/vending'
+import {
+  getVendingMonitor,
+  type VendingMonitorData as MonitorData
+} from '@/services/vending'
 
 const route = useRoute()
 const monitorData = ref<MonitorData>({
@@ -180,7 +183,7 @@ const fetchMonitorData = async () => {
   const machineId =
     typeof route.query.id === 'string' ? route.query.id.trim() : ''
   const response = await getVendingMonitor(machineId || undefined)
-  if (response.code !== 10000) return
+  if (response.code !== 200) return
   monitorData.value = response.data
   lastUpdated.value = new Date()
 }

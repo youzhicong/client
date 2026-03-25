@@ -93,9 +93,5 @@ export const publishAnnouncement = (id: number) => {
 
 export const deleteAnnouncement = (id: number) => {
   const payload: IdPayload = { id }
-  return request<Record<string, never>>(
-    '/announcement/delete',
-    'POST',
-    payload
-  )
+  return request<Record<string, never>>('/announcement/delete', 'POST', payload)
 }

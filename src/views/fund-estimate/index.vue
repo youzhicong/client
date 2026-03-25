@@ -256,7 +256,12 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Delete, Plus, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { addFund, deleteFund, getFundList, type FundItem as Fund } from '@/services/fund'
+import {
+  addFund,
+  deleteFund,
+  getFundList,
+  type FundItem as Fund
+} from '@/services/fund'
 
 const loading = ref(false)
 const fundList = ref<Fund[]>([])
@@ -374,7 +379,7 @@ const fetchFundList = async () => {
   try {
     const response = await getFundList()
     const data = response
-    if (response.code === 10000 && Array.isArray(response.data)) {
+    if (response.code === 200 && Array.isArray(response.data)) {
       fundList.value = response.data
       lastUpdatedAt.value = new Date()
       refreshSeconds.value = 60
@@ -407,7 +412,7 @@ const handleAddFund = async () => {
       cost: newFund.value.cost
     })
     const data = response
-    if (data.code === 10000) {
+    if (data.code === 200) {
       ElMessage.success('基金已加入持仓')
       newFund.value.code = ''
       await fetchFundList()
@@ -433,7 +438,7 @@ const handleDelete = (fund: Fund) => {
       try {
         const response = await deleteFund({ code: fund.code })
         const data = response
-        if (data.code === 10000) {
+        if (data.code === 200) {
           fundList.value = fundList.value.filter(
             (item) => item.code !== fund.code
           )

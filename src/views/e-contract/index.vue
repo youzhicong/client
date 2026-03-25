@@ -437,7 +437,7 @@ const fetchList = async () => {
       page: pagination.page,
       pageSize: pagination.pageSize
     })
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.error(res.message || '获取合同列表失败')
       return
     }
@@ -469,7 +469,7 @@ const fetchList = async () => {
 const selectContract = async (id: number) => {
   selectedContractId.value = id
   const res = await getContractDetail(id)
-  if (res.code !== 10000) {
+  if (res.code !== 200) {
     ElMessage.error(res.message || '获取合同详情失败')
     return
   }
@@ -506,7 +506,7 @@ const createNewContract = async () => {
       content: formData.content,
       createdBy: operatorName.value.trim() || '合同发起人'
     })
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.error(res.message || '创建失败')
       return
     }
@@ -537,7 +537,7 @@ const saveCurrentDraft = async () => {
       content: formData.content,
       operator: operatorName.value.trim() || '合同发起人'
     })
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.error(res.message || '保存失败')
       return
     }
@@ -559,7 +559,7 @@ const submitCurrentContract = async () => {
       operator: operatorName.value.trim() || '合同发起人',
       comment: actionComment.value.trim()
     })
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.error(res.message || '提交失败')
       return
     }
@@ -591,7 +591,7 @@ const signCurrentContract = async () => {
       operator: operatorName.value.trim() || '签署人',
       comment: actionComment.value.trim()
     })
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.error(res.message || '签署失败')
       return
     }
@@ -615,7 +615,7 @@ const rejectCurrentContract = async () => {
       operator: operatorName.value.trim() || '审批人',
       comment: actionComment.value.trim()
     })
-    if (res.code !== 10000) {
+    if (res.code !== 200) {
       ElMessage.error(res.message || '驳回失败')
       return
     }

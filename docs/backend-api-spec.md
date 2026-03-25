@@ -16,13 +16,13 @@ export const getExample = (params?: Record<string, unknown>) =>
 
 ```json
 {
-  "code": 10000,
+  "code": 200,
   "message": "success",
   "data": {}
 }
 ```
 
-- 成功固定使用 `code = 10000`。
+- 成功固定使用 `code = 200`。
 - 失败时建议：
   - `400` 参数错误
   - `401` 未登录或登录失效
