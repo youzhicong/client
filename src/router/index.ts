@@ -28,6 +28,12 @@ const router = createRouter({
           meta: { title: '在线预览' }
         },
         {
+          path: '/rich-text-editor',
+          name: 'rich-text-editor',
+          component: () => import('@/views/rich-text-editor/index.vue'),
+          meta: { title: '富文本编辑器' }
+        },
+        {
           path: '/file-upload',
           name: 'file-upload',
           component: () => import('@/views/file-upload/index.vue'),

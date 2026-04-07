@@ -70,6 +70,7 @@ import {
   ChatDotRound,
   Compass,
   Document,
+  EditPen,
   Food,
   Grid,
   House,
@@ -158,6 +159,13 @@ const menuSections: MenuSection[] = [
         desc: '文档预览',
         icon: Document,
         theme: 'theme-preview'
+      },
+      {
+        index: '/rich-text-editor',
+        label: '富文本编辑器',
+        desc: '内容排版工作台',
+        icon: EditPen,
+        theme: 'theme-editor'
       },
       {
         index: '/announcement/list',
@@ -678,6 +686,10 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   &.theme-preview {
     background: #fdf2f8;
     color: #ec4899;
+  }
+  &.theme-editor {
+    background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+    color: #0f766e;
   }
   &.theme-announcement {
     background: linear-gradient(135deg, #d7f5f7 0%, #dbeafe 100%);
