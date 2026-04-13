@@ -1,7 +1,19 @@
 ﻿<template>
   <nav class="app-sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-intro">
+        <span class="sidebar-kicker">Workspace</span>
+        <h3>功能矩阵</h3>
+        <p>把常用业务入口整理成清晰的协作导航。</p>
+      </div>
+    </div>
+
     <div class="sidebar-scroll">
-      <!-- 主导航 -->
+      <div class="sidebar-quick-actions">
+        <button type="button" class="quick-action primary">新建任务</button>
+        <button type="button" class="quick-action">团队看板</button>
+      </div>
+
       <div class="nav-group">
         <div class="nav-title">导航菜单</div>
         <div
@@ -19,7 +31,10 @@
               <span class="section-icon">
                 <el-icon><component :is="section.icon" /></el-icon>
               </span>
-              <span class="section-title">{{ section.title }}</span>
+              <span class="section-meta">
+                <span class="section-title">{{ section.title }}</span>
+                <span class="section-count">{{ section.items.length }} 项</span>
+              </span>
             </span>
             <el-icon
               class="section-arrow"
@@ -432,16 +447,13 @@ const getMenuDelay = (sectionIndex: number, index: number) =>
 const isActiveMenu = (item: MenuItem) => {
   const matchPaths = item.matchPaths ?? [item.index]
   return matchPaths.some((path) => {
-    if (item.exact) {
-      return activePath.value === path
-    }
+    if (item.exact) return activePath.value === path
     return activePath.value === path || activePath.value.startsWith(`${path}/`)
   })
 }
 
-const sectionHasActive = (section: MenuSection) => {
-  return section.items.some((item) => isActiveMenu(item))
-}
+const sectionHasActive = (section: MenuSection) =>
+  section.items.some((item) => isActiveMenu(item))
 
 const openedSections = ref<string[]>([
   'common',
@@ -451,9 +463,7 @@ const openedSections = ref<string[]>([
   'ai-center'
 ])
 
-const isSectionOpen = (key: string) => {
-  return openedSections.value.includes(key)
-}
+const isSectionOpen = (key: string) => openedSections.value.includes(key)
 
 const toggleSection = (key: string) => {
   if (isSectionOpen(key)) {
@@ -478,11 +488,11 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
 
 <style lang="scss" scoped>
 .app-sidebar {
-  width: 260px;
-  height: calc(100vh - 64px);
+  width: 280px;
+  height: calc(100vh - 72px);
   position: fixed;
   left: 0;
-  top: 64px;
+  top: 72px;
   z-index: 999;
   display: flex;
   flex-direction: column;
@@ -491,82 +501,156 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   box-shadow: var(--app-sidebar-shadow);
 }
 
+.sidebar-top {
+  padding: 18px 18px 8px;
+}
+
+.sidebar-intro {
+  padding: 16px;
+  border-radius: 22px;
+  background: var(--app-gradient-soft);
+  border: 1px solid rgba(29, 78, 216, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+
+  h3 {
+    margin: 8px 0 6px;
+    color: var(--app-text-main);
+    font-size: 20px;
+    line-height: 1.1;
+  }
+
+  p {
+    margin: 0;
+    color: var(--app-text-sub);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+}
+
+.sidebar-kicker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--app-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
 .sidebar-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 14px;
+  padding: 4px 14px 20px;
 
   &::-webkit-scrollbar {
-    width: 4px;
+    width: 5px;
   }
 
   &::-webkit-scrollbar-thumb {
     background: var(--app-sidebar-scrollbar);
-    border-radius: 4px;
+    border-radius: 999px;
   }
 }
 
-.nav-group {
-  margin-bottom: 28px;
+.sidebar-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0 4px 18px;
+}
+
+.quick-action {
+  height: 38px;
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.64);
+  color: var(--app-text-main);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &.primary {
+    background: var(--app-gradient-brand);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 14px 28px rgba(29, 78, 216, 0.2);
+  }
 }
 
 .nav-title {
   padding: 0 12px;
   margin-bottom: 12px;
+  color: var(--app-sidebar-muted);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  color: var(--app-sidebar-muted);
+  letter-spacing: 0.08em;
 }
 
 .menu-section {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .section-trigger {
   width: 100%;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: 18px;
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  border-radius: 12px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   color: var(--app-sidebar-text);
   cursor: pointer;
-  transition: all 0.2s ease;
 
   &:hover {
     background: var(--app-sidebar-hover);
+    border-color: var(--app-border);
   }
 
   &.active {
     background: var(--app-sidebar-section-active-bg);
     color: var(--app-sidebar-section-active-text);
+    border-color: rgba(29, 78, 216, 0.12);
   }
 }
 
 .section-trigger-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .section-icon {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
-  border-radius: 9px;
+  border-radius: 12px;
   background: var(--app-sidebar-icon-bg);
-  color: var(--app-sidebar-muted);
-  font-size: 14px;
+  color: var(--app-accent);
+  font-size: 15px;
+}
+
+.section-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .section-title {
   font-size: 13px;
   font-weight: 700;
+}
+
+.section-count {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--app-sidebar-muted);
 }
 
 .section-arrow {
@@ -580,8 +664,7 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
 }
 
 .section-items {
-  padding-left: 10px;
-  padding-top: 6px;
+  padding: 8px 0 2px 6px;
 }
 
 .section-collapse-enter-active,
@@ -594,32 +677,32 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
 .section-collapse-leave-to {
   max-height: 0;
   opacity: 0;
-  transform: translateY(-2px);
 }
 
 .section-collapse-enter-to,
 .section-collapse-leave-from {
   max-height: 560px;
   opacity: 1;
-  transform: translateY(0);
 }
 
 .nav-link {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
-  margin-bottom: 4px;
-  border-radius: 14px;
-  text-decoration: none;
+  margin-bottom: 6px;
+  padding: 11px 12px;
+  border: 1px solid transparent;
+  border-radius: 18px;
   color: var(--app-sidebar-text);
-  transition: all 0.25s ease;
+  text-decoration: none;
   animation: slideIn 0.4s ease backwards;
   animation-delay: var(--delay);
+  backdrop-filter: blur(10px);
 
   &:hover {
-    background: var(--app-sidebar-hover);
-    transform: translateX(4px);
+    background: rgba(255, 255, 255, 0.62);
+    border-color: var(--app-border);
+    transform: translateX(3px);
 
     .nav-arrow {
       opacity: 1;
@@ -628,41 +711,34 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   }
 
   &.active {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+    border-color: rgba(255, 255, 255, 0.18);
     color: #fff;
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
-    transform: scale(1.02);
+    box-shadow: 0 18px 28px rgba(29, 78, 216, 0.26);
 
     .nav-icon-wrap {
-      background: rgba(255, 255, 255, 0.2);
-      box-shadow: none;
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
     }
 
-    .nav-desc {
-      color: rgba(255, 255, 255, 0.75);
+    .nav-desc,
+    .nav-arrow {
+      color: rgba(255, 255, 255, 0.72);
+      opacity: 1;
+      transform: translateX(0);
     }
 
     .nav-badge {
       background: #fff;
-      color: #6366f1;
-    }
-
-    .nav-arrow {
-      color: rgba(255, 255, 255, 0.6);
-      opacity: 1;
-      transform: translateX(0);
+      color: #0f172a;
     }
   }
-}
-
-.level-2 {
-  margin-left: 0;
 }
 
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateX(-12px);
+    transform: translateX(-10px);
   }
   to {
     opacity: 1;
@@ -671,161 +747,85 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
 }
 
 .nav-icon-wrap {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 14px;
   font-size: 16px;
-  transition: all 0.2s ease;
+}
 
-  &.theme-home {
-    background: #eef2ff;
-    color: #6366f1;
-  }
-  &.theme-preview {
-    background: #fdf2f8;
-    color: #ec4899;
-  }
-  &.theme-editor {
-    background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
-    color: #0f766e;
-  }
-  &.theme-announcement {
-    background: linear-gradient(135deg, #d7f5f7 0%, #dbeafe 100%);
-    color: #0f7f93;
-  }
-  &.theme-upload {
-    background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
-    color: #059669;
-  }
-  &.theme-drag {
-    background: #f0fdf4;
-    color: #22c55e;
-  }
-  &.theme-im {
-    background: #ecfdf5;
-    color: #10b981;
-  }
-  &.theme-map {
-    background: #fffbeb;
-    color: #f59e0b;
-  }
-  &.theme-users {
-    background: #f0f9ff;
-    color: #0ea5e9;
-  }
-  &.theme-schedule {
-    background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
-    color: #0f766e;
-  }
-  &.theme-classlottery {
-    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
-    color: #1d4ed8;
-  }
-  &.theme-interview {
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    color: #1d4ed8;
-  }
-  &.theme-game-hall {
-    background: linear-gradient(135deg, #dcfce7 0%, #ecfccb 100%);
-    color: #15803d;
-  }
-  &.theme-game-snake {
-    background: linear-gradient(135deg, #d1fae5 0%, #bbf7d0 100%);
-    color: #047857;
-  }
-  &.theme-game-merge {
-    background: linear-gradient(135deg, #ffedd5 0%, #fde68a 100%);
-    color: #c2410c;
-  }
-  &.theme-game-memory {
-    background: linear-gradient(135deg, #ede9fe 0%, #f5d0fe 100%);
-    color: #7e22ce;
-  }
-  &.theme-live {
-    background: linear-gradient(135deg, #ffe4dd 0%, #fff1ea 100%);
-    color: #f97316;
-  }
-  &.theme-live-data {
-    background: linear-gradient(135deg, #fef3c7 0%, #ffedd5 100%);
-    color: #d97706;
-  }
-  &.theme-live-room {
-    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
-    color: #7c3aed;
-  }
-  &.theme-live-money {
-    background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
-    color: #059669;
-  }
-  &.theme-live-ops {
-    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
-    color: #2563eb;
-  }
-  &.theme-meal {
-    background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
-    color: #b45309;
-  }
-  &.theme-workflow {
-    background: linear-gradient(135deg, #d8f2f2 0%, #dbeafe 100%);
-    color: #0f8f92;
-  }
-  &.theme-econtract {
-    background: linear-gradient(135deg, #ffe8d4 0%, #fde68a 100%);
-    color: #9a3412;
-  }
-  &.theme-ai {
-    background: linear-gradient(135deg, #f5f3ff 0%, #fdf2f8 100%);
-    color: #8b5cf6;
-  }
-  &.theme-ai-chat {
-    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-    color: #ea580c;
-  }
-  &.theme-ai-settings {
-    background: linear-gradient(135deg, #ecfeff 0%, #e0f2fe 100%);
-    color: #0f766e;
-  }
-  &.theme-monitor {
-    background: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 100%);
-    color: #14b8a6;
-  }
-  &.theme-fund {
-    background: linear-gradient(135deg, #fef3c7 0%, #fff7ed 100%);
-    color: #d97706;
-  }
-  &.theme-h5config {
-    background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
-    color: #4338ca;
-  }
-  &.theme-vending {
-    background: linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%);
-    color: #7c3aed;
-  }
-  &.theme-diary {
-    background: linear-gradient(135deg, #fef9c3 0%, #ffedd5 100%);
-    color: #b45309;
-  }
-  &.theme-pc {
-    background: linear-gradient(135deg, #dcfce7 0%, #dbeafe 100%);
-    color: #166534;
-  }
-  &.theme-spline {
-    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-    color: #fff;
-  }
-  &.theme-campus {
-    background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
-    color: #fff;
-  }
+.theme-home,
+.theme-users,
+.theme-live-ops,
+.theme-h5config {
+  background: linear-gradient(135deg, #dbeafe, #e0f2fe);
+  color: #1d4ed8;
+}
+.theme-im,
+.theme-upload,
+.theme-game-snake,
+.theme-live-money,
+.theme-pc {
+  background: linear-gradient(135deg, #dcfce7, #ccfbf1);
+  color: #0f766e;
+}
+.theme-map,
+.theme-live-data,
+.theme-meal,
+.theme-fund,
+.theme-econtract {
+  background: linear-gradient(135deg, #fef3c7, #ffedd5);
+  color: #b45309;
+}
+.theme-preview,
+.theme-ai,
+.theme-game-memory,
+.theme-vending {
+  background: linear-gradient(135deg, #f5f3ff, #fce7f3);
+  color: #7c3aed;
+}
+.theme-editor,
+.theme-announcement,
+.theme-workflow,
+.theme-monitor {
+  background: linear-gradient(135deg, #cffafe, #dbeafe);
+  color: #0f766e;
+}
+.theme-drag,
+.theme-game-hall,
+.theme-schedule {
+  background: linear-gradient(135deg, #ecfccb, #dcfce7);
+  color: #3f6212;
+}
+.theme-classlottery,
+.theme-interview,
+.theme-live-room,
+.theme-campus {
+  background: linear-gradient(135deg, #dbeafe, #ddd6fe);
+  color: #4338ca;
+}
+.theme-ai-chat,
+.theme-live,
+.theme-diary {
+  background: linear-gradient(135deg, #ffe4e6, #ffedd5);
+  color: #c2410c;
+}
+.theme-game-merge,
+.theme-ai-settings {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+}
+.theme-spline {
+  background: linear-gradient(135deg, #0f172a, #1d4ed8);
+  color: #fff;
 }
 
 .nav-content {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
 }
 
 .nav-label {
@@ -835,9 +835,9 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
 }
 
 .nav-desc {
-  font-size: 11px;
+  margin-top: 2px;
   color: var(--app-sidebar-muted);
-  margin-top: 1px;
+  font-size: 11px;
 }
 
 .nav-badge {
@@ -846,23 +846,11 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   padding: 0 7px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #ef4444, #f87171);
   border-radius: 999px;
+  background: linear-gradient(135deg, #dc2626, #fb7185);
   color: #fff;
   font-size: 11px;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-  animation: badgePulse 2s ease-in-out infinite;
-}
-
-@keyframes badgePulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
+  font-weight: 700;
 }
 
 .nav-arrow {
@@ -871,5 +859,11 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   opacity: 0;
   transform: translateX(-4px);
   transition: all 0.2s ease;
+}
+
+@media (max-width: 1120px) {
+  .app-sidebar {
+    width: 248px;
+  }
 }
 </style>

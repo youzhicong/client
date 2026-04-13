@@ -78,13 +78,13 @@ onMounted(async () => {
 }
 
 .main-content {
-  margin-top: 64px;
-  margin-left: 260px;
-  min-height: calc(100vh - 64px);
+  margin-top: 72px;
+  margin-left: 280px;
+  min-height: calc(100vh - 72px);
 }
 
 .content-scroll {
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 72px);
 }
 
 /* Page transition */
@@ -104,10 +104,27 @@ onMounted(async () => {
 }
 
 .breadcrumb-container {
-  padding: 10px 20px;
+  padding: 12px 24px;
   background: var(--app-breadcrumb-bg);
   border-bottom: 1px solid var(--app-border);
   box-shadow: var(--app-breadcrumb-shadow);
   backdrop-filter: blur(8px);
+}
+
+@media (max-width: 1120px) {
+  .main-content {
+    margin-left: 248px;
+  }
+}
+
+@media (max-width: 820px) {
+  .main-content {
+    margin-top: 152px;
+    margin-left: 0;
+  }
+
+  .content-scroll {
+    min-height: calc(100vh - 152px);
+  }
 }
 </style>

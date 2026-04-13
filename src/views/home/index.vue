@@ -1,20 +1,54 @@
-<template>
+﻿<template>
   <div class="home-dashboard">
-    <div class="bg-grid"></div>
-    <div class="bg-glow glow-a"></div>
-    <div class="bg-glow glow-b"></div>
+    <section class="top-overview">
+      <article class="overview-card spotlight-card">
+        <div class="overview-copy">
+          <span class="overview-kicker">Daily Focus</span>
+          <h2>今天的增长势能保持在稳定区间</h2>
+          <p>
+            推荐优先关注流量结构和业务健康度，两项指标已经具备联动分析价值。
+          </p>
+        </div>
+        <div class="overview-metrics">
+          <div class="overview-metric">
+            <span>核心转化</span>
+            <strong>28.4%</strong>
+          </div>
+          <div class="overview-metric">
+            <span>服务可用性</span>
+            <strong>99.92%</strong>
+          </div>
+        </div>
+      </article>
 
-    <div class="hero-panel panel">
-      <div class="hero-left">
-        <span class="hero-kicker">DIGITAL OPS</span>
-        <h1 class="hero-title">数字化运营驾驶舱</h1>
+      <article class="overview-card activity-card">
+        <div class="activity-head">
+          <span class="overview-kicker muted">Live Feed</span>
+          <strong>协作动态</strong>
+        </div>
+        <ul class="activity-list">
+          <li>数据面板已完成今日第 3 次同步</li>
+          <li>直播模块转化率较昨日提升 6.8%</li>
+          <li>用户中心页面在移动端表现稳定</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="hero-panel panel">
+      <div class="hero-main">
+        <span class="hero-kicker">Control Center</span>
+        <h1 class="hero-title">数字运营驾驶舱</h1>
         <p class="hero-desc">
-          聚合访问、转化、区域和服务稳定性，帮助你在一个页面完成全局判断。
+          聚合访问、转化、区域和服务健康度，让常用业务数据在一个首页里快速形成判断。
         </p>
+        <div class="hero-actions">
+          <button class="hero-btn primary" type="button">查看日报</button>
+          <button class="hero-btn secondary" type="button">导出看板</button>
+        </div>
       </div>
 
-      <div class="hero-right">
-        <div v-for="item in heroStats" :key="item.label" class="hero-stat">
+      <div class="hero-stats">
+        <div v-for="item in heroStats" :key="item.label" class="hero-stat-card">
           <span class="stat-label">{{ item.label }}</span>
           <strong class="stat-value">{{ item.value }}</strong>
           <span class="stat-delta" :class="item.deltaTone">{{
@@ -22,10 +56,10 @@
           }}</span>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="kpi-strip">
-      <div
+    <section class="insight-strip">
+      <article
         v-for="item in kpiCards"
         :key="item.label"
         class="kpi-card panel"
@@ -37,21 +71,27 @@
         </div>
         <strong class="kpi-value">{{ item.value }}</strong>
         <span class="kpi-trend" :class="item.trendTone">{{ item.trend }}</span>
-      </div>
-    </div>
+      </article>
+    </section>
 
-    <div class="charts-grid">
-      <div class="panel chart-panel">
+    <section class="dashboard-grid">
+      <article class="panel chart-panel chart-panel-wide">
         <div class="card-header">
-          <h3>近七日访问趋势</h3>
+          <div>
+            <p class="eyebrow">Traffic trend</p>
+            <h3>近七日访问趋势</h3>
+          </div>
           <span class="card-subtitle">UV / PV 双轴对比</span>
         </div>
         <div ref="lineChartRef" class="chart-box"></div>
-      </div>
+      </article>
 
-      <div class="panel chart-panel">
+      <article class="panel chart-panel">
         <div class="card-header">
-          <h3>流量来源结构</h3>
+          <div>
+            <p class="eyebrow">Channels</p>
+            <h3>流量来源结构</h3>
+          </div>
           <span class="card-subtitle">渠道贡献占比</span>
         </div>
         <div class="source-body">
@@ -68,22 +108,27 @@
             </div>
           </div>
         </div>
-      </div>
+      </article>
 
-      <div class="panel chart-panel">
+      <article class="panel chart-panel">
         <div class="card-header">
-          <h3>区域活跃分布</h3>
+          <div>
+            <p class="eyebrow">Cities</p>
+            <h3>区域活跃分布</h3>
+          </div>
           <span class="card-subtitle">Top 5 城市</span>
         </div>
         <div ref="barChartRef" class="chart-box"></div>
-      </div>
+      </article>
 
-      <div class="panel chart-panel">
+      <article class="panel chart-panel">
         <div class="card-header">
-          <h3>业务健康度</h3>
+          <div>
+            <p class="eyebrow">Health</p>
+            <h3>业务健康度</h3>
+          </div>
           <span class="card-subtitle">关键指标监测</span>
         </div>
-
         <div class="health-list">
           <div
             v-for="metric in healthMetrics"
@@ -108,8 +153,8 @@
             }}</span>
           </div>
         </div>
-      </div>
-    </div>
+      </article>
+    </section>
   </div>
 </template>
 
@@ -184,37 +229,38 @@ const loadDashboard = async () => {
   renderCharts()
 }
 
+const tooltipStyle = {
+  backgroundColor: 'rgba(15, 23, 42, 0.94)',
+  borderColor: 'rgba(148, 163, 184, 0.22)',
+  textStyle: { color: '#e2e8f0' }
+}
+
 const initLineChart = () => {
   if (!lineChartRef.value) return
 
   lineChart = echarts.init(lineChartRef.value)
   lineChart.setOption({
-    grid: { left: 36, right: 16, top: 42, bottom: 26 },
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(20, 40, 60, 0.92)',
-      borderColor: 'rgba(140, 180, 200, 0.35)',
-      textStyle: { color: '#e6f2ff' }
-    },
+    grid: { left: 24, right: 20, top: 40, bottom: 26 },
+    tooltip: { trigger: 'axis', ...tooltipStyle },
     legend: {
-      top: 4,
-      right: 6,
+      top: 0,
+      right: 0,
       itemWidth: 10,
       itemHeight: 10,
-      textStyle: { color: '#5d7a83' }
+      textStyle: { color: '#64748b' }
     },
     xAxis: {
       type: 'category',
       boundaryGap: false,
       data: weekDays.value,
-      axisLine: { lineStyle: { color: '#cfe0e0' } },
-      axisLabel: { color: '#5f7880' },
+      axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.2)' } },
+      axisLabel: { color: '#64748b' },
       axisTick: { show: false }
     },
     yAxis: {
       type: 'value',
-      axisLabel: { color: '#7b949b' },
-      splitLine: { lineStyle: { color: '#e4f0ef' } },
+      axisLabel: { color: '#94a3b8' },
+      splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.14)' } },
       axisLine: { show: false }
     },
     series: [
@@ -225,12 +271,12 @@ const initLineChart = () => {
         data: uvData.value,
         symbol: 'circle',
         symbolSize: 7,
-        lineStyle: { width: 3, color: '#0f9d92' },
-        itemStyle: { color: '#0f9d92' },
+        lineStyle: { width: 3, color: '#1d4ed8' },
+        itemStyle: { color: '#1d4ed8' },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(15, 157, 146, 0.32)' },
-            { offset: 1, color: 'rgba(15, 157, 146, 0.03)' }
+            { offset: 0, color: 'rgba(29, 78, 216, 0.28)' },
+            { offset: 1, color: 'rgba(29, 78, 216, 0.02)' }
           ])
         }
       },
@@ -241,8 +287,8 @@ const initLineChart = () => {
         data: pvData.value,
         symbol: 'circle',
         symbolSize: 7,
-        lineStyle: { width: 3, color: '#ef7f38' },
-        itemStyle: { color: '#ef7f38' }
+        lineStyle: { width: 3, color: '#0f766e' },
+        itemStyle: { color: '#0f766e' }
       }
     ]
   })
@@ -253,18 +299,12 @@ const initPieChart = () => {
 
   pieChart = echarts.init(pieChartRef.value)
   pieChart.setOption({
-    tooltip: {
-      trigger: 'item',
-      formatter: '{b}: {c}%',
-      backgroundColor: 'rgba(20, 40, 60, 0.92)',
-      borderColor: 'rgba(140, 180, 200, 0.35)',
-      textStyle: { color: '#e6f2ff' }
-    },
+    tooltip: { trigger: 'item', formatter: '{b}: {c}%', ...tooltipStyle },
     series: [
       {
         type: 'pie',
-        radius: ['48%', '72%'],
-        center: ['44%', '48%'],
+        radius: ['52%', '74%'],
+        center: ['45%', '50%'],
         label: { show: false },
         labelLine: { show: false },
         itemStyle: {
@@ -281,15 +321,15 @@ const initPieChart = () => {
     graphic: [
       {
         type: 'text',
-        left: '44%',
+        left: '45%',
         top: '42%',
         style: {
           text: '渠道\n分布',
           textAlign: 'center',
-          fill: '#355b62',
-          fontSize: 14,
+          fill: '#334155',
+          fontSize: 16,
           fontWeight: 700,
-          lineHeight: 20
+          lineHeight: 22
         }
       }
     ]
@@ -301,24 +341,22 @@ const initBarChart = () => {
 
   barChart = echarts.init(barChartRef.value)
   barChart.setOption({
-    grid: { left: 52, right: 20, top: 22, bottom: 20 },
+    grid: { left: 52, right: 20, top: 20, bottom: 20 },
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
-      backgroundColor: 'rgba(20, 40, 60, 0.92)',
-      borderColor: 'rgba(140, 180, 200, 0.35)',
-      textStyle: { color: '#e6f2ff' }
+      ...tooltipStyle
     },
     xAxis: {
       type: 'value',
-      axisLabel: { color: '#6b868c' },
-      splitLine: { lineStyle: { color: '#e5f0ef' } },
+      axisLabel: { color: '#94a3b8' },
+      splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.14)' } },
       axisLine: { show: false }
     },
     yAxis: {
       type: 'category',
       data: regionData.value.map((item) => item.name),
-      axisLabel: { color: '#49656b' },
+      axisLabel: { color: '#475569' },
       axisTick: { show: false },
       axisLine: { show: false }
     },
@@ -328,16 +366,16 @@ const initBarChart = () => {
         data: regionData.value.map((item) => item.value),
         barWidth: 16,
         itemStyle: {
-          borderRadius: 12,
+          borderRadius: 999,
           color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
-            { offset: 0, color: '#2f7de1' },
-            { offset: 1, color: '#54b5ff' }
+            { offset: 0, color: '#38bdf8' },
+            { offset: 1, color: '#1d4ed8' }
           ])
         },
         label: {
           show: true,
           position: 'right',
-          color: '#607b81',
+          color: '#64748b',
           fontSize: 11
         }
       }
@@ -372,282 +410,406 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .home-dashboard {
-  --bg: #eff7f5;
-  --panel: rgba(255, 255, 255, 0.82);
-  --line: #d7e9e6;
-  --text-main: #173941;
-  --text-sub: #6b868c;
-  --brand: #0f9d92;
-  --brand-2: #ef7f38;
-  --shadow: 0 20px 44px rgba(23, 57, 65, 0.12);
-
-  position: relative;
-  min-height: calc(100vh - 64px);
-  overflow: hidden;
-  padding: 24px;
-  background:
-    radial-gradient(circle at 100% 6%, #ffe8d9 0%, transparent 36%),
-    radial-gradient(circle at 4% 0%, #d8f3f0 0%, transparent 40%), var(--bg);
-  color: var(--text-main);
-  font-family: 'Space Grotesk', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  min-height: calc(100vh - 72px);
+  padding: 28px;
+  color: var(--app-text-main);
 }
 
-.bg-grid {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.22;
-  background-image:
-    linear-gradient(rgba(22, 73, 85, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(22, 73, 85, 0.05) 1px, transparent 1px);
-  background-size: 26px 26px;
-}
-
-.bg-glow {
-  position: absolute;
-  border-radius: 999px;
-  filter: blur(3px);
-  pointer-events: none;
-}
-
-.glow-a {
-  width: 300px;
-  height: 300px;
-  right: -120px;
-  top: -120px;
-  opacity: 0.42;
-  background: linear-gradient(135deg, #b4f2ec, #ffd9bf);
-}
-
-.glow-b {
-  width: 320px;
-  height: 320px;
-  left: -140px;
-  bottom: -190px;
-  opacity: 0.38;
-  background: linear-gradient(135deg, #bce8ff, #aef4d3);
-}
-
-.panel {
-  position: relative;
-  z-index: 1;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--panel);
-  backdrop-filter: blur(12px);
-  box-shadow: var(--shadow);
-}
-
-.hero-panel {
-  display: flex;
-  justify-content: space-between;
+.top-overview {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr;
   gap: 16px;
-  align-items: center;
-  padding: 24px;
+  margin-bottom: 18px;
 }
 
-.hero-kicker {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid #bae0dc;
-  background: #e9f9f7;
-  color: #0c7f75;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+.overview-card {
+  border: 1px solid var(--app-border);
+  border-radius: 24px;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow);
+  backdrop-filter: blur(18px);
 }
 
-.hero-title {
-  margin: 12px 0 8px;
-  font-size: 32px;
-  line-height: 1.08;
+.spotlight-card {
+  padding: 22px 24px;
+  display: grid;
+  grid-template-columns: 1.2fr auto;
+  gap: 18px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.16), transparent 26%),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.86),
+      rgba(255, 255, 255, 0.62)
+    );
 }
 
-.hero-desc {
+.overview-copy h2 {
+  margin: 12px 0 10px;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.overview-copy p {
   margin: 0;
   max-width: 640px;
-  color: var(--text-sub);
+  color: var(--app-text-sub);
+  line-height: 1.75;
   font-size: 14px;
 }
 
-.hero-right {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  min-width: 310px;
+.overview-kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--app-accent-soft);
+  color: var(--app-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.hero-stat {
-  border: 1px solid #d8e9e7;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.8);
-  padding: 12px 14px;
+.overview-kicker.muted {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.overview-metrics {
+  display: grid;
+  gap: 12px;
+  min-width: 180px;
+}
+
+.overview-metric {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid var(--app-border);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+
+  span {
+    color: var(--app-text-sub);
+    font-size: 12px;
+  }
+
+  strong {
+    font-size: 28px;
+    line-height: 1;
+  }
 }
 
-.stat-label {
-  font-size: 12px;
-  color: #6d878d;
+.activity-card {
+  padding: 22px;
 }
 
-.stat-value {
-  font-size: 24px;
-  line-height: 1;
+.activity-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  strong {
+    font-size: 22px;
+    line-height: 1.1;
+  }
 }
 
-.stat-delta {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.stat-delta.up {
-  color: #15803d;
-}
-
-.stat-delta.down {
-  color: #b91c1c;
-}
-
-.kpi-strip {
-  position: relative;
-  z-index: 1;
-  margin-top: 14px;
+.activity-list {
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+
+  li {
+    position: relative;
+    padding: 12px 14px 12px 34px;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.04);
+    color: var(--app-text-sub);
+    line-height: 1.6;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 14px;
+      top: 18px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--app-accent);
+      box-shadow: 0 0 0 6px rgba(29, 78, 216, 0.08);
+    }
+  }
+}
+
+.panel {
+  border: 1px solid var(--app-border);
+  border-radius: 28px;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.hero-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr);
+  gap: 18px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.12), transparent 28%),
+    radial-gradient(
+      circle at 100% 20%,
+      rgba(29, 78, 216, 0.14),
+      transparent 30%
+    ),
+    var(--app-surface);
+}
+
+.hero-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero-kicker,
+.eyebrow {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--app-accent-soft);
+  color: var(--app-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero-title {
+  margin: 16px 0 10px;
+  font-size: clamp(32px, 4vw, 52px);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+
+.hero-desc {
+  max-width: 720px;
+  margin: 0;
+  color: var(--app-text-sub);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.hero-btn {
+  min-width: 124px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hero-btn.primary {
+  background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+  color: #fff;
+  box-shadow: 0 16px 26px rgba(29, 78, 216, 0.2);
+}
+
+.hero-btn.secondary {
+  background: rgba(255, 255, 255, 0.68);
+  border-color: var(--app-border);
+  color: var(--app-text-main);
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
-.kpi-card {
-  padding: 14px 16px;
-}
-
-.kpi-head {
+.hero-stat-card {
+  padding: 18px;
+  border-radius: 22px;
+  background: var(--app-surface-strong);
+  border: 1px solid var(--app-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.kpi-label {
-  font-size: 12px;
-  color: #6a858b;
+.stat-label,
+.kpi-label,
+.card-subtitle,
+.health-meta .label,
+.source-item .name {
+  color: var(--app-text-sub);
 }
 
-.kpi-tag {
-  height: 20px;
-  padding: 0 8px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-}
-
-.kpi-card.teal .kpi-tag {
-  color: #0e756d;
-  background: #dcf8f4;
-}
-
-.kpi-card.orange .kpi-tag {
-  color: #b45309;
-  background: #ffedd5;
-}
-
-.kpi-card.navy .kpi-tag {
-  color: #1d4ed8;
-  background: #dbeafe;
-}
-
-.kpi-card.green .kpi-tag {
-  color: #166534;
-  background: #dcfce7;
-}
-
-.kpi-value {
-  display: block;
-  margin-top: 8px;
+.stat-value {
   font-size: 28px;
   line-height: 1;
 }
 
-.kpi-trend {
+.stat-delta,
+.kpi-trend,
+.health-trend {
+  width: fit-content;
+  min-height: 24px;
+  padding: 0 10px;
   display: inline-flex;
-  margin-top: 10px;
-  padding: 3px 10px;
+  align-items: center;
   border-radius: 999px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.kpi-trend.up {
-  background: #dcfce7;
+.up {
+  background: rgba(34, 197, 94, 0.12);
   color: #15803d;
 }
 
-.kpi-trend.down {
-  background: #fee2e2;
+.down {
+  background: rgba(239, 68, 68, 0.12);
   color: #b91c1c;
 }
 
-.charts-grid {
-  position: relative;
-  z-index: 1;
-  margin-top: 14px;
+.insight-strip {
+  margin-top: 18px;
   display: grid;
-  grid-template-columns: 2fr 1.2fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+}
+
+.kpi-card {
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  inset: auto -20% -42px auto;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  opacity: 0.16;
+}
+
+.kpi-card.teal::after {
+  background: #14b8a6;
+}
+.kpi-card.orange::after {
+  background: #f59e0b;
+}
+.kpi-card.navy::after {
+  background: #2563eb;
+}
+.kpi-card.green::after {
+  background: #22c55e;
+}
+
+.kpi-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.kpi-tag {
+  min-height: 24px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--app-text-main);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.kpi-value {
+  display: block;
+  margin-top: 18px;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.kpi-trend {
+  margin-top: 16px;
+}
+
+.dashboard-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
 }
 
 .chart-panel {
   min-height: 320px;
-  padding: 18px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
+}
+
+.chart-panel-wide {
+  min-height: 360px;
 }
 
 .card-header {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .card-header h3 {
-  margin: 0;
-  font-size: 17px;
+  margin: 8px 0 0;
+  font-size: 22px;
+  line-height: 1.15;
 }
 
 .card-subtitle {
   font-size: 12px;
-  color: #6f8a90;
 }
 
 .chart-box {
   flex: 1;
-  min-height: 220px;
+  min-height: 230px;
 }
 
 .source-body {
   display: grid;
-  grid-template-columns: 1fr 130px;
+  grid-template-columns: 1fr 136px;
   gap: 10px;
   flex: 1;
-}
-
-.pie-box {
-  min-height: 230px;
 }
 
 .source-list {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .source-item {
@@ -658,57 +820,42 @@ onUnmounted(() => {
   font-size: 12px;
 }
 
-.source-item .dot {
+.dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
 }
 
-.source-item .name {
-  color: #4a686f;
-}
-
-.source-item .value {
-  color: #1f444c;
+.source-item .value,
+.health-meta .value {
+  color: var(--app-text-main);
   font-weight: 700;
 }
 
 .health-list {
-  margin-top: 4px;
   display: grid;
   gap: 12px;
 }
 
 .health-item {
-  border: 1px solid #dbeaea;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.78);
-  padding: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--app-surface-strong);
+  border: 1px solid var(--app-border);
 }
 
 .health-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
-}
-
-.health-meta .label {
-  font-size: 12px;
-  color: #69858b;
-}
-
-.health-meta .value {
-  font-size: 13px;
-  color: #1d4149;
-  font-weight: 700;
+  margin-bottom: 8px;
 }
 
 .progress-track {
   height: 8px;
   border-radius: 999px;
-  background: #e5f1f0;
   overflow: hidden;
+  background: rgba(148, 163, 184, 0.16);
 }
 
 .progress-fill {
@@ -717,47 +864,41 @@ onUnmounted(() => {
 }
 
 .health-trend {
-  margin-top: 6px;
-  display: inline-flex;
-  font-size: 11px;
-  font-weight: 600;
+  margin-top: 8px;
 }
 
-.health-trend.up {
-  color: #15803d;
-}
+@media (max-width: 1380px) {
+  .top-overview {
+    grid-template-columns: 1fr;
+  }
 
-.health-trend.down {
-  color: #b91c1c;
-}
-
-@media (max-width: 1320px) {
-  .kpi-strip {
+  .insight-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .charts-grid {
+  .dashboard-grid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 960px) {
   .home-dashboard {
-    padding: 14px;
+    padding: 16px;
   }
 
-  .hero-panel {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .hero-right {
-    width: 100%;
-    min-width: 0;
+  .spotlight-card {
     grid-template-columns: 1fr;
   }
 
-  .kpi-strip {
+  .hero-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .insight-strip {
     grid-template-columns: 1fr;
   }
 

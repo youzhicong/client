@@ -1,15 +1,15 @@
 <template>
   <div class="app-header">
     <div class="header-left">
-      <div class="logo" @click="goHome">
+      <button class="logo" type="button" @click="goHome">
         <div class="logo-icon">
-          <span class="logo-spark">⚡</span>
+          <span class="logo-spark">DP</span>
         </div>
         <div class="logo-text">
-          <span class="logo-name">数字化平台</span>
-          <span class="logo-version">v1.0</span>
+          <span class="logo-name">数字工作台</span>
+          <span class="logo-version">Operations cockpit</span>
         </div>
-      </div>
+      </button>
     </div>
 
     <div class="header-center">
@@ -18,17 +18,23 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="搜索功能、页面..."
+          placeholder="搜索页面、功能或模块"
           class="search-input"
           @focus="searchFocused = true"
           @blur="searchFocused = false"
           @keyup.enter="handleSearch"
         />
-        <div class="search-shortcut"><span>⌘</span><span>K</span></div>
+        <div class="search-shortcut"><span>Ctrl</span><span>K</span></div>
       </div>
     </div>
 
     <div class="header-right">
+      <div class="header-status">
+        <span class="status-label">系统状态</span>
+        <strong>运行正常</strong>
+        <span class="status-meta">今日同步 12 次</span>
+      </div>
+
       <div class="header-actions">
         <button
           class="action-btn"
@@ -54,8 +60,6 @@
         </button>
       </div>
 
-      <div class="header-divider"></div>
-
       <el-dropdown trigger="click" @command="handleCommand">
         <div class="user-profile">
           <div class="user-avatar">
@@ -65,7 +69,7 @@
             <span class="user-name">{{ displayName }}</span>
             <span class="user-status">
               <span class="status-dot online"></span>
-              在线
+              在线协作中
             </span>
           </div>
           <el-icon class="user-arrow"><ArrowDown /></el-icon>
@@ -186,102 +190,109 @@ const handleCommand = (command: string) => {
 <style lang="scss" scoped>
 .app-header {
   width: 100%;
-  height: 64px;
+  height: 72px;
   position: fixed;
   top: 0;
   left: 0;
   z-index: 1000;
-  display: flex;
+  display: grid;
+  grid-template-columns: 260px minmax(280px, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
+  gap: 24px;
+  padding: 0 22px;
   background: var(--app-header-bg);
   border-bottom: 1px solid var(--app-header-border);
   box-shadow: var(--app-header-shadow);
-  backdrop-filter: blur(12px);
+  isolation: isolate;
+}
+
+.app-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 12% -20%,
+      rgba(56, 189, 248, 0.22),
+      transparent 28%
+    ),
+    radial-gradient(circle at 88% -30%, rgba(29, 78, 216, 0.2), transparent 30%);
+  opacity: 0.8;
+}
+
+.app-header > * {
+  position: relative;
+  z-index: 1;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  width: 260px;
 }
 
 .logo {
-  display: flex;
+  border: 0;
+  background: transparent;
+  display: inline-flex;
   align-items: center;
   gap: 14px;
+  padding: 0;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.24s ease;
 
   &:hover {
-    transform: scale(1.02);
-
-    .logo-icon {
-      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
-    }
+    transform: translateY(-1px);
   }
 }
 
 .logo-icon {
-  width: 42px;
-  height: 42px;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
-  transition: all 0.3s ease;
+  border-radius: 16px;
+  background: var(--app-gradient-brand);
+  box-shadow: 0 14px 32px rgba(29, 78, 216, 0.24);
 }
 
 .logo-spark {
-  font-size: 22px;
-  animation: sparkle 2s ease-in-out infinite;
-}
-
-@keyframes sparkle {
-  0%,
-  100% {
-    transform: scale(1) rotate(0deg);
-  }
-  50% {
-    transform: scale(1.1) rotate(10deg);
-  }
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
 .logo-text {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
 }
 
 .logo-name {
   font-size: 18px;
   font-weight: 700;
+  line-height: 1.1;
   color: var(--app-header-text);
-  letter-spacing: 0.01em;
-  line-height: 1.2;
 }
 
 .logo-version {
-  font-size: 10px;
+  margin-top: 3px;
   color: var(--app-header-muted);
-  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.04em;
 }
 
 .header-center {
-  flex: 1;
   display: flex;
   justify-content: center;
-  max-width: 520px;
-  margin: 0 32px;
 }
 
 .search-box {
   position: relative;
-  width: 100%;
+  width: min(100%, 620px);
   display: flex;
   align-items: center;
-  transition: all 0.3s ease;
 
   &.focused {
     .search-input {
@@ -298,23 +309,21 @@ const handleCommand = (command: string) => {
 
 .search-icon {
   position: absolute;
-  left: 16px;
-  color: var(--app-header-muted);
+  left: 18px;
   font-size: 16px;
-  transition: color 0.2s ease;
+  color: var(--app-header-muted);
 }
 
 .search-input {
   width: 100%;
-  height: 44px;
-  padding: 0 90px 0 46px;
+  height: 48px;
+  padding: 0 96px 0 50px;
+  border-radius: 18px;
   border: 1px solid var(--app-search-border);
-  border-radius: 14px;
   background: var(--app-search-bg);
   color: var(--app-header-text);
   font-size: 14px;
   outline: none;
-  transition: all 0.3s ease;
 
   &::placeholder {
     color: var(--app-header-muted);
@@ -328,57 +337,82 @@ const handleCommand = (command: string) => {
   gap: 4px;
 
   span {
-    padding: 3px 7px;
-    background: var(--app-search-shortcut-bg);
+    min-width: 26px;
+    height: 24px;
+    padding: 0 7px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
     border: 1px solid var(--app-search-shortcut-border);
-    border-radius: 6px;
+    background: var(--app-search-shortcut-bg);
     color: var(--app-header-muted);
     font-size: 11px;
-    font-family:
-      system-ui,
-      -apple-system,
-      sans-serif;
+    font-weight: 600;
   }
 }
 
 .header-right {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
+}
+
+.header-status {
+  min-width: 120px;
+  padding: 9px 12px;
+  border-radius: 18px;
+  border: 1px solid var(--app-header-surface-border);
+  background: var(--app-header-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  strong {
+    color: var(--app-header-text);
+    font-size: 13px;
+    line-height: 1.2;
+  }
+}
+
+.status-meta {
+  margin-top: 2px;
+  color: var(--app-header-muted);
+  font-size: 11px;
+}
+
+.status-label {
+  color: var(--app-header-muted);
+  font-size: 11px;
 }
 
 .header-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .action-btn {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   display: grid;
   place-items: center;
-  border: none;
-  border-radius: 12px;
+  border: 1px solid transparent;
+  border-radius: 14px;
   background: transparent;
   color: var(--app-header-subtle);
   cursor: pointer;
-  transition: all 0.2s ease;
 
   &:hover {
     background: var(--app-header-hover);
+    border-color: var(--app-header-surface-border);
     color: var(--app-header-text);
-    transform: scale(1.05);
-  }
-
-  &:active {
-    transform: scale(0.95);
   }
 
   &.active {
     background: var(--app-header-active-bg);
+    border-color: var(--app-header-active-border);
     color: var(--app-header-text);
-    box-shadow: inset 0 0 0 1px var(--app-header-active-border);
   }
 
   .el-icon {
@@ -388,73 +422,72 @@ const handleCommand = (command: string) => {
 
 .action-badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 5px;
+  right: 5px;
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  background: linear-gradient(135deg, #ef4444, #f87171);
-  border-radius: 999px;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 600;
   display: grid;
   place-items: center;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #dc2626, #f97316);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
 
-  &.pulse {
-    animation: pulse 2s ease-in-out infinite;
-  }
+.pulse {
+  animation: pulse 2.1s ease-in-out infinite;
 }
 
 @keyframes pulse {
   0%,
   100% {
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3);
   }
   50% {
-    box-shadow: 0 2px 16px rgba(239, 68, 68, 0.6);
+    transform: scale(1.06);
+    box-shadow: 0 0 0 7px rgba(220, 38, 38, 0);
   }
-}
-
-.header-divider {
-  width: 1px;
-  height: 28px;
-  background: var(--app-header-border);
-  margin: 0 8px;
 }
 
 .user-profile {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 6px 14px 6px 6px;
-  border-radius: 14px;
-  background: var(--app-header-surface);
+  padding: 7px 12px 7px 7px;
+  border-radius: 18px;
   border: 1px solid var(--app-header-surface-border);
+  background: var(--app-header-surface);
   cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 
   &:hover {
     background: var(--app-header-hover-surface);
     border-color: var(--app-header-hover-border);
-    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      0 16px 32px rgba(15, 23, 42, 0.08);
   }
 }
 
-.user-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
+.user-avatar,
+.dropdown-avatar {
   overflow: hidden;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, #1d4ed8, #38bdf8);
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
 }
 
 .user-info {
@@ -464,42 +497,40 @@ const handleCommand = (command: string) => {
 }
 
 .user-name {
-  font-size: 13px;
-  font-weight: 600;
   color: var(--app-header-text);
-  line-height: 1;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
 .user-status {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11px;
+  gap: 6px;
   color: var(--app-header-muted);
+  font-size: 11px;
 }
 
 .status-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--app-header-subtle);
+}
 
-  &.online {
-    background: #22c55e;
-    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
-  }
+.status-dot.online {
+  background: #22c55e;
+  box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.12);
 }
 
 .user-arrow {
   color: var(--app-header-muted);
   font-size: 12px;
-  transition: transform 0.2s ease;
 }
 
 :deep(.user-dropdown) {
-  min-width: 220px;
+  min-width: 240px;
   padding: 8px;
-  border-radius: 16px;
+  border-radius: 20px;
   background: var(--app-dropdown-bg);
   border: 1px solid var(--app-dropdown-border);
   box-shadow: var(--app-dropdown-shadow);
@@ -507,60 +538,81 @@ const handleCommand = (command: string) => {
 
 .dropdown-header {
   display: flex;
+  align-items: center;
   gap: 12px;
-  padding: 12px;
+  padding: 14px;
   margin-bottom: 8px;
+  border-radius: 16px;
   background: var(--app-dropdown-header-bg);
-  border-radius: 12px;
 }
 
 .dropdown-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
 }
 
 .dropdown-info {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  gap: 4px;
 }
 
 .dropdown-name {
-  font-size: 14px;
-  font-weight: 600;
   color: var(--app-dropdown-text);
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .dropdown-email {
-  font-size: 12px;
   color: var(--app-dropdown-muted);
+  font-size: 12px;
 }
 
 :deep(.el-dropdown-menu__item) {
+  margin: 2px 0;
   padding: 12px 14px;
-  border-radius: 10px;
+  border-radius: 12px;
+  color: var(--app-dropdown-text);
   font-size: 13px;
   gap: 10px;
-  margin: 2px 0;
-  transition: all 0.2s ease;
 
   &:hover {
     background: var(--app-dropdown-hover);
     color: var(--app-accent);
-    transform: translateX(4px);
+  }
+}
+
+@media (max-width: 1120px) {
+  .app-header {
+    grid-template-columns: 220px 1fr;
+    gap: 16px;
   }
 
-  .el-icon {
-    font-size: 16px;
+  .header-status {
+    display: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .app-header {
+    height: auto;
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .header-left,
+  .header-center,
+  .header-right {
+    width: 100%;
+  }
+
+  .header-right {
+    justify-content: space-between;
+  }
+
+  .user-info {
+    display: none;
   }
 }
 </style>
