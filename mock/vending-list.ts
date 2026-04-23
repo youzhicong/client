@@ -12,7 +12,7 @@ const vendingMachines = [
     todaySales: 68,
     todayRevenue: 486,
     lastMaintenance: '2026-01-15',
-    createTime: '2025-06-01',
+    createTime: '2025-06-01'
   },
   {
     id: 'VM_002',
@@ -24,7 +24,7 @@ const vendingMachines = [
     todaySales: 42,
     todayRevenue: 315,
     lastMaintenance: '2026-01-20',
-    createTime: '2025-07-15',
+    createTime: '2025-07-15'
   },
   {
     id: 'VM_003',
@@ -36,7 +36,7 @@ const vendingMachines = [
     todaySales: 95,
     todayRevenue: 720,
     lastMaintenance: '2026-01-10',
-    createTime: '2025-08-20',
+    createTime: '2025-08-20'
   },
   {
     id: 'VM_004',
@@ -48,7 +48,7 @@ const vendingMachines = [
     todaySales: 0,
     todayRevenue: 0,
     lastMaintenance: '2025-12-25',
-    createTime: '2025-09-10',
+    createTime: '2025-09-10'
   },
   {
     id: 'VM_005',
@@ -60,8 +60,8 @@ const vendingMachines = [
     todaySales: 35,
     todayRevenue: 280,
     lastMaintenance: '2026-01-28',
-    createTime: '2025-10-05',
-  },
+    createTime: '2025-10-05'
+  }
 ]
 
 export default [
@@ -80,7 +80,7 @@ export default [
           (item) =>
             item.name.includes(keyword) ||
             item.location.includes(keyword) ||
-            item.id.includes(keyword),
+            item.id.includes(keyword)
         )
       }
 
@@ -101,10 +101,10 @@ export default [
           list: pageList,
           total: list.length,
           page: parseInt(page),
-          pageSize: parseInt(pageSize),
-        },
+          pageSize: parseInt(pageSize)
+        }
       }
-    },
+    }
   },
   // 获取单个贩卖机详情
   {
@@ -116,7 +116,7 @@ export default [
         return { code: 200, message: 'success', data: machine }
       }
       return { code: 404, message: '贩卖机不存在' }
-    },
+    }
   },
   // 新增贩卖机
   {
@@ -133,18 +133,18 @@ export default [
         todaySales: 0,
         todayRevenue: 0,
         lastMaintenance: '-',
-        createTime: new Date().toISOString().split('T')[0],
+        createTime: new Date().toISOString().split('T')[0]
       }
       vendingMachines.push(newMachine)
       return { code: 200, message: '添加成功', data: newMachine }
-    },
+    }
   },
   // 修改贩卖机
   {
     url: '/api/vending/update',
     method: 'put',
     response: ({
-      body,
+      body
     }: {
       body: { id: string; name: string; location: string; status: string }
     }) => {
@@ -154,7 +154,7 @@ export default [
         return { code: 200, message: '修改成功', data: vendingMachines[index] }
       }
       return { code: 404, message: '贩卖机不存在' }
-    },
+    }
   },
   // 删除贩卖机
   {
@@ -167,6 +167,6 @@ export default [
         return { code: 200, message: '删除成功' }
       }
       return { code: 404, message: '贩卖机不存在' }
-    },
-  },
+    }
+  }
 ] as MockMethod[]

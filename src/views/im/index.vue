@@ -83,7 +83,18 @@
             :style="{ '--delay': `${idx * 0.03}s` }"
             @click="selectConversation(conv.id)"
           >
-            <div class="avatar">{{ conv.avatar }}</div>
+            <div class="avatar">
+              <img
+                v-if="showAvatarImage(conv.avatar)"
+                class="avatar-media"
+                :src="conv.avatar"
+                :alt="`${conv.title} 头像`"
+                @error="markAvatarBroken(conv.avatar)"
+              />
+              <span v-else class="avatar-fallback">
+                {{ getAvatarFallbackText(conv.title) }}
+              </span>
+            </div>
 
             <div class="conversation-content">
               <div class="top-line">
@@ -298,7 +309,18 @@
             :key="member.id"
             class="member-item"
           >
-            <div class="member-avatar">{{ member.avatar }}</div>
+            <div class="member-avatar">
+              <img
+                v-if="showAvatarImage(member.avatar)"
+                class="avatar-media"
+                :src="member.avatar"
+                :alt="`${member.name} 头像`"
+                @error="markAvatarBroken(member.avatar)"
+              />
+              <span v-else class="avatar-fallback">
+                {{ getAvatarFallbackText(member.name) }}
+              </span>
+            </div>
             <div class="member-info">
               <div class="member-name">
                 {{ member.name }}
@@ -321,6 +343,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useImStore } from '@/stores'
+import { canRenderAvatarImage, getAvatarFallbackText } from './avatarDisplay'
 
 type TabKey = 'all' | 'unread' | 'group'
 
@@ -372,6 +395,22 @@ const canSend = computed(
 const newMessageCount = ref(0)
 const lastMessageCount = ref(0)
 const autoScroll = ref(true)
+const brokenAvatarSources = ref<string[]>([])
+
+const showAvatarImage = (source?: string | null) => {
+  const normalized = source?.trim()
+  return (
+    Boolean(normalized) &&
+    canRenderAvatarImage(normalized) &&
+    !brokenAvatarSources.value.includes(normalized)
+  )
+}
+
+const markAvatarBroken = (source?: string | null) => {
+  const normalized = source?.trim()
+  if (!normalized || brokenAvatarSources.value.includes(normalized)) return
+  brokenAvatarSources.value = [...brokenAvatarSources.value, normalized]
+}
 
 const filteredConversations = computed(() => {
   const key = keyword.value.trim().toLowerCase()
@@ -850,9 +889,21 @@ watch(
   border-radius: 12px;
   display: grid;
   place-items: center;
+  overflow: hidden;
   font-weight: 700;
   color: #0b4d8f;
   background: linear-gradient(135deg, #dbeafe, #cffafe);
+}
+
+.avatar-media {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.avatar-fallback {
+  line-height: 1;
 }
 
 .conversation-content {
@@ -1358,6 +1409,7 @@ watch(
   border-radius: 10px;
   display: grid;
   place-items: center;
+  overflow: hidden;
   font-size: 12px;
   font-weight: 700;
   color: #0f4f8f;

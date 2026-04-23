@@ -30,7 +30,7 @@ const fundList: Fund[] = [
     estimateChange: 0,
     updateTime: '',
     holdShares: 1000,
-    holdCost: 1.15,
+    holdCost: 1.15
   },
   {
     code: '110011',
@@ -41,7 +41,7 @@ const fundList: Fund[] = [
     estimateChange: 0,
     updateTime: '',
     holdShares: 500,
-    holdCost: 5.2,
+    holdCost: 5.2
   },
   {
     code: '161725',
@@ -52,7 +52,7 @@ const fundList: Fund[] = [
     estimateChange: 0,
     updateTime: '',
     holdShares: 2000,
-    holdCost: 1.65,
+    holdCost: 1.65
   },
   {
     code: '005827',
@@ -63,7 +63,7 @@ const fundList: Fund[] = [
     estimateChange: 0,
     updateTime: '',
     holdShares: 800,
-    holdCost: 2.3,
+    holdCost: 2.3
   },
   {
     code: '003834',
@@ -74,7 +74,7 @@ const fundList: Fund[] = [
     estimateChange: 0,
     updateTime: '',
     holdShares: 600,
-    holdCost: 3.1,
+    holdCost: 3.1
   },
   {
     code: '519736',
@@ -85,8 +85,8 @@ const fundList: Fund[] = [
     estimateChange: 0,
     updateTime: '',
     holdShares: 400,
-    holdCost: 4.0,
-  },
+    holdCost: 4.0
+  }
 ]
 
 export default [
@@ -104,21 +104,25 @@ export default [
           ...fund,
           estimateNav,
           estimateChange: change,
-          updateTime: timeStr,
+          updateTime: timeStr
         }
       })
 
       return {
         code: 200,
         message: 'success',
-        data,
+        data
       }
-    },
+    }
   },
   {
     url: '/api/fund/add',
     method: 'post',
-    response: ({ body }: { body: { code: string; shares: number; cost: number } }) => {
+    response: ({
+      body
+    }: {
+      body: { code: string; shares: number; cost: number }
+    }) => {
       const { code, shares, cost } = body
 
       // 模拟添加基金
@@ -131,15 +135,15 @@ export default [
         estimateChange: 0,
         updateTime: '',
         holdShares: shares,
-        holdCost: cost,
+        holdCost: cost
       }
 
       return {
         code: 200,
         message: 'success',
-        data: newFund,
+        data: newFund
       }
-    },
+    }
   },
   {
     url: '/api/fund/delete',
@@ -147,8 +151,8 @@ export default [
     response: () => {
       return {
         code: 200,
-        message: 'success',
+        message: 'success'
       }
-    },
-  },
+    }
+  }
 ] as MockMethod[]

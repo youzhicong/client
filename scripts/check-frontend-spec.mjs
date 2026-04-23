@@ -25,7 +25,8 @@ const walkFiles = (dir) => {
   return files
 }
 
-const toProjectPath = (filePath) => path.relative(rootDir, filePath).replace(/\\/gu, '/')
+const toProjectPath = (filePath) =>
+  path.relative(rootDir, filePath).replace(/\\/gu, '/')
 
 const vueFiles = walkFiles(srcDir)
 const semanticViolations = []

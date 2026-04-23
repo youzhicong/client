@@ -157,10 +157,15 @@ const levelTagType = (level: QuestionLevel) => {
 
 :deep(.el-collapse-item__wrap) {
   border-bottom: 1px solid #eef2f7;
+  overflow-anchor: none;
 }
 
 :deep(.el-collapse-item:last-child .el-collapse-item__wrap) {
   border-bottom: none;
+}
+
+:deep(.el-collapse-item__content) {
+  overflow-anchor: none;
 }
 
 @media (max-width: 1200px) {
