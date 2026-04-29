@@ -73,18 +73,23 @@ onMounted(async () => {
 
 <style lang="scss" scoped>
 .app-layout {
+  --app-header-height: 72px;
+  --app-breadcrumb-height: 75px;
+
   min-height: 100vh;
   background: var(--app-shell-bg);
 }
 
 .main-content {
-  margin-top: 72px;
+  margin-top: var(--app-header-height);
   margin-left: 280px;
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - var(--app-header-height));
 }
 
 .content-scroll {
-  min-height: calc(100vh - 72px);
+  min-height: calc(
+    100vh - var(--app-header-height) - var(--app-breadcrumb-height)
+  );
 }
 
 /* Page transition */
@@ -118,13 +123,13 @@ onMounted(async () => {
 }
 
 @media (max-width: 820px) {
-  .main-content {
-    margin-top: 152px;
-    margin-left: 0;
+  .app-layout {
+    --app-header-height: 152px;
   }
 
-  .content-scroll {
-    min-height: calc(100vh - 152px);
+  .main-content {
+    margin-top: var(--app-header-height);
+    margin-left: 0;
   }
 }
 </style>

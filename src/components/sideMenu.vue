@@ -140,14 +140,6 @@ const menuSections: MenuSection[] = [
         theme: 'theme-home'
       },
       {
-        index: '/im',
-        label: '即时通信',
-        desc: '消息中心',
-        icon: ChatDotRound,
-        theme: 'theme-im',
-        badge: 3
-      },
-      {
         index: '/users',
         label: '用户列表',
         desc: '成员管理',
@@ -380,21 +372,21 @@ const menuSections: MenuSection[] = [
     ]
   },
   {
-    key: 'ai-center',
-    title: 'AI 模块',
-    icon: MagicStick,
+    key: 'smart-communication',
+    title: '智能沟通',
+    icon: ChatDotRound,
     items: [
       {
-        index: '/ai/workflow',
-        label: 'AI工作流',
-        desc: '产品创意生成',
-        icon: MagicStick,
-        theme: 'theme-ai',
-        matchPaths: ['/ai/workflow']
+        index: '/im',
+        label: '即时通信',
+        desc: '消息中心 + AI接待',
+        icon: ChatDotRound,
+        theme: 'theme-im',
+        badge: 3
       },
       {
         index: '/ai/chat',
-        label: '聊天模块',
+        label: 'AI聊天',
         desc: '模型对话测试',
         icon: ChatDotRound,
         theme: 'theme-ai-chat',
@@ -407,6 +399,14 @@ const menuSections: MenuSection[] = [
         icon: Setting,
         theme: 'theme-ai-settings',
         matchPaths: ['/ai/settings']
+      },
+      {
+        index: '/ai/workflow',
+        label: 'AI工作流',
+        desc: '产品创意生成',
+        icon: MagicStick,
+        theme: 'theme-ai',
+        matchPaths: ['/ai/workflow']
       }
     ]
   },
@@ -460,7 +460,7 @@ const openedSections = ref<string[]>([
   'upload-doc',
   'games',
   'live-center',
-  'ai-center'
+  'smart-communication'
 ])
 
 const isSectionOpen = (key: string) => openedSections.value.includes(key)

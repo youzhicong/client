@@ -1,15 +1,24 @@
 import { request } from '@/utils/request'
 
-export type ImUserStatus = 'online' | 'offline' | 'busy'
-export type ConversationMode = 'direct' | 'group'
-export type MessageType = 'text' | 'image' | 'file' | 'system'
-export type MessageStatus = 'sending' | 'sent' | 'read'
+export type ImUserStatus = 'online' | 'offline' | (string & {})
+export type ConversationMode = 'direct' | (string & {})
+export type MessageType = 'text' | 'image' | 'file' | 'system' | (string & {})
+export type MessageStatus =
+  | 'sending'
+  | 'sent'
+  | 'read'
+  | 'failed'
+  | (string & {})
 
 export interface ImUserProfile {
   id: string
   name: string
   avatar: string
   status: ImUserStatus
+}
+
+export interface ImUserSummary extends ImUserProfile {
+  online: boolean
 }
 
 export interface ImMessageItem {
@@ -22,6 +31,7 @@ export interface ImMessageItem {
   createdAt: number
   status: MessageStatus
   fileName?: string
+  errorMessage?: string
 }
 
 export interface ImConversationItem {
@@ -33,14 +43,15 @@ export interface ImConversationItem {
   lastMessage: string
   lastTime: number
   unread: number
-  pinned?: boolean
-  typing?: boolean
+  pinned: boolean
+  typing: boolean
 }
 
 export interface ImBootstrapResult {
   currentUser: ImUserProfile
   conversations: ImConversationItem[]
-  activeConversationId?: string
+  activeConversationId: string
+  onlineUsers: ImUserSummary[]
 }
 
 export interface ImConversationMessageResult {
@@ -49,6 +60,7 @@ export interface ImConversationMessageResult {
 
 export interface ImSendMessagePayload {
   convId: string
+  senderId: string
   content: string
   type: MessageType
   fileName?: string

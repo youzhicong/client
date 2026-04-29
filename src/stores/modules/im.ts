@@ -1,5 +1,23 @@
 import { computed, reactive, ref } from 'vue'
 import {
+  AI_ASSISTANT_USER_ID,
+  AI_CONVERSATION_ID,
+  CHAT_INIT_ERROR_MESSAGE,
+  CHAT_MESSAGE_ERROR_MESSAGE,
+  CHAT_SEND_ERROR_MESSAGE,
+  createAiConversation,
+  getHumanOnlineUsers,
+  isAiFallbackActive,
+  markMessageFailed,
+  normalizeConversation,
+  normalizeImError,
+  replaceMessageById,
+  resolveMemberLiveStatus,
+  resolveLoggedInImUser
+} from './imState'
+import { useUserStore } from './use'
+import { chatWithAI, type AIMessage } from '@/services/ai'
+import {
   connectImSession,
   disconnectImSession,
   getConversationMessages,
@@ -9,21 +27,30 @@ import {
   toggleConversationPin,
   type ImConversationItem as ConversationItem,
   type ImMessageItem as MessageItem,
+  type ImUserSummary as UserSummary,
   type ImUserProfile as UserProfile,
-  type MessageStatus,
   type MessageType
 } from '@/services/im'
 
 const createTempMessageId = () =>
   `temp-${Date.now()}-${Math.random().toString(16).slice(2)}`
 
+const AI_SYSTEM_PROMPT =
+  '你是这个即时通信页面里的 AI 助手。当前没有人工成员在线，请用简洁、可靠的中文先接待用户；如果问题需要人工处理，说明可以稍后转人工继续跟进。'
+
 export const useImStore = defineStore('im', () => {
   const conversations = ref<ConversationItem[]>([])
+  const onlineUsers = ref<UserSummary[]>([])
   const messages = reactive<Record<string, MessageItem[]>>({})
   const activeId = ref('')
   const connected = ref(false)
   const currentUser = ref<UserProfile | null>(null)
   const loadedMessageIds = ref<string[]>([])
+  const localConversationIds = ref<string[]>([])
+  const initLoading = ref(false)
+  const messageLoading = ref(false)
+  const initError = ref('')
+  const messageError = ref('')
 
   const activeConversation = computed(
     () => conversations.value.find((item) => item.id === activeId.value) || null
@@ -35,8 +62,18 @@ export const useImStore = defineStore('im', () => {
     conversations.value.reduce((sum, item) => sum + (item.unread || 0), 0)
   )
 
+  const humanOnlineUsers = computed(() =>
+    getHumanOnlineUsers(currentUser.value, onlineUsers.value)
+  )
+
+  const aiFallbackActive = computed(() =>
+    isAiFallbackActive(currentUser.value, onlineUsers.value)
+  )
+
   const messageLoaded = (convId: string) =>
     loadedMessageIds.value.includes(convId)
+
+  const isAiConversation = (convId: string) => convId === AI_CONVERSATION_ID
 
   const rememberLoaded = (convId: string) => {
     if (!messageLoaded(convId)) {
@@ -44,30 +81,125 @@ export const useImStore = defineStore('im', () => {
     }
   }
 
+  const rememberLocalConversation = (convId: string) => {
+    if (!localConversationIds.value.includes(convId)) {
+      localConversationIds.value = [...localConversationIds.value, convId]
+    }
+  }
+
+  const isLocalConversation = (convId: string) =>
+    localConversationIds.value.includes(convId)
+
+  const ensureAiConversation = () => {
+    if (!currentUser.value || !aiFallbackActive.value) return
+
+    const existing = conversations.value.find(
+      (item) => item.id === AI_CONVERSATION_ID
+    )
+    const aiConversation = createAiConversation(currentUser.value)
+
+    if (existing) {
+      Object.assign(existing, {
+        ...aiConversation,
+        lastMessage: existing.lastMessage || aiConversation.lastMessage,
+        lastTime: existing.lastTime || aiConversation.lastTime,
+        typing: existing.typing
+      })
+    } else {
+      conversations.value = [aiConversation, ...conversations.value]
+    }
+
+    if (!messages[AI_CONVERSATION_ID]) {
+      messages[AI_CONVERSATION_ID] = [
+        {
+          id: createTempMessageId(),
+          convId: AI_CONVERSATION_ID,
+          senderId: AI_ASSISTANT_USER_ID,
+          senderName: 'AI 助手',
+          content: '当前暂无人工在线，我可以先帮你解答。',
+          type: 'text',
+          createdAt: Date.now(),
+          status: 'sent'
+        }
+      ]
+    }
+
+    rememberLoaded(AI_CONVERSATION_ID)
+    rememberLocalConversation(AI_CONVERSATION_ID)
+  }
+
+  const getDirectConversationByMember = (member: UserProfile) =>
+    conversations.value.find(
+      (item) =>
+        item.mode === 'direct' &&
+        item.members.some(
+          (target) => target.id === member.id || target.name === member.name
+        )
+    )
+
   const loadMessages = async (convId: string) => {
-    const response = await getConversationMessages(convId)
-    if (response.code !== 200) return
-    messages[convId] = response.data.list
-    rememberLoaded(convId)
+    if (isAiConversation(convId)) {
+      rememberLoaded(convId)
+      return true
+    }
+
+    messageLoading.value = true
+    messageError.value = ''
+
+    try {
+      const response = await getConversationMessages(convId)
+      if (response.code !== 200) return false
+      messages[convId] = response.data.list
+      rememberLoaded(convId)
+      return true
+    } catch (error) {
+      messageError.value = normalizeImError(error, CHAT_MESSAGE_ERROR_MESSAGE)
+      return false
+    } finally {
+      messageLoading.value = false
+    }
   }
 
   const loadBootstrap = async () => {
-    const response = await getImBootstrap()
-    if (response.code !== 200) return
+    initLoading.value = true
+    initError.value = ''
 
-    currentUser.value = response.data.currentUser
-    conversations.value = response.data.conversations
-    activeId.value =
-      response.data.activeConversationId ||
-      response.data.conversations[0]?.id ||
-      ''
+    try {
+      const response = await getImBootstrap()
+      if (response.code !== 200) return false
 
-    if (activeId.value) {
-      await loadMessages(activeId.value)
+      const userStore = useUserStore()
+      currentUser.value = resolveLoggedInImUser(
+        userStore.user,
+        response.data.currentUser
+      )
+      onlineUsers.value = response.data.onlineUsers || []
+      conversations.value = response.data.conversations.map(
+        normalizeConversation
+      )
+      ensureAiConversation()
+      activeId.value = aiFallbackActive.value
+        ? AI_CONVERSATION_ID
+        : response.data.activeConversationId ||
+          response.data.conversations[0]?.id ||
+          ''
+
+      if (activeId.value && !isAiConversation(activeId.value)) {
+        await loadMessages(activeId.value)
+      }
+
+      return true
+    } catch (error) {
+      initError.value = normalizeImError(error, CHAT_INIT_ERROR_MESSAGE)
+      return false
+    } finally {
+      initLoading.value = false
     }
   }
 
   const markRead = async (convId: string) => {
+    if (isAiConversation(convId)) return
+
     const conv = conversations.value.find((item) => item.id === convId)
     if (!conv) return
 
@@ -81,7 +213,14 @@ export const useImStore = defineStore('im', () => {
   }
 
   const selectConversation = async (convId: string) => {
+    messageError.value = ''
     activeId.value = convId
+
+    if (isAiConversation(convId)) {
+      rememberLoaded(convId)
+      return
+    }
+
     if (!messageLoaded(convId)) {
       await loadMessages(convId)
     }
@@ -98,6 +237,152 @@ export const useImStore = defineStore('im', () => {
     conv.lastTime = next.lastTime
   }
 
+  const toAiMessages = (convId: string): AIMessage[] => {
+    const history = (messages[convId] || [])
+      .filter((item) => item.type === 'text' && item.status !== 'failed')
+      .slice(-12)
+      .map<AIMessage>((item) => ({
+        role: item.senderId === currentUser.value?.id ? 'user' : 'assistant',
+        content: item.content
+      }))
+
+    return [
+      {
+        role: 'system',
+        content: AI_SYSTEM_PROMPT
+      },
+      ...history
+    ]
+  }
+
+  const sendAiMessage = async (
+    content: string,
+    type: MessageType,
+    fileName?: string
+  ) => {
+    if (!currentUser.value) return
+
+    if (type !== 'text') {
+      pushSystemMessage(
+        AI_CONVERSATION_ID,
+        'AI 助手暂不处理附件，请直接输入文字问题。'
+      )
+      return
+    }
+
+    const conv = conversations.value.find(
+      (item) => item.id === AI_CONVERSATION_ID
+    )
+    const userMessage: MessageItem = {
+      id: createTempMessageId(),
+      convId: AI_CONVERSATION_ID,
+      senderId: currentUser.value.id,
+      senderName: currentUser.value.name,
+      content,
+      type,
+      createdAt: Date.now(),
+      status: 'sent',
+      fileName
+    }
+
+    if (!messages[AI_CONVERSATION_ID]) {
+      messages[AI_CONVERSATION_ID] = []
+    }
+
+    messages[AI_CONVERSATION_ID]!.push(userMessage)
+    updateConversationPreview(AI_CONVERSATION_ID, {
+      lastMessage: content,
+      lastTime: userMessage.createdAt
+    })
+
+    if (conv) conv.typing = true
+
+    try {
+      const reply = await chatWithAI(toAiMessages(AI_CONVERSATION_ID), {
+        temperature: 0.6,
+        maxTokens: 800
+      })
+      const assistantMessage: MessageItem = {
+        id: createTempMessageId(),
+        convId: AI_CONVERSATION_ID,
+        senderId: AI_ASSISTANT_USER_ID,
+        senderName: 'AI 助手',
+        content: reply,
+        type: 'text',
+        createdAt: Date.now(),
+        status: 'sent'
+      }
+
+      messages[AI_CONVERSATION_ID]!.push(assistantMessage)
+      updateConversationPreview(AI_CONVERSATION_ID, {
+        lastMessage: assistantMessage.content,
+        lastTime: assistantMessage.createdAt
+      })
+    } catch (error) {
+      const failedMessage: MessageItem = {
+        id: createTempMessageId(),
+        convId: AI_CONVERSATION_ID,
+        senderId: AI_ASSISTANT_USER_ID,
+        senderName: 'AI 助手',
+        content: normalizeImError(error, 'AI 助手暂时无法回复，请稍后再试。'),
+        type: 'text',
+        createdAt: Date.now(),
+        status: 'failed'
+      }
+      messages[AI_CONVERSATION_ID]!.push(failedMessage)
+      updateConversationPreview(AI_CONVERSATION_ID, {
+        lastMessage: 'AI 助手暂时无法回复',
+        lastTime: failedMessage.createdAt
+      })
+    } finally {
+      if (conv) conv.typing = false
+    }
+  }
+
+  const openDirectConversation = async (member: UserProfile) => {
+    if (!currentUser.value) return ''
+
+    const existing = getDirectConversationByMember(member)
+    if (existing) {
+      await selectConversation(existing.id)
+      return existing.id
+    }
+
+    const convId = `local-direct-${member.id}`
+    const localConversation = conversations.value.find(
+      (item) => item.id === convId
+    )
+
+    if (!localConversation) {
+      conversations.value = [
+        {
+          id: convId,
+          title: member.name,
+          avatar: member.avatar,
+          mode: 'direct',
+          members: [currentUser.value, member],
+          lastMessage:
+            member.status === 'online' ? '可以开始聊天' : '对方离线，可先留言',
+          lastTime: Date.now(),
+          unread: 0,
+          pinned: false,
+          typing: false
+        },
+        ...conversations.value
+      ]
+    }
+
+    if (!messages[convId]) {
+      messages[convId] = []
+    }
+
+    rememberLoaded(convId)
+    rememberLocalConversation(convId)
+    messageError.value = ''
+    activeId.value = convId
+    return convId
+  }
+
   const sendMessage = async (
     content: string,
     type: MessageType = 'text',
@@ -105,6 +390,11 @@ export const useImStore = defineStore('im', () => {
   ) => {
     if (!activeId.value || !currentUser.value) return
     if (!content.trim()) return
+
+    if (isAiConversation(activeId.value)) {
+      await sendAiMessage(content, type, fileName)
+      return
+    }
 
     const tempMessage: MessageItem = {
       id: createTempMessageId(),
@@ -127,30 +417,46 @@ export const useImStore = defineStore('im', () => {
       lastTime: tempMessage.createdAt
     })
 
+    if (isLocalConversation(activeId.value)) {
+      tempMessage.status = 'sent'
+      return
+    }
+
     const response = await sendConversationMessage({
       convId: activeId.value,
       content,
       type,
-      fileName
+      fileName,
+      senderId: currentUser.value.id
     }).catch(() => null)
 
     if (!response || response.code !== 200) {
-      tempMessage.status = 'read' as MessageStatus
+      const list = messages[activeId.value] || []
+      replaceMessageById(
+        list,
+        tempMessage.id,
+        markMessageFailed(tempMessage, CHAT_SEND_ERROR_MESSAGE)
+      )
       return
     }
 
     const list = messages[activeId.value] || []
-    const index = list.findIndex((item) => item.id === tempMessage.id)
-    if (index >= 0) {
-      list.splice(index, 1, response.data)
+    const sentMessage: MessageItem = {
+      ...response.data,
+      convId: activeId.value,
+      senderId: currentUser.value.id,
+      senderName: currentUser.value.name
     }
+    replaceMessageById(list, tempMessage.id, sentMessage)
     updateConversationPreview(activeId.value, {
-      lastMessage: response.data.fileName || response.data.content,
-      lastTime: response.data.createdAt
+      lastMessage: sentMessage.fileName || sentMessage.content,
+      lastTime: sentMessage.createdAt
     })
   }
 
   const togglePin = async (convId: string) => {
+    if (isAiConversation(convId)) return
+
     const conv = conversations.value.find((item) => item.id === convId)
     if (!conv) return
     const nextPinned = !conv.pinned
@@ -176,8 +482,22 @@ export const useImStore = defineStore('im', () => {
 
   const connect = async () => {
     if (connected.value) return
-    await connectImSession().catch(() => null)
+    initLoading.value = true
+    initError.value = ''
+
+    const response = await connectImSession().catch((error) => {
+      initError.value = normalizeImError(error, CHAT_INIT_ERROR_MESSAGE)
+      return null
+    })
+
+    if (!response) {
+      connected.value = false
+      initLoading.value = false
+      return
+    }
+
     connected.value = true
+    initLoading.value = false
     await loadBootstrap()
   }
 
@@ -189,6 +509,7 @@ export const useImStore = defineStore('im', () => {
 
   return {
     conversations,
+    onlineUsers,
     messages,
     activeId,
     activeConversation,
@@ -196,14 +517,24 @@ export const useImStore = defineStore('im', () => {
     totalUnread,
     connected,
     currentUser,
+    localConversationIds,
+    initLoading,
+    messageLoading,
+    initError,
+    messageError,
+    humanOnlineUsers,
+    aiFallbackActive,
     selectConversation,
     sendMessage,
     connect,
     disconnect,
     markRead,
     togglePin,
+    openDirectConversation,
     pushSystemMessage,
     loadBootstrap,
-    loadMessages
+    loadMessages,
+    resolveLiveStatus: (member: UserProfile) =>
+      resolveMemberLiveStatus(member, currentUser.value, onlineUsers.value)
   }
 })

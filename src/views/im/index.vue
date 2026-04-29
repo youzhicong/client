@@ -58,13 +58,17 @@
             <strong>{{ totalConversations }}</strong>
           </div>
           <div class="summary-card">
-            <span>群聊</span>
-            <strong>{{ groupConversations }}</strong>
+            <span>人工在线</span>
+            <strong>{{ humanOnlineUsers.length }}</strong>
           </div>
           <div class="summary-card highlight">
             <span>未读</span>
             <strong>{{ totalUnread }}</strong>
           </div>
+        </div>
+
+        <div v-if="aiFallbackActive" class="ai-fallback-note">
+          当前只有你在线，已启用 AI 助手接待。
         </div>
 
         <div class="conversation-list">
@@ -110,9 +114,10 @@
 
               <div class="tags-line">
                 <span class="mode-tag" :class="conv.mode">
-                  {{ conv.mode === 'group' ? '群聊' : '私聊' }}
+                  {{ conversationModeLabel(conv.mode) }}
                 </span>
                 <button
+                  v-if="!isAiConversation(conv.id)"
                   class="pin-btn"
                   type="button"
                   @click.stop="togglePin(conv.id)"
@@ -137,7 +142,7 @@
               <h3>{{ activeConversation.title }}</h3>
               <div class="chat-sub">
                 <span class="status" :class="statusClass(activeConversation)">
-                  {{ activeConversation.mode === 'group' ? '群聊' : '私聊' }}
+                  {{ conversationModeLabel(activeConversation.mode) }}
                 </span>
                 <span>{{ activeConversation.members.length }} 位成员</span>
                 <span v-if="activeConversation.typing" class="typing-text"
@@ -147,10 +152,15 @@
             </div>
 
             <div class="chat-actions">
-              <el-button size="small" @click="markRead(activeConversation.id)"
-                >全部已读</el-button
-              >
-              <el-button size="small" type="primary" plain>发起会议</el-button>
+              <template v-if="!isActiveAiConversation">
+                <el-button size="small" @click="markRead(activeConversation.id)"
+                  >全部已读</el-button
+                >
+                <el-button size="small" type="primary" plain
+                  >发起会议</el-button
+                >
+              </template>
+              <span v-else class="ai-session-chip">AI 接待中</span>
             </div>
           </div>
 
@@ -238,17 +248,22 @@
           <div class="composer">
             <div class="composer-tools">
               <button class="tool-btn" type="button" @click="appendEmoji('😊')">
-                😊 表情
+                表情
               </button>
               <button
                 class="tool-btn"
                 type="button"
                 @click="appendText('收到，30 分钟内给你回复。')"
               >
-                ⚡ 快捷回复
+                快捷回复
               </button>
-              <button class="tool-btn" type="button" @click="triggerFile">
-                📎 上传文件
+              <button
+                v-if="!isActiveAiConversation"
+                class="tool-btn"
+                type="button"
+                @click="triggerFile"
+              >
+                上传文件
               </button>
               <input
                 ref="fileInputRef"
@@ -272,7 +287,7 @@
             />
 
             <div class="composer-footer">
-              <span class="hint">当前会话：{{ activeConversation.title }}</span>
+              <span class="hint">{{ composerHint }}</span>
 
               <div class="composer-actions">
                 <span class="count" :class="{ danger: draftOverflow }">
@@ -328,8 +343,8 @@
                   >我</span
                 >
               </div>
-              <div class="member-status" :class="member.status">
-                {{ statusLabel(member.status) }}
+              <div class="member-status" :class="memberLiveStatus(member)">
+                {{ statusLabel(memberLiveStatus(member)) }}
               </div>
             </div>
           </div>
@@ -343,6 +358,8 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useImStore } from '@/stores'
+import { AI_CONVERSATION_ID } from '@/stores/modules/imState'
+import type { ImUserProfile } from '@/services/im'
 import { canRenderAvatarImage, getAvatarFallbackText } from './avatarDisplay'
 
 type TabKey = 'all' | 'unread' | 'group'
@@ -369,18 +386,27 @@ const {
   activeMessages,
   connected,
   totalUnread,
-  currentUser
+  currentUser,
+  humanOnlineUsers,
+  aiFallbackActive
 } = storeToRefs(imStore)
 
 const activeMembers = computed(() =>
   (activeConversation.value?.members || []).filter((item) => Boolean(item))
 )
 const totalConversations = computed(() => imStore.conversations.length)
-const groupConversations = computed(
-  () => imStore.conversations.filter((item) => item.mode === 'group').length
-)
 const onlineMembers = computed(
-  () => activeMembers.value.filter((item) => item.status === 'online').length
+  () =>
+    activeMembers.value.filter((item) => memberLiveStatus(item) === 'online')
+      .length
+)
+const isActiveAiConversation = computed(
+  () => activeId.value === AI_CONVERSATION_ID
+)
+const composerHint = computed(() =>
+  isActiveAiConversation.value
+    ? '当前由 AI 助手接待，人工上线后可继续转人工沟通。'
+    : `当前会话：${activeConversation.value?.title || '-'}`
 )
 
 const draftLength = computed(() => draft.value.length)
@@ -389,7 +415,8 @@ const canSend = computed(
   () =>
     Boolean(activeConversation.value) &&
     draft.value.trim().length > 0 &&
-    !draftOverflow.value
+    !draftOverflow.value &&
+    !(isActiveAiConversation.value && activeConversation.value?.typing)
 )
 
 const newMessageCount = ref(0)
@@ -399,12 +426,24 @@ const brokenAvatarSources = ref<string[]>([])
 
 const showAvatarImage = (source?: string | null) => {
   const normalized = source?.trim()
+  if (!normalized) return false
+
   return (
-    Boolean(normalized) &&
     canRenderAvatarImage(normalized) &&
     !brokenAvatarSources.value.includes(normalized)
   )
 }
+
+const isAiConversation = (convId: string) => convId === AI_CONVERSATION_ID
+
+const conversationModeLabel = (mode: string) => {
+  if (mode === 'group') return '群聊'
+  if (mode === 'ai') return 'AI 接待'
+  return '私聊'
+}
+
+const memberLiveStatus = (member: ImUserProfile) =>
+  imStore.resolveLiveStatus(member)
 
 const markAvatarBroken = (source?: string | null) => {
   const normalized = source?.trim()
@@ -485,6 +524,7 @@ const formatMessageTime = (value: number) => formatTime(value)
 
 const formatStatus = (status: string) => {
   if (status === 'sending') return '发送中'
+  if (status === 'failed') return '发送失败'
   if (status === 'sent') return '已送达'
   return '已读'
 }
@@ -496,7 +536,7 @@ const statusLabel = (status: string) => {
 }
 
 const statusClass = (conv: { mode: string }) =>
-  conv.mode === 'group' ? 'group' : 'direct'
+  conv.mode === 'group' ? 'group' : conv.mode === 'ai' ? 'ai' : 'direct'
 
 const scrollToBottom = () => {
   if (!messageWrapRef.value) return
@@ -845,6 +885,17 @@ watch(
   color: #c2410c;
 }
 
+.ai-fallback-note {
+  margin: 12px 16px 0;
+  padding: 9px 11px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .conversation-list {
   flex: 1;
   padding: 12px;
@@ -994,6 +1045,11 @@ watch(
   background: #dffaf6;
 }
 
+.mode-tag.ai {
+  color: #4338ca;
+  background: #eef2ff;
+}
+
 .pin-btn {
   border: 1px dashed transparent;
   border-radius: 999px;
@@ -1076,13 +1132,31 @@ watch(
   color: #0f766e;
 }
 
+.status.ai {
+  color: #4338ca;
+}
+
 .typing-text {
   color: var(--brand);
 }
 
 .chat-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.ai-session-chip {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  color: #4338ca;
+  background: #eef2ff;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .chat-body {
