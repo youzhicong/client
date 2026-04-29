@@ -6,21 +6,27 @@ const source = readFileSync(
   'utf8'
 )
 
-const sectionBlock = (title) => {
-  const titleIndex = source.indexOf(`title: '${title}'`)
-  assert.notEqual(titleIndex, -1, `${title} section should exist`)
+const sectionBlock = (key) => {
+  const keyIndex = source.indexOf(`key: '${key}'`)
+  assert.notEqual(keyIndex, -1, `${key} section should exist`)
 
-  const nextSectionIndex = source.indexOf('\n  {', titleIndex + 1)
-  return source.slice(titleIndex, nextSectionIndex === -1 ? undefined : nextSectionIndex)
+  const nextSectionIndex = source.indexOf('\n  {', keyIndex + 1)
+  return source.slice(keyIndex, nextSectionIndex === -1 ? undefined : nextSectionIndex)
 }
 
-const commonSection = sectionBlock('常用功能')
-const smartSection = sectionBlock('智能沟通')
+const smartSection = sectionBlock('smart-communication')
+const commonSection = sectionBlock('common')
+const menuStart = source.indexOf('const menuSections')
+const firstSectionAfterMenuStart = source.indexOf('\n  {', menuStart)
+const firstSectionBlock = source.slice(
+  firstSectionAfterMenuStart,
+  source.indexOf('\n  {', firstSectionAfterMenuStart + 1)
+)
 
 assert.equal(
-  source.includes("title: 'AI 模块'"),
-  false,
-  'old AI module section should be removed'
+  firstSectionBlock.includes("key: 'smart-communication'"),
+  true,
+  'smart communication should be the first sidebar section'
 )
 
 assert.equal(
@@ -41,6 +47,12 @@ assert.match(
   source,
   /openedSections[\s\S]*'smart-communication'/,
   'smart communication section should be opened by default'
+)
+
+assert.match(
+  source,
+  /@media \(max-width: 820px\)[\s\S]*\.app-sidebar[\s\S]*display: none/,
+  'fixed sidebar should be hidden on H5 widths so the chat page can use the full screen'
 )
 
 console.log('side-menu-smart-communication tests passed')

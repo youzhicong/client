@@ -128,6 +128,45 @@ type MenuSection = {
 
 const menuSections: MenuSection[] = [
   {
+    key: 'smart-communication',
+    title: '智能沟通',
+    icon: ChatDotRound,
+    items: [
+      {
+        index: '/im',
+        label: '即时通信',
+        desc: '消息中心 + AI接待',
+        icon: ChatDotRound,
+        theme: 'theme-im',
+        badge: 3
+      },
+      {
+        index: '/ai/chat',
+        label: 'AI聊天',
+        desc: '模型对话测试',
+        icon: ChatDotRound,
+        theme: 'theme-ai-chat',
+        matchPaths: ['/ai/chat']
+      },
+      {
+        index: '/ai/settings',
+        label: 'AI设置',
+        desc: '模型与接口配置',
+        icon: Setting,
+        theme: 'theme-ai-settings',
+        matchPaths: ['/ai/settings']
+      },
+      {
+        index: '/ai/workflow',
+        label: 'AI工作流',
+        desc: '产品创意生成',
+        icon: MagicStick,
+        theme: 'theme-ai',
+        matchPaths: ['/ai/workflow']
+      }
+    ]
+  },
+  {
     key: 'common',
     title: '常用功能',
     icon: House,
@@ -372,45 +411,6 @@ const menuSections: MenuSection[] = [
     ]
   },
   {
-    key: 'smart-communication',
-    title: '智能沟通',
-    icon: ChatDotRound,
-    items: [
-      {
-        index: '/im',
-        label: '即时通信',
-        desc: '消息中心 + AI接待',
-        icon: ChatDotRound,
-        theme: 'theme-im',
-        badge: 3
-      },
-      {
-        index: '/ai/chat',
-        label: 'AI聊天',
-        desc: '模型对话测试',
-        icon: ChatDotRound,
-        theme: 'theme-ai-chat',
-        matchPaths: ['/ai/chat']
-      },
-      {
-        index: '/ai/settings',
-        label: 'AI设置',
-        desc: '模型与接口配置',
-        icon: Setting,
-        theme: 'theme-ai-settings',
-        matchPaths: ['/ai/settings']
-      },
-      {
-        index: '/ai/workflow',
-        label: 'AI工作流',
-        desc: '产品创意生成',
-        icon: MagicStick,
-        theme: 'theme-ai',
-        matchPaths: ['/ai/workflow']
-      }
-    ]
-  },
-  {
     key: 'visual-center',
     title: '可视化模块',
     icon: View,
@@ -456,11 +456,11 @@ const sectionHasActive = (section: MenuSection) =>
   section.items.some((item) => isActiveMenu(item))
 
 const openedSections = ref<string[]>([
+  'smart-communication',
   'common',
   'upload-doc',
   'games',
-  'live-center',
-  'smart-communication'
+  'live-center'
 ])
 
 const isSectionOpen = (key: string) => openedSections.value.includes(key)
@@ -864,6 +864,12 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
 @media (max-width: 1120px) {
   .app-sidebar {
     width: 248px;
+  }
+}
+
+@media (max-width: 820px) {
+  .app-sidebar {
+    display: none;
   }
 }
 </style>
