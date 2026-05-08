@@ -10,8 +10,16 @@
 
     <div class="sidebar-scroll">
       <div class="sidebar-quick-actions">
-        <button type="button" class="quick-action primary">新建任务</button>
-        <button type="button" class="quick-action">团队看板</button>
+        <button
+          type="button"
+          class="quick-action primary"
+          @click="goToBusinessHub"
+        >
+          业务中台
+        </button>
+        <button type="button" class="quick-action" @click="goToHomeDashboard">
+          首页看板
+        </button>
       </div>
 
       <div class="nav-group">
@@ -76,7 +84,7 @@
 
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowDown,
   ArrowRight,
@@ -107,6 +115,7 @@ import {
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
+const router = useRouter()
 
 type MenuItem = {
   index: string
@@ -177,6 +186,13 @@ const menuSections: MenuSection[] = [
         desc: '数据概览',
         icon: House,
         theme: 'theme-home'
+      },
+      {
+        index: '/business-hub',
+        label: '业务中台',
+        desc: '业务闭环总览',
+        icon: Grid,
+        theme: 'theme-h5config'
       },
       {
         index: '/users',
@@ -360,6 +376,13 @@ const menuSections: MenuSection[] = [
         theme: 'theme-meal'
       },
       {
+        index: '/company-lottery',
+        label: '公司抽奖',
+        desc: '年会活动现场',
+        icon: TrophyBase,
+        theme: 'theme-live-money'
+      },
+      {
         index: '/approval-workflow',
         label: '审批流程',
         desc: '发起/驳回/修改',
@@ -441,6 +464,14 @@ const menuSections: MenuSection[] = [
 ]
 
 const activePath = computed(() => route.path)
+const goToBusinessHub = () => {
+  router.push('/business-hub')
+}
+
+const goToHomeDashboard = () => {
+  router.push('/home')
+}
+
 const getMenuDelay = (sectionIndex: number, index: number) =>
   `${(sectionIndex * 0.08 + index * 0.04).toFixed(2)}s`
 

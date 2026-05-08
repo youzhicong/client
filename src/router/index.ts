@@ -22,6 +22,12 @@ const router = createRouter({
           meta: { title: '首页' }
         },
         {
+          path: '/business-hub',
+          name: 'business-hub',
+          component: () => import('@/views/business-hub/index.vue'),
+          meta: { title: '业务中台' }
+        },
+        {
           path: '/preview',
           name: 'preview',
           component: () => import('@/views/preview/index.vue'),
@@ -161,6 +167,12 @@ const router = createRouter({
           name: 'meal-lottery',
           component: () => import('@/views/meal-lottery/index.vue'),
           meta: { title: '三餐抽奖' }
+        },
+        {
+          path: '/company-lottery',
+          name: 'company-lottery',
+          component: () => import('@/views/company-lottery/index.vue'),
+          meta: { title: '公司抽奖' }
         },
         {
           path: '/approval-workflow',
