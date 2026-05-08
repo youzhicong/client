@@ -7,7 +7,11 @@ const source = readFileSync(
 )
 
 const mobileMediaIndex = source.indexOf('@media (max-width: 680px)')
-assert.notEqual(mobileMediaIndex, -1, 'IM page should define H5 styles at 680px')
+assert.notEqual(
+  mobileMediaIndex,
+  -1,
+  'IM page should define H5 styles at 680px'
+)
 
 const mobileBlock = source.slice(mobileMediaIndex)
 

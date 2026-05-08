@@ -8,6 +8,7 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import electron from 'vite-plugin-electron'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import { viteMockServe } from 'vite-plugin-mock'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 import path from 'path'
 
 export default defineConfig(({ mode }) => {
@@ -31,6 +32,14 @@ export default defineConfig(({ mode }) => {
       }),
       createSvgIconsPlugin({
         iconDirs: [path.resolve(process.cwd(), 'src/icons')]
+      }),
+      viteStaticCopy({
+        targets: [
+          {
+            src: 'node_modules/cesium/Build/Cesium/{Workers,Assets,ThirdParty,Widgets}',
+            dest: 'cesium'
+          }
+        ]
       }),
       viteMockServe({
         mockPath: 'mock',

@@ -57,19 +57,44 @@
         </div>
 
         <div class="mobile-controls">
-          <button type="button" class="control-btn" @click="move('up')">
+          <button
+            type="button"
+            class="control-btn"
+            aria-label="向上移动"
+            @click="move('up')"
+          >
             ↑
           </button>
-          <button type="button" class="control-btn" @click="move('left')">
+          <button
+            type="button"
+            class="control-btn"
+            aria-label="向左移动"
+            @click="move('left')"
+          >
             ←
           </button>
-          <button type="button" class="control-btn center" @click="startGame">
+          <button
+            type="button"
+            class="control-btn center"
+            aria-label="重新开始"
+            @click="startGame"
+          >
             R
           </button>
-          <button type="button" class="control-btn" @click="move('right')">
+          <button
+            type="button"
+            class="control-btn"
+            aria-label="向右移动"
+            @click="move('right')"
+          >
             →
           </button>
-          <button type="button" class="control-btn" @click="move('down')">
+          <button
+            type="button"
+            class="control-btn"
+            aria-label="向下移动"
+            @click="move('down')"
+          >
             ↓
           </button>
         </div>
@@ -99,6 +124,10 @@
 
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+
+defineOptions({
+  name: 'Game2048Board'
+})
 
 type Direction = 'up' | 'down' | 'left' | 'right'
 type GameStatus = 'running' | 'over'

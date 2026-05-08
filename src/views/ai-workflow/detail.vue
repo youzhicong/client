@@ -186,6 +186,10 @@ import {
   type ProductDetail
 } from '@/services/ai'
 
+defineOptions({
+  name: 'AiWorkflowDetailPage'
+})
+
 const route = useRoute()
 const router = useRouter()
 

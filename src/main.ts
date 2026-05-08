@@ -9,6 +9,8 @@ import './permission'
 import pinia from './stores'
 import { useTheme } from './composables/useTheme'
 import 'virtual:svg-icons-register'
+;(window as Window & { CESIUM_BASE_URL?: string }).CESIUM_BASE_URL =
+  '/cesium/node_modules/cesium/Build/Cesium/'
 
 useTheme().initTheme()
 

@@ -21,7 +21,8 @@ export default defineConfigWithVueTs(
     '**/dist/**',
     '**/dist-ssr/**',
     '**/coverage/**',
-    '**/dist-electron/**'
+    '**/dist-electron/**',
+    '**/src/vendor/**'
   ]),
 
   pluginVue.configs['flat/essential'],

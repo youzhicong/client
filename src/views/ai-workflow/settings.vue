@@ -190,6 +190,10 @@ import {
   type AISettings
 } from '@/services/ai'
 
+defineOptions({
+  name: 'AiWorkflowSettingsPage'
+})
+
 const showKey = ref(false)
 const testing = ref(false)
 const testResult = ref<{ success: boolean; message: string } | null>(null)

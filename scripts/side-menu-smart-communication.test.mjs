@@ -11,7 +11,10 @@ const sectionBlock = (key) => {
   assert.notEqual(keyIndex, -1, `${key} section should exist`)
 
   const nextSectionIndex = source.indexOf('\n  {', keyIndex + 1)
-  return source.slice(keyIndex, nextSectionIndex === -1 ? undefined : nextSectionIndex)
+  return source.slice(
+    keyIndex,
+    nextSectionIndex === -1 ? undefined : nextSectionIndex
+  )
 }
 
 const smartSection = sectionBlock('smart-communication')
@@ -53,6 +56,42 @@ assert.match(
   source,
   /@media \(max-width: 820px\)[\s\S]*\.app-sidebar[\s\S]*display: none/,
   'fixed sidebar should be hidden on H5 widths so the chat page can use the full screen'
+)
+
+assert.match(
+  source,
+  /@click="goToBusinessHub"/,
+  'primary quick action should jump to the business hub'
+)
+
+assert.match(
+  source,
+  /@click="goToHomeDashboard"/,
+  'secondary quick action should jump back to the home dashboard'
+)
+
+assert.match(
+  source,
+  /router\.push\('\/business-hub'\)/,
+  'business hub quick action should use the shared router'
+)
+
+assert.match(
+  source,
+  /router\.push\('\/home'\)/,
+  'home dashboard quick action should use the shared router'
+)
+
+assert.match(
+  source,
+  />\s*业务中台\s*</,
+  'primary quick action label should describe the business hub destination'
+)
+
+assert.match(
+  source,
+  />\s*首页看板\s*</,
+  'secondary quick action label should describe the home dashboard destination'
 )
 
 console.log('side-menu-smart-communication tests passed')

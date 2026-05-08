@@ -42,8 +42,20 @@
           聚合访问、转化、区域和服务健康度，让常用业务数据在一个首页里快速形成判断。
         </p>
         <div class="hero-actions">
-          <button class="hero-btn primary" type="button">查看日报</button>
-          <button class="hero-btn secondary" type="button">导出看板</button>
+          <button
+            class="hero-btn primary"
+            type="button"
+            @click="openBusinessHub"
+          >
+            进入业务中台
+          </button>
+          <button
+            class="hero-btn secondary"
+            type="button"
+            @click="viewBusinessSuggestions"
+          >
+            查看业务建议
+          </button>
         </div>
       </div>
 
@@ -160,6 +172,7 @@
 
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import {
   getHomeDashboard,
@@ -170,6 +183,7 @@ import {
   type HomeRegionItem
 } from '@/services/homeDashboard'
 
+const router = useRouter()
 const lineChartRef = ref<HTMLDivElement | null>(null)
 const pieChartRef = ref<HTMLDivElement | null>(null)
 const barChartRef = ref<HTMLDivElement | null>(null)
@@ -186,6 +200,14 @@ const healthMetrics = ref<HomeHealthMetric[]>([])
 let lineChart: echarts.ECharts | null = null
 let pieChart: echarts.ECharts | null = null
 let barChart: echarts.ECharts | null = null
+
+const openBusinessHub = () => {
+  router.push('/business-hub')
+}
+
+const viewBusinessSuggestions = () => {
+  router.push({ path: '/business-hub', hash: '#business-backlog' })
+}
 
 const renderCharts = () => {
   lineChart?.setOption({

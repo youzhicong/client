@@ -227,7 +227,7 @@ const resolveBaseUrl = (baseUrl: string, provider = 'custom') => {
   return trimTrailingSlash(`${parsed.origin}${pathname}`)
 }
 
-export function normalizeAISettings(settings: AISettings): AISettings {
+export const normalizeAISettings = (settings: AISettings): AISettings => {
   return {
     provider: settings.provider || 'custom',
     baseUrl: resolveBaseUrl(settings.baseUrl, settings.provider),
@@ -239,7 +239,7 @@ export function normalizeAISettings(settings: AISettings): AISettings {
 /**
  * 获取 AI 设置
  */
-export function getAISettings(): AISettings {
+export const getAISettings = (): AISettings => {
   const saved = localStorage.getItem(AI_SETTINGS_STORAGE_KEY)
   if (saved) {
     try {
@@ -255,20 +255,20 @@ export function getAISettings(): AISettings {
 /**
  * 保存 AI 设置
  */
-export function saveAISettings(settings: AISettings): void {
+export const saveAISettings = (settings: AISettings): void => {
   localStorage.setItem(
     AI_SETTINGS_STORAGE_KEY,
     JSON.stringify(normalizeAISettings(settings))
   )
 }
 
-export function getAIProviderById(providerId: string) {
+export const getAIProviderById = (providerId: string) => {
   return AI_PROVIDERS.find((item) => item.id === providerId)
 }
 
-export function getAIChatEndpoint(
+export const getAIChatEndpoint = (
   settings: Pick<AISettings, 'baseUrl' | 'provider'>
-) {
+) => {
   const baseUrl = resolveBaseUrl(settings.baseUrl, settings.provider)
 
   if (!baseUrl) return ''
@@ -333,11 +333,11 @@ const readErrorMessage = async (response: Response) => {
   return `连接失败: ${response.status}`
 }
 
-async function requestAIChatCompletion(
+const requestAIChatCompletion = async (
   settings: AISettings,
   messages: AIMessage[],
   options: AIChatOptions = {}
-) {
+) => {
   const normalizedSettings = normalizeAISettings(settings)
 
   if (!normalizedSettings.baseUrl) {
@@ -384,9 +384,9 @@ async function requestAIChatCompletion(
 /**
  * 测试 AI 连接
  */
-export async function testAIConnection(
+export const testAIConnection = async (
   settings: AISettings
-): Promise<{ success: boolean; message: string }> {
+): Promise<{ success: boolean; message: string }> => {
   const normalizedSettings = normalizeAISettings(settings)
 
   try {
@@ -417,17 +417,17 @@ export async function testAIConnection(
   }
 }
 
-export async function chatWithAI(
+export const chatWithAI = async (
   messages: AIMessage[],
   options: AIChatOptions = {}
-) {
+) => {
   return requestAIChatCompletion(getAISettings(), messages, options)
 }
 
 /**
  * 演示模式数据 - 当 API 不可用时使用
  */
-function getDemoData(keyword: string): GenerationResult {
+const getDemoData = (keyword: string): GenerationResult => {
   const demoCategories: Record<
     string,
     { name: string; icon: string; products: ProductIdea[] }[]
@@ -576,9 +576,9 @@ function getDemoData(keyword: string): GenerationResult {
 /**
  * 根据关键词生成产品创意
  */
-export async function generateProductIdeas(
+export const generateProductIdeas = async (
   keyword: string
-): Promise<GenerationResult> {
+): Promise<GenerationResult> => {
   const prompt = `你是一个产品创意专家。用户输入一个关键词，请根据这个关键词生成一系列相关的产品创意。
 
 关键词: "${keyword}"
@@ -638,7 +638,7 @@ export async function generateProductIdeas(
 /**
  * 获取历史记录
  */
-export function getHistory(): GenerationResult[] {
+export const getHistory = (): GenerationResult[] => {
   const stored = localStorage.getItem(AI_WORKFLOW_HISTORY_KEY)
   return stored ? JSON.parse(stored) : []
 }
@@ -646,7 +646,7 @@ export function getHistory(): GenerationResult[] {
 /**
  * 保存到历史记录
  */
-export function saveToHistory(result: GenerationResult): void {
+export const saveToHistory = (result: GenerationResult): void => {
   const history = getHistory()
   history.unshift(result)
   localStorage.setItem(
@@ -658,17 +658,17 @@ export function saveToHistory(result: GenerationResult): void {
 /**
  * 清空历史记录
  */
-export function clearHistory(): void {
+export const clearHistory = (): void => {
   localStorage.removeItem(AI_WORKFLOW_HISTORY_KEY)
 }
 
 /**
  * 生成产品详细信息（带缓存）
  */
-export async function generateProductDetail(
+export const generateProductDetail = async (
   product: ProductIdea,
   keyword: string
-): Promise<ProductDetail> {
+): Promise<ProductDetail> => {
   const cacheKey = `product-detail-${keyword}-${product.name}`
   const cached = localStorage.getItem(cacheKey)
 
@@ -744,7 +744,7 @@ export async function generateProductDetail(
 /**
  * 演示产品详情数据
  */
-function getDemoProductDetail(product: ProductIdea): ProductDetail {
+const getDemoProductDetail = (product: ProductIdea): ProductDetail => {
   return {
     ...product,
     overview: `${product.name}是一款基于${product.category}的创新产品。${product.description}该产品定位于中高端市场，致力于为消费者提供优质的产品体验。`,
