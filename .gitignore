@@ -27,6 +27,10 @@ coverage
 *.tsbuildinfo
 
 .eslintcache
+__pycache__/
+*.pyc
+.codex/skills/**/__pycache__/
+.vite-*.log
 
 # Cypress
 /cypress/videos/

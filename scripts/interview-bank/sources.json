@@ -1,0 +1,142 @@
+{
+  "output": "src/views/frontend-interview/generatedQuestionBank.ts",
+  "sources": [
+    {
+      "id": "baidu-developer-frontend-200",
+      "name": "百度开发者中心前端面试题",
+      "type": "html",
+      "framework": "foundation",
+      "url": "https://developer.baidu.com/article/details/3323986",
+      "headers": {
+        "User-Agent": "Mozilla/5.0"
+      },
+      "contentPath": "props.pageProps.defaultArticleDetail.htmlContent",
+      "itemPattern": "(<p><strong>\\d+\\.\\s*[\\s\\S]*?<\\/li><\\/ul>)",
+      "titlePatterns": [
+        "<p><strong>\\d+\\.\\s*([\\s\\S]*?)<\\/strong><\\/p>"
+      ],
+      "answerItemPattern": "<li><strong>答案<\\/strong>：([\\s\\S]*?)<\\/li>",
+      "sectionKey": "generated-baidu-developer-foundation",
+      "sectionTitle": "自动采集 / 百度开发者中心",
+      "sectionDesc": "来自百度开发者中心文章页的前端面试题",
+      "levelDefault": "中级",
+      "routeRules": [
+        {
+          "pattern": "React",
+          "framework": "react"
+        },
+        {
+          "pattern": "Vue",
+          "framework": "vue"
+        }
+      ],
+      "tagsDefault": ["自动采集", "百度开发者"]
+    },
+    {
+      "id": "juejin-frontend-general",
+      "name": "掘金前端通用面试题",
+      "type": "json",
+      "framework": "foundation",
+      "url": "https://api.juejin.cn/search_api/v1/search?query=%E5%89%8D%E7%AB%AF%20%E9%9D%A2%E8%AF%95%E9%A2%98",
+      "headers": {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://juejin.cn/"
+      },
+      "itemPath": "data",
+      "titlePath": "result_model.article_info.title",
+      "tagsPath": "result_model.tags",
+      "tagsItemPath": "tag_name",
+      "answerPath": "result_model.article_info.brief_content",
+      "sourceUrlTemplate": "https://juejin.cn/post/{{result_model.article_info.article_id}}",
+      "sectionKey": "generated-juejin-general-foundation",
+      "sectionTitle": "自动采集 / 掘金通用题",
+      "sectionDesc": "来自掘金搜索接口的前端通用面试题文章",
+      "levelDefault": "中级",
+      "maxItems": 8,
+      "routeRules": [
+        {
+          "pattern": "Vue|VUE",
+          "framework": "vue"
+        },
+        {
+          "pattern": "React|react",
+          "framework": "react"
+        },
+        {
+          "pattern": "手写|并发|LRU|防抖|节流",
+          "framework": "handwriting"
+        }
+      ],
+      "tagsDefault": ["自动采集", "掘金", "通用题"]
+    },
+    {
+      "id": "juejin-vue-search",
+      "name": "掘金 Vue 面试题",
+      "type": "json",
+      "framework": "vue",
+      "url": "https://api.juejin.cn/search_api/v1/search?query=Vue%20%E9%9D%A2%E8%AF%95%E9%A2%98",
+      "headers": {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://juejin.cn/"
+      },
+      "itemPath": "data",
+      "titlePath": "result_model.article_info.title",
+      "tagsPath": "result_model.tags",
+      "tagsItemPath": "tag_name",
+      "answerPath": "result_model.article_info.brief_content",
+      "sourceUrlTemplate": "https://juejin.cn/post/{{result_model.article_info.article_id}}",
+      "sectionKey": "generated-juejin-vue",
+      "sectionTitle": "自动采集 / 掘金 Vue",
+      "sectionDesc": "来自掘金搜索接口的 Vue 面试题文章",
+      "levelDefault": "中级",
+      "maxItems": 8,
+      "tagsDefault": ["自动采集", "掘金", "Vue"]
+    },
+    {
+      "id": "juejin-react-search",
+      "name": "掘金 React 面试题",
+      "type": "json",
+      "framework": "react",
+      "url": "https://api.juejin.cn/search_api/v1/search?query=React%20%E9%9D%A2%E8%AF%95%E9%A2%98",
+      "headers": {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://juejin.cn/"
+      },
+      "itemPath": "data",
+      "titlePath": "result_model.article_info.title",
+      "tagsPath": "result_model.tags",
+      "tagsItemPath": "tag_name",
+      "answerPath": "result_model.article_info.brief_content",
+      "sourceUrlTemplate": "https://juejin.cn/post/{{result_model.article_info.article_id}}",
+      "sectionKey": "generated-juejin-react",
+      "sectionTitle": "自动采集 / 掘金 React",
+      "sectionDesc": "来自掘金搜索接口的 React 面试题文章",
+      "levelDefault": "中级",
+      "maxItems": 8,
+      "tagsDefault": ["自动采集", "掘金", "React"]
+    },
+    {
+      "id": "juejin-handwriting-search",
+      "name": "掘金手写题",
+      "type": "json",
+      "framework": "handwriting",
+      "url": "https://api.juejin.cn/search_api/v1/search?query=%E6%89%8B%E5%86%99%E9%A2%98%20%E5%89%8D%E7%AB%AF",
+      "headers": {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://juejin.cn/"
+      },
+      "itemPath": "data",
+      "titlePath": "result_model.article_info.title",
+      "tagsPath": "result_model.tags",
+      "tagsItemPath": "tag_name",
+      "answerPath": "result_model.article_info.brief_content",
+      "sourceUrlTemplate": "https://juejin.cn/post/{{result_model.article_info.article_id}}",
+      "sectionKey": "generated-juejin-handwriting",
+      "sectionTitle": "自动采集 / 掘金手写题",
+      "sectionDesc": "来自掘金搜索接口的前端手写题文章",
+      "levelDefault": "中级",
+      "maxItems": 8,
+      "tagsDefault": ["自动采集", "掘金"]
+    }
+  ]
+}

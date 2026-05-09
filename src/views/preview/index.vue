@@ -10,7 +10,7 @@
         <p>支持 PDF、Word、Excel、图片和文本文件，支持拖拽上传与快速下载。</p>
       </div>
 
-      <div class="hero-stats">
+      <div class="hero-right">
         <div class="hero-stat">
           <span class="label">当前文件</span>
           <span class="value">{{ file ? file.name : '未选择' }}</span>
@@ -97,7 +97,7 @@
           </div>
 
           <div class="meta-message" :class="{ warning: message }">
-            {{ message || '文件已就绪，可直接预览。' }}
+            {{ message || '文件已就绪，可以直接预览。' }}
           </div>
         </template>
       </div>
@@ -236,30 +236,30 @@ const triggerPick = () => {
   fileInputRef.value?.click()
 }
 
-const isTextFile = (f: File) => {
-  const type = f.type.toLowerCase()
+const isTextFile = (targetFile: File) => {
+  const type = targetFile.type.toLowerCase()
   if (type.startsWith('text/')) return true
   if (type === 'application/json') return true
-  const name = f.name.toLowerCase()
+  const name = targetFile.name.toLowerCase()
   return ['.txt', '.md', '.json', '.log', '.xml', '.csv'].some((ext) =>
     name.endsWith(ext)
   )
 }
 
-const readAsArrayBuffer = (f: File) =>
+const readAsArrayBuffer = (targetFile: File) =>
   new Promise<ArrayBuffer>((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result as ArrayBuffer)
     reader.onerror = () => reject(new Error('read failed'))
-    reader.readAsArrayBuffer(f)
+    reader.readAsArrayBuffer(targetFile)
   })
 
-const readAsText = (f: File) =>
+const readAsText = (targetFile: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result || ''))
     reader.onerror = () => reject(new Error('read failed'))
-    reader.readAsText(f)
+    reader.readAsText(targetFile)
   })
 
 const onOfficeError = () => {

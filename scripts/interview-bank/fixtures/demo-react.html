@@ -1,0 +1,28 @@
+<section class="question-list">
+  <article class="qa-item">
+    <h3>React 里为什么会有闭包陷阱？</h3>
+    <div class="meta">
+      <span class="tag">React</span>
+      <span class="tag">闭包</span>
+      <span class="tag">状态快照</span>
+    </div>
+    <ul class="answer">
+      <li>函数组件每次渲染都会形成新的作用域，回调捕获的是当次渲染时的值。</li>
+      <li>异步逻辑、事件监听和定时器如果处理不好，就很容易读到旧状态。</li>
+      <li>理解这一点后，再去谈 useRef、函数式更新或 effect 重绑才更稳。</li>
+    </ul>
+  </article>
+  <article class="qa-item">
+    <h3>Context 为什么容易把更新范围放大？</h3>
+    <div class="meta">
+      <span class="tag">React</span>
+      <span class="tag">Context</span>
+      <span class="tag">性能优化</span>
+    </div>
+    <ul class="answer">
+      <li>当 Context value 改变时，依赖它的消费组件都可能重新渲染。</li>
+      <li>如果一个 Context 什么都管，更新影响面就会越来越大。</li>
+      <li>拆分上下文、稳定 value 结构和缩小共享范围，是更稳的缓解思路。</li>
+    </ul>
+  </article>
+</section>

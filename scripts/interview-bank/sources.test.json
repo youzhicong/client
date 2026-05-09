@@ -1,0 +1,39 @@
+{
+  "output": "src/views/frontend-interview/generatedQuestionBank.ts",
+  "sources": [
+    {
+      "id": "demo-json-vue",
+      "name": "示例 JSON 题源",
+      "type": "json",
+      "framework": "vue",
+      "filePath": "scripts/interview-bank/fixtures/demo-vue.json",
+      "itemPath": "questions",
+      "titlePath": "title",
+      "tagsPath": "tags",
+      "answerPath": "answer",
+      "levelPath": "level",
+      "sectionKey": "generated-vue-json-demo",
+      "sectionTitle": "自动采集 / JSON 示例",
+      "sectionDesc": "来自 JSON 接口题源的自动导入示例",
+      "tagsDefault": ["自动采集", "JSON题源"]
+    },
+    {
+      "id": "demo-html-react",
+      "name": "示例 HTML 题源",
+      "type": "html",
+      "framework": "react",
+      "filePath": "scripts/interview-bank/fixtures/demo-react.html",
+      "itemPattern": "(<article class=\"qa-item\">[\\s\\S]*?<\\/article>)",
+      "titlePatterns": [
+        "<h3[^>]*>([\\s\\S]*?)<\\/h3>"
+      ],
+      "tagPattern": "<span class=\"tag\">([\\s\\S]*?)<\\/span>",
+      "answerItemPattern": "<li[^>]*>([\\s\\S]*?)<\\/li>",
+      "sectionKey": "generated-react-html-demo",
+      "sectionTitle": "自动采集 / HTML 示例",
+      "sectionDesc": "来自 HTML 页面题源的自动导入示例",
+      "levelDefault": "中级",
+      "tagsDefault": ["自动采集", "HTML题源"]
+    }
+  ]
+}

@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const useMock = env.VITE_USE_MOCK === 'true'
   const apiTarget = env.VITE_API_TARGET || 'http://localhost:8080'
+  const enableElectron = mode === 'electron'
   process.env.VITE_USE_BACKEND_FOR_CORE_APIS =
     env.VITE_USE_BACKEND_FOR_CORE_APIS || ''
 
@@ -45,7 +46,7 @@ export default defineConfig(({ mode }) => {
         mockPath: 'mock',
         enable: mode === 'development' && useMock
       }),
-      mode === 'development' || mode === 'electron'
+      enableElectron
         ? electron({
             entry: './src-electron/main.ts'
           })

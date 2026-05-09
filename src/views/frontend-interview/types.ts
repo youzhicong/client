@@ -1,4 +1,5 @@
-export type FrameworkTab = 'vue' | 'react'
+export type FrameworkTab = 'foundation' | 'handwriting' | 'vue' | 'react'
+
 export type QuestionLevel = '初级' | '中级' | '高级'
 
 export interface InterviewQuestion {
@@ -7,6 +8,9 @@ export interface InterviewQuestion {
   level: QuestionLevel
   tags: string[]
   answer: string[]
+  sourceName?: string
+  sourceUrl?: string
+  syncedAt?: string
 }
 
 export interface InterviewSection {
