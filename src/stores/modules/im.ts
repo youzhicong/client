@@ -35,8 +35,23 @@ import {
 const createTempMessageId = () =>
   `temp-${Date.now()}-${Math.random().toString(16).slice(2)}`
 
+const wait = (ms: number) =>
+  new Promise<void>((resolve) => window.setTimeout(resolve, ms))
+
+const resolveChunkDelay = (chunk: string) => {
+  if (/[\r\n]/.test(chunk)) return 45
+  if (/[\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A\u3001,.!?;]/.test(chunk)) return 70
+  return 16
+}
+
+const getStreamChunkSize = (remaining: number) => {
+  if (remaining > 80) return 3
+  if (remaining > 24) return 2
+  return 1
+}
+
 const AI_SYSTEM_PROMPT =
-  '你是这个即时通信页面里的 AI 助手。当前没有人工成员在线，请用简洁、可靠的中文先接待用户；如果问题需要人工处理，说明可以稍后转人工继续跟进。'
+  '\u4f60\u662f IM \u804a\u5929\u754c\u9762\u91cc\u7684 AI \u52a9\u624b\u3002\u5f53\u524d\u6682\u65e0\u4eba\u5de5\u5728\u7ebf\uff0c\u8bf7\u7528\u7b80\u6d01\u3001\u53ef\u9760\u7684\u4e2d\u6587\u5148\u63a5\u5f85\u7528\u6237\uff1b\u5982\u679c\u95ee\u9898\u9700\u8981\u4eba\u5de5\u5904\u7406\uff0c\u8bf7\u8bf4\u660e\u53ef\u4ee5\u7a0d\u540e\u8f6c\u4eba\u5de5\u7ee7\u7eed\u8ddf\u8fdb\u3002'
 
 export const useImStore = defineStore('im', () => {
   const conversations = ref<ConversationItem[]>([])
@@ -115,8 +130,9 @@ export const useImStore = defineStore('im', () => {
           id: createTempMessageId(),
           convId: AI_CONVERSATION_ID,
           senderId: AI_ASSISTANT_USER_ID,
-          senderName: 'AI 助手',
-          content: '当前暂无人工在线，我可以先帮你解答。',
+          senderName: 'AI',
+          content:
+            '\u5f53\u524d\u6682\u65e0\u4eba\u5de5\u5728\u7ebf\uff0c\u6211\u53ef\u4ee5\u5148\u5e2e\u4f60\u89e3\u7b54\u3002',
           type: 'text',
           createdAt: Date.now(),
           status: 'sent'
@@ -237,6 +253,50 @@ export const useImStore = defineStore('im', () => {
     conv.lastTime = next.lastTime
   }
 
+  const streamAssistantMessage = async (
+    convId: string,
+    content: string,
+    senderName: string
+  ) => {
+    if (!messages[convId]) {
+      messages[convId] = []
+    }
+
+    const assistantMessage: MessageItem = {
+      id: createTempMessageId(),
+      convId,
+      senderId: AI_ASSISTANT_USER_ID,
+      senderName,
+      content: '',
+      type: 'text',
+      createdAt: Date.now(),
+      status: 'sent'
+    }
+
+    messages[convId]!.push(assistantMessage)
+    const streamingMessage = messages[convId]![messages[convId]!.length - 1]
+    updateConversationPreview(convId, {
+      lastMessage: '',
+      lastTime: streamingMessage.createdAt
+    })
+
+    let cursor = 0
+
+    while (cursor < content.length) {
+      const remaining = content.length - cursor
+      const chunkSize = getStreamChunkSize(remaining)
+      const chunk = content.slice(cursor, cursor + chunkSize)
+
+      streamingMessage.content += chunk
+      updateConversationPreview(convId, {
+        lastMessage: streamingMessage.content,
+        lastTime: streamingMessage.createdAt
+      })
+      cursor += chunk.length
+      await wait(resolveChunkDelay(chunk))
+    }
+  }
+
   const toAiMessages = (convId: string): AIMessage[] => {
     const history = (messages[convId] || [])
       .filter((item) => item.type === 'text' && item.status !== 'failed')
@@ -265,7 +325,7 @@ export const useImStore = defineStore('im', () => {
     if (type !== 'text') {
       pushSystemMessage(
         AI_CONVERSATION_ID,
-        'AI 助手暂不处理附件，请直接输入文字问题。'
+        '\u0041\u0049\u0020\u52a9\u624b\u6682\u4e0d\u5904\u7406\u9644\u4ef6\uff0c\u8bf7\u76f4\u63a5\u8f93\u5165\u6587\u5b57\u95ee\u9898\u3002'
       )
       return
     }
@@ -302,36 +362,25 @@ export const useImStore = defineStore('im', () => {
         temperature: 0.6,
         maxTokens: 800
       })
-      const assistantMessage: MessageItem = {
-        id: createTempMessageId(),
-        convId: AI_CONVERSATION_ID,
-        senderId: AI_ASSISTANT_USER_ID,
-        senderName: 'AI 助手',
-        content: reply,
-        type: 'text',
-        createdAt: Date.now(),
-        status: 'sent'
-      }
-
-      messages[AI_CONVERSATION_ID]!.push(assistantMessage)
-      updateConversationPreview(AI_CONVERSATION_ID, {
-        lastMessage: assistantMessage.content,
-        lastTime: assistantMessage.createdAt
-      })
+      await streamAssistantMessage(AI_CONVERSATION_ID, reply, 'AI')
     } catch (error) {
       const failedMessage: MessageItem = {
         id: createTempMessageId(),
         convId: AI_CONVERSATION_ID,
         senderId: AI_ASSISTANT_USER_ID,
-        senderName: 'AI 助手',
-        content: normalizeImError(error, 'AI 助手暂时无法回复，请稍后再试。'),
+        senderName: 'AI',
+        content: normalizeImError(
+          error,
+          '\u0041\u0049\u0020\u52a9\u624b\u6682\u65f6\u65e0\u6cd5\u56de\u590d\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5\u3002'
+        ),
         type: 'text',
         createdAt: Date.now(),
         status: 'failed'
       }
       messages[AI_CONVERSATION_ID]!.push(failedMessage)
       updateConversationPreview(AI_CONVERSATION_ID, {
-        lastMessage: 'AI 助手暂时无法回复',
+        lastMessage:
+          '\u0041\u0049\u0020\u52a9\u624b\u6682\u65f6\u65e0\u6cd5\u56de\u590d',
         lastTime: failedMessage.createdAt
       })
     } finally {
@@ -362,7 +411,9 @@ export const useImStore = defineStore('im', () => {
           mode: 'direct',
           members: [currentUser.value, member],
           lastMessage:
-            member.status === 'online' ? '可以开始聊天' : '对方离线，可先留言',
+            member.status === 'online'
+              ? '\u53ef\u4ee5\u5f00\u59cb\u804a\u5929'
+              : '\u5bf9\u65b9\u79bb\u7ebf\uff0c\u53ef\u5148\u7559\u8a00',
           lastTime: Date.now(),
           unread: 0,
           pinned: false,
@@ -472,7 +523,7 @@ export const useImStore = defineStore('im', () => {
       id: createTempMessageId(),
       convId,
       senderId: 'system',
-      senderName: '系统',
+      senderName: '\u7cfb\u7edf',
       content,
       type: 'system',
       createdAt: Date.now(),

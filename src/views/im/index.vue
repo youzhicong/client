@@ -222,7 +222,13 @@
                       <span>图片消息</span>
                     </div>
 
-                    <div v-else class="text">{{ msg.content }}</div>
+                    <div v-else class="text">
+                      {{ msg.content
+                      }}<span
+                        v-if="isStreamingAiMessage(msg)"
+                        class="typing-cursor"
+                      ></span>
+                    </div>
                   </div>
 
                   <div class="meta">
@@ -238,7 +244,10 @@
               </div>
             </template>
 
-            <div v-if="activeConversation.typing" class="typing-row">
+            <div
+              v-if="activeConversation.typing && !hasStreamingAiMessage"
+              class="typing-row"
+            >
               <span></span>
               <span></span>
               <span></span>
@@ -480,6 +489,22 @@ const messageView = computed(() => {
   })
 })
 
+const isStreamingAiMessage = (msg: {
+  id: string
+  senderId: string
+  type: string
+}) => {
+  if (!activeConversation.value?.typing) return false
+  if (msg.senderId === currentUser.value?.id || msg.type !== 'text')
+    return false
+  const lastMessage = activeMessages.value[activeMessages.value.length - 1]
+  return lastMessage?.id === msg.id
+}
+
+const hasStreamingAiMessage = computed(() =>
+  activeMessages.value.some((msg) => isStreamingAiMessage(msg))
+)
+
 const isSameDate = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
@@ -617,6 +642,14 @@ watch(
     lastMessageCount.value = count
   },
   { immediate: true }
+)
+
+watch(
+  () => activeMessages.value.map((item) => item.content).join('\u0000'),
+  () => {
+    if (!autoScroll.value) return
+    nextTick(scrollToBottom)
+  }
 )
 
 watch(
@@ -1262,6 +1295,16 @@ watch(
   white-space: pre-wrap;
 }
 
+.typing-cursor {
+  display: inline-block;
+  width: 1px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: currentColor;
+  animation: blink-cursor 0.9s steps(1) infinite;
+}
+
 .file-card {
   display: flex;
   align-items: center;
@@ -1646,6 +1689,18 @@ watch(
   .composer-actions {
     width: 100%;
     justify-content: space-between;
+  }
+}
+
+@keyframes blink-cursor {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
   }
 }
 </style>
