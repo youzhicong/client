@@ -19,6 +19,7 @@
 <script lang="ts" setup>
 import { ref, watch } from 'vue'
 import { useRoute, useRouter, type RouteLocationMatched } from 'vue-router'
+import { resolveMenuItemByPath } from '@/config/navigation'
 
 const route = useRoute()
 const router = useRouter()
@@ -48,6 +49,26 @@ const getBreadcrumb = () => {
   breadcrumbs.value = matched.filter(
     (item) => item.meta && item.meta.title && item.meta.breadcrumb !== false
   )
+
+  const menuContext = resolveMenuItemByPath(route.path)
+  if (menuContext && route.path !== '/home' && route.path !== '/business-hub') {
+    const projectCrumb = {
+      path: menuContext.project.homePath,
+      meta: { title: menuContext.project.title }
+    } as unknown as RouteLocationMatched
+
+    const hasProjectCrumb = breadcrumbs.value.some(
+      (item) => item.meta?.title === menuContext.project.title
+    )
+
+    if (!hasProjectCrumb) {
+      breadcrumbs.value = [
+        breadcrumbs.value[0],
+        projectCrumb,
+        ...breadcrumbs.value.slice(1)
+      ]
+    }
+  }
 }
 
 const handleLink = (item: RouteLocationMatched) => {

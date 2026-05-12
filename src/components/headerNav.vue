@@ -10,6 +10,11 @@
           <span class="logo-version">Operations cockpit</span>
         </div>
       </button>
+
+      <div v-if="currentProject" class="project-pill">
+        <span class="project-pill-label">当前项目</span>
+        <span class="project-pill-title">{{ currentProject.title }}</span>
+      </div>
     </div>
 
     <div class="header-center">
@@ -18,13 +23,37 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="搜索页面、功能或模块"
+          placeholder="搜索页面、功能或项目"
           class="search-input"
           @focus="searchFocused = true"
-          @blur="searchFocused = false"
+          @blur="handleSearchBlur"
           @keyup.enter="handleSearch"
         />
         <div class="search-shortcut"><span>Ctrl</span><span>K</span></div>
+
+        <div v-if="showSearchPanel" class="search-panel">
+          <button
+            v-for="result in searchResults"
+            :key="result.index"
+            type="button"
+            class="search-result"
+            @mousedown.prevent="goToSearchResult(result.index)"
+          >
+            <span class="search-result-icon">
+              <el-icon><component :is="result.icon" /></el-icon>
+            </span>
+            <span class="search-result-copy">
+              <span class="search-result-title">{{ result.label }}</span>
+              <span class="search-result-meta">
+                {{ result.projectTitle }} / {{ result.sectionTitle }}
+              </span>
+            </span>
+          </button>
+
+          <div v-if="!searchResults.length" class="search-empty">
+            没有找到匹配的菜单
+          </div>
+        </div>
       </div>
     </div>
 
@@ -46,7 +75,7 @@
         </button>
         <button class="action-btn has-badge" title="通知">
           <el-icon><Bell /></el-icon>
-          <span class="action-badge pulse">3</span>
+          <span class="action-badge">3</span>
         </button>
         <button class="action-btn" title="消息" @click="goToIM">
           <el-icon><ChatDotRound /></el-icon>
@@ -74,6 +103,7 @@
           </div>
           <el-icon class="user-arrow"><ArrowDown /></el-icon>
         </div>
+
         <template #dropdown>
           <el-dropdown-menu class="user-dropdown">
             <div class="dropdown-header">
@@ -124,15 +154,39 @@ import {
   SwitchButton,
   User
 } from '@element-plus/icons-vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useTheme } from '@/composables/useTheme'
+import { projectWorkspaces, resolveProjectByPath } from '@/config/navigation'
 
+const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const accountStore = useAccountStore()
 const searchQuery = ref('')
 const searchFocused = ref(false)
 const { isDark, toggleTheme } = useTheme()
+
+const searchableMenus = projectWorkspaces.flatMap((project) =>
+  project.sections.flatMap((section) =>
+    section.items.map((item) => ({
+      index: item.index,
+      label: item.label,
+      desc: item.desc,
+      icon: item.icon,
+      projectTitle: project.title,
+      sectionTitle: section.title,
+      keywords: [
+        item.label,
+        item.desc,
+        project.title,
+        project.subtitle,
+        section.title
+      ]
+        .join(' ')
+        .toLowerCase()
+    }))
+  )
+)
 
 const displayName = computed(
   () => userStore.user?.name || accountStore.profile.name || '管理员'
@@ -147,9 +201,25 @@ const displayAvatar = computed(
     accountStore.profile.avatar ||
     'https://api.dicebear.com/7.x/avataaars/svg?seed=user'
 )
+const currentProject = computed(() => resolveProjectByPath(route.path))
+const searchResults = computed(() => {
+  const keyword = searchQuery.value.trim().toLowerCase()
+  if (!keyword) return searchableMenus.slice(0, 6)
+
+  return searchableMenus
+    .filter((item) => item.keywords.includes(keyword))
+    .slice(0, 6)
+})
+const showSearchPanel = computed(() => searchFocused.value)
 
 const goHome = () => router.push('/home')
 const goToIM = () => router.push('/im')
+
+const goToSearchResult = (path: string) => {
+  searchQuery.value = ''
+  searchFocused.value = false
+  void router.push(path)
+}
 
 const handleToggleTheme = () => {
   const theme = toggleTheme()
@@ -157,9 +227,18 @@ const handleToggleTheme = () => {
 }
 
 const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    ElMessage.info(`搜索: ${searchQuery.value}`)
+  const firstResult = searchResults.value[0]
+  if (firstResult) {
+    goToSearchResult(firstResult.index)
+    return
   }
+  ElMessage.info('没有找到匹配的项目菜单')
+}
+
+const handleSearchBlur = () => {
+  window.setTimeout(() => {
+    searchFocused.value = false
+  }, 120)
 }
 
 const handleCommand = (command: string) => {
@@ -176,7 +255,7 @@ const handleCommand = (command: string) => {
     case 'logout':
       accountStore.recordActivity(
         '退出登录',
-        '已安全退出当前账号会话。',
+        '已安全退出当前账户会话。',
         '账号'
       )
       userStore.delUser()
@@ -196,39 +275,23 @@ const handleCommand = (command: string) => {
   left: 0;
   z-index: 1000;
   display: grid;
-  grid-template-columns: 260px minmax(280px, 1fr) auto;
+  grid-template-columns: 280px minmax(320px, 1fr) auto;
   align-items: center;
-  gap: 24px;
-  padding: 0 22px;
+  gap: 20px;
+  padding: 0 20px;
   background: var(--app-header-bg);
   border-bottom: 1px solid var(--app-header-border);
   box-shadow: var(--app-header-shadow);
-  isolation: isolate;
 }
 
-.app-header::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      circle at 12% -20%,
-      rgba(56, 189, 248, 0.22),
-      transparent 28%
-    ),
-    radial-gradient(circle at 88% -30%, rgba(29, 78, 216, 0.2), transparent 30%);
-  opacity: 0.8;
-}
-
-.app-header > * {
-  position: relative;
-  z-index: 1;
+.header-left,
+.header-right {
+  display: flex;
+  align-items: center;
 }
 
 .header-left {
-  display: flex;
-  align-items: center;
+  gap: 12px;
 }
 
 .logo {
@@ -236,51 +299,68 @@ const handleCommand = (command: string) => {
   background: transparent;
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   padding: 0;
   cursor: pointer;
-  transition: transform 0.24s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-  }
 }
 
 .logo-icon {
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
-  border-radius: 16px;
-  background: var(--app-gradient-brand);
-  box-shadow: 0 14px 32px rgba(29, 78, 216, 0.24);
+  border-radius: 10px;
+  background: #1d4ed8;
 }
 
 .logo-spark {
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
 }
 
 .logo-text {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  gap: 2px;
   align-items: flex-start;
 }
 
 .logo-name {
-  font-size: 18px;
+  color: var(--app-header-text);
+  font-size: 17px;
   font-weight: 700;
   line-height: 1.1;
-  color: var(--app-header-text);
 }
 
 .logo-version {
-  margin-top: 3px;
   color: var(--app-header-muted);
   font-size: 11px;
-  letter-spacing: 0.04em;
+}
+
+.project-pill {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border-left: 1px solid var(--app-header-border);
+}
+
+.project-pill-label {
+  color: var(--app-header-muted);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.project-pill-title {
+  color: var(--app-header-text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-center {
@@ -296,7 +376,6 @@ const handleCommand = (command: string) => {
 
   &.focused {
     .search-input {
-      background: var(--app-search-bg-focus);
       border-color: var(--app-search-focus-border);
       box-shadow: var(--app-search-focus-shadow);
     }
@@ -309,17 +388,17 @@ const handleCommand = (command: string) => {
 
 .search-icon {
   position: absolute;
-  left: 18px;
-  font-size: 16px;
+  left: 16px;
   color: var(--app-header-muted);
+  font-size: 16px;
 }
 
 .search-input {
   width: 100%;
-  height: 48px;
-  padding: 0 96px 0 50px;
-  border-radius: 18px;
+  height: 42px;
+  padding: 0 90px 0 46px;
   border: 1px solid var(--app-search-border);
+  border-radius: 10px;
   background: var(--app-search-bg);
   color: var(--app-header-text);
   font-size: 14px;
@@ -332,18 +411,18 @@ const handleCommand = (command: string) => {
 
 .search-shortcut {
   position: absolute;
-  right: 14px;
+  right: 12px;
   display: flex;
   gap: 4px;
 
   span {
-    min-width: 26px;
-    height: 24px;
-    padding: 0 7px;
+    min-width: 24px;
+    height: 22px;
+    padding: 0 6px;
     display: grid;
     place-items: center;
-    border-radius: 8px;
     border: 1px solid var(--app-search-shortcut-border);
+    border-radius: 6px;
     background: var(--app-search-shortcut-bg);
     color: var(--app-header-muted);
     font-size: 11px;
@@ -351,39 +430,90 @@ const handleCommand = (command: string) => {
   }
 }
 
-.header-right {
+.search-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  padding: 8px;
+  border: 1px solid var(--app-header-surface-border);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+}
+
+.search-result {
+  width: 100%;
   display: flex;
   align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: #f8fafc;
+  }
+}
+
+.search-result-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.search-result-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.search-result-title {
+  color: var(--app-header-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.search-result-meta,
+.search-empty,
+.status-label,
+.status-meta,
+.user-status {
+  color: var(--app-header-muted);
+  font-size: 11px;
+}
+
+.search-empty {
+  padding: 12px 10px;
+}
+
+.header-right {
   justify-content: flex-end;
-  gap: 12px;
+  gap: 10px;
 }
 
 .header-status {
   min-width: 120px;
-  padding: 9px 12px;
-  border-radius: 18px;
+  padding: 8px 10px;
   border: 1px solid var(--app-header-surface-border);
+  border-radius: 10px;
   background: var(--app-header-surface);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  display: grid;
+  gap: 2px;
 
   strong {
     color: var(--app-header-text);
     font-size: 13px;
     line-height: 1.2;
   }
-}
-
-.status-meta {
-  margin-top: 2px;
-  color: var(--app-header-muted);
-  font-size: 11px;
-}
-
-.status-label {
-  color: var(--app-header-muted);
-  font-size: 11px;
 }
 
 .header-actions {
@@ -393,12 +523,12 @@ const handleCommand = (command: string) => {
 
 .action-btn {
   position: relative;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
   border: 1px solid transparent;
-  border-radius: 14px;
+  border-radius: 8px;
   background: transparent;
   color: var(--app-header-subtle);
   cursor: pointer;
@@ -416,66 +546,46 @@ const handleCommand = (command: string) => {
   }
 
   .el-icon {
-    font-size: 18px;
+    font-size: 17px;
   }
 }
 
 .action-badge {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: linear-gradient(135deg, #dc2626, #f97316);
+  background: #ef4444;
   color: #fff;
   font-size: 10px;
   font-weight: 700;
 }
 
-.pulse {
-  animation: pulse 2.1s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3);
-  }
-  50% {
-    transform: scale(1.06);
-    box-shadow: 0 0 0 7px rgba(220, 38, 38, 0);
-  }
-}
-
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 7px 12px 7px 7px;
-  border-radius: 18px;
+  gap: 10px;
+  padding: 5px 10px 5px 5px;
   border: 1px solid var(--app-header-surface-border);
+  border-radius: 10px;
   background: var(--app-header-surface);
   cursor: pointer;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 
   &:hover {
     background: var(--app-header-hover-surface);
     border-color: var(--app-header-hover-border);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.22),
-      0 16px 32px rgba(15, 23, 42, 0.08);
   }
 }
 
 .user-avatar,
 .dropdown-avatar {
   overflow: hidden;
-  background: linear-gradient(135deg, #1d4ed8, #38bdf8);
+  background: #dbeafe;
 
   img {
     width: 100%;
@@ -485,41 +595,34 @@ const handleCommand = (command: string) => {
 }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
 }
 
 .user-info {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 2px;
 }
 
-.user-name {
+.user-name,
+.dropdown-name {
   color: var(--app-header-text);
   font-size: 13px;
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.user-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--app-header-muted);
-  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 .status-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
 }
 
 .status-dot.online {
   background: #22c55e;
-  box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.12);
 }
 
 .user-arrow {
@@ -530,9 +633,9 @@ const handleCommand = (command: string) => {
 :deep(.user-dropdown) {
   min-width: 240px;
   padding: 8px;
-  border-radius: 20px;
-  background: var(--app-dropdown-bg);
   border: 1px solid var(--app-dropdown-border);
+  border-radius: 12px;
+  background: var(--app-dropdown-bg);
   box-shadow: var(--app-dropdown-shadow);
 }
 
@@ -540,28 +643,21 @@ const handleCommand = (command: string) => {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px;
-  margin-bottom: 8px;
-  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 6px;
+  border-radius: 10px;
   background: var(--app-dropdown-header-bg);
 }
 
 .dropdown-avatar {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
 }
 
 .dropdown-info {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 4px;
-}
-
-.dropdown-name {
-  color: var(--app-dropdown-text);
-  font-size: 14px;
-  font-weight: 700;
 }
 
 .dropdown-email {
@@ -571,11 +667,11 @@ const handleCommand = (command: string) => {
 
 :deep(.el-dropdown-menu__item) {
   margin: 2px 0;
-  padding: 12px 14px;
-  border-radius: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
   color: var(--app-dropdown-text);
   font-size: 13px;
-  gap: 10px;
+  gap: 8px;
 
   &:hover {
     background: var(--app-dropdown-hover);
@@ -586,10 +682,10 @@ const handleCommand = (command: string) => {
 @media (max-width: 1120px) {
   .app-header {
     grid-template-columns: 220px 1fr;
-    gap: 16px;
   }
 
-  .header-status {
+  .header-status,
+  .project-pill {
     display: none;
   }
 }
@@ -598,6 +694,7 @@ const handleCommand = (command: string) => {
   .app-header {
     height: auto;
     grid-template-columns: 1fr;
+    gap: 12px;
     padding: 14px;
   }
 

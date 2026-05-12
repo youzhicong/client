@@ -1,31 +1,86 @@
-﻿<template>
+<template>
   <nav class="app-sidebar">
     <div class="sidebar-top">
-      <div class="sidebar-intro">
-        <span class="sidebar-kicker">Workspace</span>
-        <h3>功能矩阵</h3>
-        <p>把常用业务入口整理成清晰的协作导航。</p>
+      <div class="sidebar-title">
+        <strong>项目导航</strong>
+        <span>按项目归类菜单，减少主导航堆叠</span>
       </div>
+
+      <el-select
+        :model-value="currentProject.key"
+        class="project-select"
+        placeholder="请选择项目"
+        @update:model-value="handleProjectSelect"
+      >
+        <el-option
+          v-for="project in projectWorkspaces"
+          :key="project.key"
+          :label="project.title"
+          :value="project.key"
+        />
+      </el-select>
     </div>
 
     <div class="sidebar-scroll">
-      <div class="sidebar-quick-actions">
+      <div class="project-summary">
+        <span class="project-summary-icon">
+          <el-icon><component :is="currentProject.icon" /></el-icon>
+        </span>
+        <div class="project-summary-copy">
+          <strong>{{ currentProject.title }}</strong>
+          <span>{{ currentProject.subtitle }}</span>
+        </div>
+      </div>
+
+      <div class="sidebar-actions">
         <button
           type="button"
-          class="quick-action primary"
-          @click="goToBusinessHub"
+          class="action-link action-link-primary"
+          @click="goToCurrentProjectHome"
         >
-          业务中台
+          进入项目
         </button>
-        <button type="button" class="quick-action" @click="goToHomeDashboard">
-          首页看板
+        <button type="button" class="action-link" @click="goToBusinessHub">
+          查看总览
         </button>
       </div>
 
-      <div class="nav-group">
-        <div class="nav-title">导航菜单</div>
+      <section v-if="recentItems.length" class="sidebar-panel">
+        <div class="panel-head">
+          <span>最近访问</span>
+          <button type="button" class="panel-clear" @click="clearRecentItems">
+            清空
+          </button>
+        </div>
+
+        <button
+          v-for="item in recentItems"
+          :key="item.index"
+          type="button"
+          class="recent-link"
+          :class="{ active: activePath === item.index }"
+          @click="goToRecentItem(item.index)"
+        >
+          <span class="nav-icon-wrap" :class="item.theme">
+            <el-icon><component :is="item.icon" /></el-icon>
+          </span>
+          <span class="recent-copy">
+            <span class="recent-label">{{ item.label }}</span>
+            <span class="recent-meta">
+              {{ item.projectTitle }} / {{ item.sectionTitle }}
+            </span>
+          </span>
+        </button>
+      </section>
+
+      <section class="nav-group">
+        <div class="nav-head">
+          <strong>{{ currentProject.title }}</strong>
+          <span>{{ currentProject.sections.length }} 个分组</span>
+        </div>
+
         <div
-          v-for="(section, sectionIndex) in menuSections"
+          v-for="(section, sectionIndex) in currentProject.sections"
           :key="section.key"
           class="menu-section"
         >
@@ -58,7 +113,7 @@
                 v-for="(item, index) in section.items"
                 :key="item.index"
                 :to="item.index"
-                class="nav-link level-2"
+                class="nav-link"
                 :class="{ active: isActiveMenu(item) }"
                 :style="{ '--delay': getMenuDelay(sectionIndex, index) }"
               >
@@ -72,12 +127,11 @@
                 <span v-if="item.badge" class="nav-badge">{{
                   item.badge
                 }}</span>
-                <el-icon v-else class="nav-arrow"><ArrowRight /></el-icon>
               </router-link>
             </div>
           </transition>
         </div>
-      </div>
+      </section>
     </div>
   </nav>
 </template>
@@ -85,395 +139,25 @@
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ArrowDown } from '@element-plus/icons-vue'
 import {
-  ArrowDown,
-  ArrowRight,
-  Aim,
-  Calendar,
-  ChatDotRound,
-  Compass,
-  Document,
-  EditPen,
-  Food,
-  Grid,
-  House,
-  MagicStick,
-  MapLocation,
-  Monitor,
-  Notebook,
-  OfficeBuilding,
-  Promotion,
-  Reading,
-  Rank,
-  School,
-  Setting,
-  TrendCharts,
-  TrophyBase,
-  Upload,
-  UserFilled,
-  View
-} from '@element-plus/icons-vue'
+  projectWorkspaces,
+  resolveProjectByPath,
+  type MenuItem,
+  type MenuSection,
+  type ProjectWorkspace
+} from '@/config/navigation'
+import { useRecentNavigation } from '@/composables/useRecentNavigation'
 
 const route = useRoute()
 const router = useRouter()
-
-type MenuItem = {
-  index: string
-  label: string
-  desc: string
-  icon: unknown
-  theme: string
-  badge?: number
-  exact?: boolean
-  matchPaths?: string[]
-}
-
-type MenuSection = {
-  key: string
-  title: string
-  icon: unknown
-  items: MenuItem[]
-}
-
-const menuSections: MenuSection[] = [
-  {
-    key: 'smart-communication',
-    title: '智能沟通',
-    icon: ChatDotRound,
-    items: [
-      {
-        index: '/im',
-        label: '即时通信',
-        desc: '消息中心 + AI接待',
-        icon: ChatDotRound,
-        theme: 'theme-im',
-        badge: 3
-      },
-      {
-        index: '/ai/chat',
-        label: 'AI聊天',
-        desc: '模型对话测试',
-        icon: ChatDotRound,
-        theme: 'theme-ai-chat',
-        matchPaths: ['/ai/chat']
-      },
-      {
-        index: '/ai/settings',
-        label: 'AI设置',
-        desc: '模型与接口配置',
-        icon: Setting,
-        theme: 'theme-ai-settings',
-        matchPaths: ['/ai/settings']
-      },
-      {
-        index: '/ai/workflow',
-        label: 'AI工作流',
-        desc: '产品创意生成',
-        icon: MagicStick,
-        theme: 'theme-ai',
-        matchPaths: ['/ai/workflow']
-      }
-    ]
-  },
-  {
-    key: 'common',
-    title: '常用功能',
-    icon: House,
-    items: [
-      {
-        index: '/home',
-        label: '首页',
-        desc: '数据概览',
-        icon: House,
-        theme: 'theme-home'
-      },
-      {
-        index: '/business-hub',
-        label: '业务中台',
-        desc: '业务闭环总览',
-        icon: Grid,
-        theme: 'theme-h5config'
-      },
-      {
-        index: '/users',
-        label: '用户列表',
-        desc: '成员管理',
-        icon: UserFilled,
-        theme: 'theme-users'
-      },
-      {
-        index: '/map',
-        label: '地图菜单',
-        desc: '位置服务',
-        icon: MapLocation,
-        theme: 'theme-map'
-      }
-    ]
-  },
-  {
-    key: 'upload-doc',
-    title: '上传与文档',
-    icon: Upload,
-    items: [
-      {
-        index: '/preview',
-        label: '在线预览',
-        desc: '文档预览',
-        icon: Document,
-        theme: 'theme-preview'
-      },
-      {
-        index: '/rich-text-editor',
-        label: '富文本编辑器',
-        desc: '内容排版工作台',
-        icon: EditPen,
-        theme: 'theme-editor'
-      },
-      {
-        index: '/announcement/list',
-        label: '公告管理',
-        desc: '发布与统计',
-        icon: Document,
-        theme: 'theme-announcement',
-        matchPaths: [
-          '/announcement/list',
-          '/announcement/publish',
-          '/announcement/detail'
-        ]
-      },
-      {
-        index: '/file-upload',
-        label: '文件上传',
-        desc: '分片续传',
-        icon: Upload,
-        theme: 'theme-upload'
-      },
-      {
-        index: '/drag',
-        label: '拖拽功能',
-        desc: '表单构建',
-        icon: Rank,
-        theme: 'theme-drag'
-      }
-    ]
-  },
-  {
-    key: 'teaching',
-    title: '教学专区',
-    icon: School,
-    items: [
-      {
-        index: '/high-school-schedule',
-        label: '高中课表',
-        desc: '教师排课',
-        icon: Calendar,
-        theme: 'theme-schedule'
-      },
-      {
-        index: '/class-lottery',
-        label: '课堂抽奖',
-        desc: '随机提问',
-        icon: School,
-        theme: 'theme-classlottery'
-      },
-      {
-        index: '/frontend-interview',
-        label: '前端面试',
-        desc: 'Vue 与 React',
-        icon: Reading,
-        theme: 'theme-interview'
-      }
-    ]
-  },
-  {
-    key: 'games',
-    title: '游戏中心',
-    icon: TrophyBase,
-    items: [
-      {
-        index: '/games',
-        label: '游戏大厅',
-        desc: '前端小游戏',
-        icon: Compass,
-        theme: 'theme-game-hall',
-        exact: true
-      },
-      {
-        index: '/games/snake',
-        label: '贪吃蛇',
-        desc: '经典街机',
-        icon: Aim,
-        theme: 'theme-game-snake'
-      },
-      {
-        index: '/games/2048',
-        label: '2048',
-        desc: '合并数字',
-        icon: Grid,
-        theme: 'theme-game-merge'
-      },
-      {
-        index: '/games/memory',
-        label: '记忆翻牌',
-        desc: '考验记忆',
-        icon: MagicStick,
-        theme: 'theme-game-memory'
-      }
-    ]
-  },
-  {
-    key: 'live-center',
-    title: '直播模块',
-    icon: Monitor,
-    items: [
-      {
-        index: '/live-center/overview',
-        label: '直播总览',
-        desc: '模块总控台',
-        icon: Monitor,
-        theme: 'theme-live'
-      },
-      {
-        index: '/live-center/data',
-        label: '直播数据',
-        desc: '趋势与大盘',
-        icon: TrendCharts,
-        theme: 'theme-live-data'
-      },
-      {
-        index: '/live-center/rooms',
-        label: '直播间',
-        desc: '观看与切流',
-        icon: View,
-        theme: 'theme-live-room'
-      },
-      {
-        index: '/live-center/monetization',
-        label: '礼物充值',
-        desc: '互动与转化',
-        icon: Promotion,
-        theme: 'theme-live-money'
-      },
-      {
-        index: '/live-center/operations',
-        label: '运营协同',
-        desc: '排班与执行',
-        icon: Setting,
-        theme: 'theme-live-ops'
-      }
-    ]
-  },
-  {
-    key: 'tools',
-    title: '业务工具',
-    icon: Setting,
-    items: [
-      {
-        index: '/meal-lottery',
-        label: '三餐抽奖',
-        desc: '今天吃什么',
-        icon: Food,
-        theme: 'theme-meal'
-      },
-      {
-        index: '/company-lottery',
-        label: '公司抽奖',
-        desc: '年会活动现场',
-        icon: TrophyBase,
-        theme: 'theme-live-money'
-      },
-      {
-        index: '/approval-workflow',
-        label: '审批流程',
-        desc: '发起/驳回/修改',
-        icon: Document,
-        theme: 'theme-workflow'
-      },
-      {
-        index: '/e-contract',
-        label: '电子合同签署',
-        desc: '在线签章',
-        icon: Document,
-        theme: 'theme-econtract'
-      },
-      {
-        index: '/fund-estimate',
-        label: '基金估值',
-        desc: '实时追踪',
-        icon: TrendCharts,
-        theme: 'theme-fund'
-      },
-      {
-        index: '/h5-project-config',
-        label: 'H5项目配置',
-        desc: '后台数据编排',
-        icon: Grid,
-        theme: 'theme-h5config'
-      },
-      {
-        index: '/vending-list',
-        label: '贩卖机管理',
-        desc: '设备列表',
-        icon: Promotion,
-        theme: 'theme-vending'
-      },
-      {
-        index: '/pc-builder',
-        label: '自选装机',
-        desc: '电商比价',
-        icon: Setting,
-        theme: 'theme-pc'
-      },
-      {
-        index: '/yuanyuan-diary',
-        label: '圆圆舔狗日记',
-        desc: '追爱复盘',
-        icon: Notebook,
-        theme: 'theme-diary'
-      }
-    ]
-  },
-  {
-    key: 'visual-center',
-    title: '可视化模块',
-    icon: View,
-    items: [
-      {
-        index: '/vending-monitor',
-        label: '3D贩卖机',
-        desc: '实时监控',
-        icon: Monitor,
-        theme: 'theme-monitor'
-      },
-      {
-        index: '/spline-3d',
-        label: '3D可视化',
-        desc: 'Spline场景',
-        icon: View,
-        theme: 'theme-spline'
-      },
-      {
-        index: '/campus-3d',
-        label: '校园全景',
-        desc: '数字校园',
-        icon: OfficeBuilding,
-        theme: 'theme-campus'
-      }
-    ]
-  }
-]
+const { recentItems, recordRecentPath, clearRecentItems } =
+  useRecentNavigation()
 
 const activePath = computed(() => route.path)
-const goToBusinessHub = () => {
-  router.push('/business-hub')
-}
-
-const goToHomeDashboard = () => {
-  router.push('/home')
-}
 
 const getMenuDelay = (sectionIndex: number, index: number) =>
-  `${(sectionIndex * 0.08 + index * 0.04).toFixed(2)}s`
+  `${(sectionIndex * 0.05 + index * 0.03).toFixed(2)}s`
 
 const isActiveMenu = (item: MenuItem) => {
   const matchPaths = item.matchPaths ?? [item.index]
@@ -483,38 +167,102 @@ const isActiveMenu = (item: MenuItem) => {
   })
 }
 
+const currentProjectKey = ref(
+  (resolveProjectByPath(activePath.value) || projectWorkspaces[0]).key
+)
+
+const currentProject = computed<ProjectWorkspace>(() => {
+  return (
+    projectWorkspaces.find(
+      (project) => project.key === currentProjectKey.value
+    ) || projectWorkspaces[0]
+  )
+})
+
 const sectionHasActive = (section: MenuSection) =>
   section.items.some((item) => isActiveMenu(item))
 
-const openedSections = ref<string[]>([
-  'smart-communication',
-  'common',
-  'upload-doc',
-  'games',
-  'live-center'
-])
+const buildSectionKey = (projectKey: string, sectionKey: string) =>
+  `${projectKey}:${sectionKey}`
 
-const isSectionOpen = (key: string) => openedSections.value.includes(key)
+const openedSections = ref<string[]>([])
 
-const toggleSection = (key: string) => {
-  if (isSectionOpen(key)) {
-    openedSections.value = openedSections.value.filter((item) => item !== key)
-    return
-  }
-  openedSections.value = [...openedSections.value, key]
-}
-
-const ensureActiveSectionOpened = () => {
-  const currentSection = menuSections.find((section) =>
+const ensureProjectSections = (project: ProjectWorkspace) => {
+  const activeSection = project.sections.find((section) =>
     sectionHasActive(section)
   )
-  if (!currentSection) return
-  if (!isSectionOpen(currentSection.key)) {
-    openedSections.value = [...openedSections.value, currentSection.key]
-  }
+  const defaultKeys = activeSection
+    ? [buildSectionKey(project.key, activeSection.key)]
+    : project.sections
+        .slice(0, 1)
+        .map((section) => buildSectionKey(project.key, section.key))
+
+  openedSections.value = Array.from(
+    new Set([
+      ...openedSections.value.filter(
+        (key) => !key.startsWith(`${project.key}:`)
+      ),
+      ...defaultKeys
+    ])
+  )
 }
 
-watch(activePath, ensureActiveSectionOpened, { immediate: true })
+const isSectionOpen = (sectionKey: string) =>
+  openedSections.value.includes(
+    buildSectionKey(currentProject.value.key, sectionKey)
+  )
+
+const toggleSection = (sectionKey: string) => {
+  const fullKey = buildSectionKey(currentProject.value.key, sectionKey)
+  if (openedSections.value.includes(fullKey)) {
+    openedSections.value = openedSections.value.filter(
+      (item) => item !== fullKey
+    )
+    return
+  }
+  openedSections.value = [...openedSections.value, fullKey]
+}
+
+const switchProject = (projectKey: string) => {
+  const targetProject = projectWorkspaces.find(
+    (project) => project.key === projectKey
+  )
+  if (!targetProject) return
+  currentProjectKey.value = targetProject.key
+  ensureProjectSections(targetProject)
+}
+
+const handleProjectSelect = (projectKey: string) => {
+  const targetProject = projectWorkspaces.find(
+    (project) => project.key === projectKey
+  )
+  if (!targetProject) return
+  switchProject(projectKey)
+  void router.push(targetProject.homePath)
+}
+
+const goToCurrentProjectHome = () => {
+  void router.push(currentProject.value.homePath)
+}
+
+const goToBusinessHub = () => {
+  void router.push('/business-hub')
+}
+
+const goToRecentItem = (path: string) => {
+  void router.push(path)
+}
+
+watch(
+  activePath,
+  (path) => {
+    const matchedProject = resolveProjectByPath(path) || projectWorkspaces[0]
+    currentProjectKey.value = matchedProject.key
+    ensureProjectSections(matchedProject)
+    recordRecentPath(path)
+  },
+  { immediate: true }
+)
 </script>
 
 <style lang="scss" scoped>
@@ -533,52 +281,39 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
 }
 
 .sidebar-top {
-  padding: 18px 18px 8px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--app-border);
 }
 
-.sidebar-intro {
-  padding: 16px;
-  border-radius: 22px;
-  background: var(--app-gradient-soft);
-  border: 1px solid rgba(29, 78, 216, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+.sidebar-title {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
 
-  h3 {
-    margin: 8px 0 6px;
+  strong {
     color: var(--app-text-main);
-    font-size: 20px;
-    line-height: 1.1;
+    font-size: 15px;
+    line-height: 1.2;
   }
 
-  p {
-    margin: 0;
+  span {
     color: var(--app-text-sub);
     font-size: 12px;
-    line-height: 1.6;
+    line-height: 1.5;
   }
 }
 
-.sidebar-kicker {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 24px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.7);
-  color: var(--app-accent);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+.project-select {
+  width: 100%;
 }
 
 .sidebar-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 14px 20px;
+  padding: 14px 12px 18px;
 
   &::-webkit-scrollbar {
-    width: 5px;
+    width: 6px;
   }
 
   &::-webkit-scrollbar-thumb {
@@ -587,66 +322,213 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   }
 }
 
-.sidebar-quick-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 0 4px 18px;
+.project-summary,
+.sidebar-panel,
+.nav-group {
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  background: var(--app-surface);
 }
 
-.quick-action {
-  height: 38px;
-  border: 1px solid var(--app-border);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.64);
-  color: var(--app-text-main);
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
+.project-summary {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 12px;
+}
 
-  &.primary {
-    background: var(--app-gradient-brand);
-    border-color: transparent;
-    color: #fff;
-    box-shadow: 0 14px 28px rgba(29, 78, 216, 0.2);
+.project-summary-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: var(--app-accent);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.project-summary-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+
+  strong {
+    color: var(--app-text-main);
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  span {
+    color: var(--app-text-sub);
+    font-size: 12px;
+    line-height: 1.4;
   }
 }
 
-.nav-title {
-  padding: 0 12px;
+.sidebar-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   margin-bottom: 12px;
-  color: var(--app-sidebar-muted);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
 }
 
-.menu-section {
-  margin-bottom: 10px;
+.action-link {
+  height: 34px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--app-text-main);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+
+  &:hover {
+    border-color: #bfdbfe;
+    color: var(--app-accent);
+  }
+}
+
+.action-link-primary {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
+
+  &:hover {
+    background: #1e40af;
+    border-color: #1e40af;
+    color: #fff;
+  }
+}
+
+.sidebar-panel {
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+
+  span {
+    color: var(--app-text-main);
+    font-size: 13px;
+    font-weight: 700;
+  }
+}
+
+.panel-clear {
+  border: 0;
+  background: transparent;
+  color: var(--app-text-sub);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.recent-link {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+  }
+
+  &.active {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+}
+
+.recent-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.recent-label,
+.nav-label {
+  color: var(--app-sidebar-text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.recent-meta,
+.nav-desc,
+.section-count,
+.nav-head span {
+  color: var(--app-sidebar-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.nav-group {
+  padding: 12px;
+}
+
+.nav-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+
+  strong {
+    color: var(--app-sidebar-text);
+    font-size: 14px;
+    font-weight: 700;
+  }
+}
+
+.menu-section + .menu-section {
+  margin-top: 6px;
 }
 
 .section-trigger {
   width: 100%;
+  padding: 8px 10px;
   border: 1px solid transparent;
-  border-radius: 18px;
+  border-radius: 8px;
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 12px;
   color: var(--app-sidebar-text);
   cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 
   &:hover {
-    background: var(--app-sidebar-hover);
-    border-color: var(--app-border);
+    background: #f8fafc;
+    border-color: #e2e8f0;
   }
 
   &.active {
-    background: var(--app-sidebar-section-active-bg);
-    color: var(--app-sidebar-section-active-text);
-    border-color: rgba(29, 78, 216, 0.12);
+    background: #f8fafc;
+    border-color: #dbeafe;
   }
 }
 
@@ -654,34 +536,36 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+
+.section-icon,
+.nav-icon-wrap {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 .section-icon {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  background: var(--app-sidebar-icon-bg);
+  background: #f1f5f9;
   color: var(--app-accent);
-  font-size: 15px;
 }
 
-.section-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+.section-meta,
+.nav-content {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
 }
 
 .section-title {
   font-size: 13px;
-  font-weight: 700;
-}
-
-.section-count {
-  margin-top: 2px;
-  font-size: 11px;
-  color: var(--app-sidebar-muted);
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .section-arrow {
@@ -695,12 +579,12 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
 }
 
 .section-items {
-  padding: 8px 0 2px 6px;
+  padding: 4px 0 2px 0;
 }
 
 .section-collapse-enter-active,
 .section-collapse-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
   overflow: hidden;
 }
 
@@ -712,184 +596,134 @@ watch(activePath, ensureActiveSectionOpened, { immediate: true })
 
 .section-collapse-enter-to,
 .section-collapse-leave-from {
-  max-height: 560px;
+  max-height: 520px;
   opacity: 1;
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 6px;
-  padding: 11px 12px;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 8px;
   border: 1px solid transparent;
-  border-radius: 18px;
+  border-radius: 8px;
   color: var(--app-sidebar-text);
   text-decoration: none;
-  animation: slideIn 0.4s ease backwards;
+  animation: slideIn 0.28s ease backwards;
   animation-delay: var(--delay);
-  backdrop-filter: blur(10px);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.62);
-    border-color: var(--app-border);
-    transform: translateX(3px);
-
-    .nav-arrow {
-      opacity: 1;
-      transform: translateX(0);
-    }
+    background: #f8fafc;
+    border-color: #e2e8f0;
   }
 
   &.active {
-    background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
-    border-color: rgba(255, 255, 255, 0.18);
-    color: #fff;
-    box-shadow: 0 18px 28px rgba(29, 78, 216, 0.26);
-
-    .nav-icon-wrap {
-      background: rgba(255, 255, 255, 0.14);
-      color: #fff;
-    }
-
-    .nav-desc,
-    .nav-arrow {
-      color: rgba(255, 255, 255, 0.72);
-      opacity: 1;
-      transform: translateX(0);
-    }
-
-    .nav-badge {
-      background: #fff;
-      color: #0f172a;
-    }
+    background: #eff6ff;
+    border-color: #bfdbfe;
   }
 }
 
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateX(-10px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0);
   }
 }
 
-.nav-icon-wrap {
-  width: 40px;
-  height: 40px;
+.nav-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
   display: grid;
   place-items: center;
-  border-radius: 14px;
-  font-size: 16px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .theme-home,
 .theme-users,
 .theme-live-ops,
 .theme-h5config {
-  background: linear-gradient(135deg, #dbeafe, #e0f2fe);
-  color: #1d4ed8;
+  background: #eff6ff;
+  color: #2563eb;
 }
+
 .theme-im,
 .theme-upload,
 .theme-game-snake,
 .theme-live-money,
 .theme-pc {
-  background: linear-gradient(135deg, #dcfce7, #ccfbf1);
+  background: #ecfdf5;
   color: #0f766e;
 }
+
 .theme-map,
 .theme-live-data,
 .theme-meal,
 .theme-fund,
 .theme-econtract {
-  background: linear-gradient(135deg, #fef3c7, #ffedd5);
+  background: #fffbeb;
   color: #b45309;
 }
+
 .theme-preview,
 .theme-ai,
 .theme-game-memory,
 .theme-vending {
-  background: linear-gradient(135deg, #f5f3ff, #fce7f3);
+  background: #faf5ff;
   color: #7c3aed;
 }
+
 .theme-editor,
 .theme-announcement,
 .theme-workflow,
 .theme-monitor {
-  background: linear-gradient(135deg, #cffafe, #dbeafe);
+  background: #ecfeff;
   color: #0f766e;
 }
+
 .theme-drag,
 .theme-game-hall,
 .theme-schedule {
-  background: linear-gradient(135deg, #ecfccb, #dcfce7);
+  background: #f7fee7;
   color: #3f6212;
 }
+
 .theme-classlottery,
 .theme-interview,
 .theme-live-room,
 .theme-campus {
-  background: linear-gradient(135deg, #dbeafe, #ddd6fe);
+  background: #eef2ff;
   color: #4338ca;
 }
+
 .theme-ai-chat,
 .theme-live,
 .theme-diary {
-  background: linear-gradient(135deg, #ffe4e6, #ffedd5);
+  background: #fff7ed;
   color: #c2410c;
 }
+
 .theme-game-merge,
 .theme-ai-settings {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  background: #fef3c7;
   color: #92400e;
 }
+
 .theme-spline {
-  background: linear-gradient(135deg, #0f172a, #1d4ed8);
-  color: #fff;
-}
-
-.nav-content {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.nav-label {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.nav-desc {
-  margin-top: 2px;
-  color: var(--app-sidebar-muted);
-  font-size: 11px;
-}
-
-.nav-badge {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #dc2626, #fb7185);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.nav-arrow {
-  color: var(--app-sidebar-arrow);
-  font-size: 12px;
-  opacity: 0;
-  transform: translateX(-4px);
-  transition: all 0.2s ease;
+  background: #dbeafe;
+  color: #1e3a8a;
 }
 
 @media (max-width: 1120px) {
