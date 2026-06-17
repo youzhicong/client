@@ -1,90 +1,78 @@
 <template>
-  <div class="user-list-page">
-    <el-card class="hero-card" shadow="never">
-      <div class="hero-content">
-        <div class="hero-text">
-          <el-text class="hero-kicker">用户管理</el-text>
-          <h1 class="hero-title">用户列表</h1>
-          <p class="hero-desc">
-            支持用户增删改查，并记录访问本项目的用户 IP 与访问时间。
-          </p>
-        </div>
-        <el-space>
-          <el-button @click="fetchUsers">刷新列表</el-button>
+  <PageShell>
+    <template #hero>
+      <PageHero
+        badge="USER MANAGEMENT"
+        title="用户列表"
+        description="支持用户增删改查，并记录访问本项目的用户 IP 与访问时间。"
+      >
+        <template #actions>
+          <el-button @click="refresh">刷新列表</el-button>
           <el-button type="primary" @click="handleAdd">新增用户</el-button>
           <el-button @click="handleExport">导出列表</el-button>
-        </el-space>
-      </div>
-    </el-card>
+        </template>
+      </PageHero>
+    </template>
 
-    <el-row :gutter="16" class="stats-row">
-      <el-col v-for="stat in stats" :key="stat.label" :span="6">
-        <el-card class="stat-card" shadow="never">
-          <div class="stat-head">
-            <div class="stat-icon" :style="{ background: stat.gradient }">
-              {{ stat.icon }}
-            </div>
-            <el-statistic :value="stat.value" :title="stat.label" />
-          </div>
-          <div class="stat-foot">{{ stat.desc }}</div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <template #stats>
+      <PageStatGrid :columns="4">
+        <PageStatCard label="总用户数" :value="summary.total" />
+        <PageStatCard label="在职账号" :value="summary.active" />
+        <PageStatCard label="待激活" :value="summary.invited" />
+        <PageStatCard label="已停用" :value="summary.disabled" />
+      </PageStatGrid>
+    </template>
 
-    <el-card class="filter-card" shadow="never">
-      <div class="filter-content">
-        <el-form :inline="true" class="filter-form">
-          <el-form-item>
-            <el-input
-              v-model="filters.keyword"
-              clearable
-              placeholder="搜索姓名 / 邮箱 / 部门"
-              @keyup.enter="handleSearch"
+    <PagePanel>
+      <PageFilterBar>
+        <template #filters>
+          <el-input
+            v-model="filters.keyword"
+            clearable
+            placeholder="搜索姓名 / 邮箱 / 部门"
+            style="width: 240px"
+            @keyup.enter="search"
+          />
+          <el-select
+            v-model="filters.role"
+            clearable
+            placeholder="全部角色"
+            style="width: 140px"
+          >
+            <el-option
+              v-for="role in roleOptions"
+              :key="role"
+              :label="role"
+              :value="role"
             />
-          </el-form-item>
-          <el-form-item>
-            <el-select
-              v-model="filters.role"
-              clearable
-              placeholder="全部角色"
-              style="width: 140px"
-            >
-              <el-option
-                v-for="role in roleOptions"
-                :key="role"
-                :label="role"
-                :value="role"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-select
-              v-model="filters.status"
-              clearable
-              placeholder="全部状态"
-              style="width: 140px"
-            >
-              <el-option
-                v-for="status in statusOptions"
-                :key="status"
-                :label="statusLabelMap[status]"
-                :value="status"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="handleSearch">搜索</el-button>
-            <el-button @click="handleReset">重置</el-button>
-          </el-form-item>
-        </el-form>
-        <div class="filter-meta">
+          </el-select>
+          <el-select
+            v-model="filters.status"
+            clearable
+            placeholder="全部状态"
+            style="width: 140px"
+          >
+            <el-option
+              v-for="status in statusOptions"
+              :key="status"
+              :label="statusLabelMap[status]"
+              :value="status"
+            />
+          </el-select>
+          <el-button type="primary" @click="search">搜索</el-button>
+          <el-button @click="reset">重置</el-button>
+        </template>
+        <template #extra>
           <el-text size="small">共 {{ pagination.total }} 位成员</el-text>
-        </div>
-      </div>
-    </el-card>
+        </template>
+      </PageFilterBar>
 
-    <el-card class="table-card" shadow="never">
-      <AppDataTable :data="users" style="width: 100%" v-loading="loading">
+      <AppDataTable
+        :data="list"
+        class="page-table"
+        style="width: 100%"
+        v-loading="loading"
+      >
         <el-table-column label="成员" min-width="220">
           <template #default="{ row }">
             <div class="user-cell">
@@ -153,26 +141,24 @@
         </template>
       </AppDataTable>
 
-      <div class="pagination">
+      <div class="page-pagination">
         <el-pagination
           v-model:current-page="pagination.page"
           v-model:page-size="pagination.pageSize"
           :total="pagination.total"
           :page-sizes="[8, 16, 24]"
           layout="total, sizes, prev, pager, next"
-          @current-change="fetchUsers"
+          @current-change="refresh"
           @size-change="handleSizeChange"
         />
       </div>
-    </el-card>
+    </PagePanel>
 
-    <el-card class="visit-card" shadow="never">
-      <template #header>
-        <div class="visit-header">
-          <span>访问记录（可看到当前访问 IP）</span>
-          <el-button size="small" @click="refreshVisitLogs">刷新记录</el-button>
-        </div>
-      </template>
+    <PagePanel>
+      <div class="page-section-head">
+        <span>访问记录（可看到当前访问 IP）</span>
+        <el-button size="small" @click="refreshVisitLogs">刷新记录</el-button>
+      </div>
 
       <div class="visit-meta">
         <el-tag type="info">当前访问者：{{ visitorName }}</el-tag>
@@ -193,7 +179,7 @@
           show-overflow-tooltip
         />
       </AppDataTable>
-    </el-card>
+    </PagePanel>
 
     <el-dialog
       v-model="dialogVisible"
@@ -277,18 +263,26 @@
         <el-button @click="detailVisible = false">关闭</el-button>
       </template>
     </el-dialog>
-  </div>
+  </PageShell>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import {
   ElMessage,
   ElMessageBox,
   type FormInstance,
   type FormRules
 } from 'element-plus'
+import PageFilterBar from '@/components/page/PageFilterBar.vue'
+import PageHero from '@/components/page/PageHero.vue'
+import PagePanel from '@/components/page/PagePanel.vue'
+import PageShell from '@/components/page/PageShell.vue'
+import PageStatCard from '@/components/page/PageStatCard.vue'
+import PageStatGrid from '@/components/page/PageStatGrid.vue'
+import { usePaginatedQuery } from '@/composables/usePaginatedQuery'
 import { useUserStore } from '@/stores'
+import { getApiErrorMessage } from '@/utils/request'
 import {
   createUser,
   deleteUserById,
@@ -297,6 +291,7 @@ import {
   registerVisit,
   updateUser,
   type UserItem,
+  type UserListResult,
   type UserListSummary,
   type UserStatus,
   type UserUpsertPayload,
@@ -305,8 +300,6 @@ import {
 
 type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
 
-const loading = ref(false)
-const users = ref<UserItem[]>([])
 const roleOptions = ref<string[]>([])
 const statusOptions: UserStatus[] = ['active', 'invited', 'disabled']
 
@@ -333,17 +326,11 @@ const getRoleTagType = (role: string): TagType => roleTagType[role] ?? 'info'
 const getStatusTagType = (status: UserStatus): TagType => statusTagType[status]
 const getStatusLabel = (status: UserStatus): string => statusLabelMap[status]
 
-const filters = reactive({
-  keyword: '',
-  role: '',
-  status: '' as UserStatus | ''
-})
-
-const pagination = reactive({
-  page: 1,
-  pageSize: 8,
-  total: 0
-})
+type UserFilters = {
+  keyword: string
+  role: string
+  status: UserStatus | ''
+}
 
 const summary = ref<UserListSummary>({
   total: 0,
@@ -352,81 +339,31 @@ const summary = ref<UserListSummary>({
   disabled: 0
 })
 
-const stats = computed(() => [
-  {
-    label: '总用户数',
-    value: summary.value.total,
-    desc: '全部账户',
-    icon: 'U',
-    gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+const {
+  filters,
+  pagination,
+  loading,
+  list,
+  refresh,
+  search,
+  reset,
+  handleSizeChange,
+  adjustPageAfterDelete
+} = usePaginatedQuery<UserItem, UserFilters, UserListResult>({
+  defaultFilters: {
+    keyword: '',
+    role: '',
+    status: ''
   },
-  {
-    label: '在职账号',
-    value: summary.value.active,
-    desc: '活跃成员',
-    icon: 'A',
-    gradient: 'linear-gradient(135deg, #22c55e, #4ade80)'
-  },
-  {
-    label: '待激活',
-    value: summary.value.invited,
-    desc: '新邀请账号',
-    icon: 'P',
-    gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24)'
-  },
-  {
-    label: '已停用',
-    value: summary.value.disabled,
-    desc: '受限账号',
-    icon: 'D',
-    gradient: 'linear-gradient(135deg, #ef4444, #f87171)'
+  pageSize: 8,
+  immediate: false,
+  errorMessage: '获取用户列表失败',
+  fetcher: (query) => getUserList(query),
+  onLoaded: (data) => {
+    roleOptions.value = data.roleOptions
+    summary.value = data.summary
   }
-])
-
-const fetchUsers = async () => {
-  loading.value = true
-  try {
-    const res = await getUserList({
-      keyword: filters.keyword,
-      role: filters.role,
-      status: filters.status,
-      page: pagination.page,
-      pageSize: pagination.pageSize
-    })
-
-    if (res.code !== 200) {
-      ElMessage.error(res.message || '获取用户列表失败')
-      return
-    }
-
-    users.value = res.data.list
-    pagination.total = res.data.total
-    roleOptions.value = res.data.roleOptions
-    summary.value = res.data.summary
-  } catch {
-    ElMessage.error('获取用户列表失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-const handleSearch = () => {
-  pagination.page = 1
-  void fetchUsers()
-}
-
-const handleReset = () => {
-  filters.keyword = ''
-  filters.role = ''
-  filters.status = ''
-  pagination.page = 1
-  void fetchUsers()
-}
-
-const handleSizeChange = () => {
-  pagination.page = 1
-  void fetchUsers()
-}
+})
 
 const dialogVisible = ref(false)
 const isEdit = ref(false)
@@ -492,7 +429,7 @@ const submitUser = async () => {
   submitLoading.value = true
   try {
     if (isEdit.value && formData.id) {
-      const res = await updateUser({
+      await updateUser({
         id: formData.id,
         name: formData.name,
         email: formData.email,
@@ -501,13 +438,9 @@ const submitUser = async () => {
         role: formData.role,
         status: formData.status
       })
-      if (res.code !== 200) {
-        ElMessage.error(res.message || '编辑失败')
-        return
-      }
       ElMessage.success('编辑成功')
     } else {
-      const res = await createUser({
+      await createUser({
         name: formData.name,
         email: formData.email,
         department: formData.department,
@@ -515,17 +448,13 @@ const submitUser = async () => {
         role: formData.role,
         status: formData.status
       })
-      if (res.code !== 200) {
-        ElMessage.error(res.message || '新增失败')
-        return
-      }
       ElMessage.success('新增成功')
     }
 
     dialogVisible.value = false
-    await fetchUsers()
-  } catch {
-    ElMessage.error('操作失败')
+    await refresh()
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '操作失败'))
   } finally {
     submitLoading.value = false
   }
@@ -538,16 +467,14 @@ const removeUser = (user: UserItem) => {
     type: 'warning'
   })
     .then(async () => {
-      const res = await deleteUserById(user.id)
-      if (res.code !== 200) {
-        ElMessage.error(res.message || '删除失败')
-        return
+      try {
+        await deleteUserById(user.id)
+        ElMessage.success('删除成功')
+        adjustPageAfterDelete()
+        await refresh()
+      } catch (error) {
+        ElMessage.error(getApiErrorMessage(error, '删除失败'))
       }
-      ElMessage.success('删除成功')
-      if (users.value.length === 1 && pagination.page > 1) {
-        pagination.page -= 1
-      }
-      await fetchUsers()
     })
     .catch(() => {})
 }
@@ -555,23 +482,23 @@ const removeUser = (user: UserItem) => {
 const toggleStatus = async (user: UserItem) => {
   const nextStatus: UserStatus =
     user.status === 'disabled' ? 'active' : 'disabled'
-  const res = await updateUser({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    department: user.department,
-    location: user.location,
-    role: user.role,
-    status: nextStatus
-  })
-  if (res.code !== 200) {
-    ElMessage.error(res.message || '状态切换失败')
-    return
+  try {
+    await updateUser({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      department: user.department,
+      location: user.location,
+      role: user.role,
+      status: nextStatus
+    })
+    ElMessage.success(
+      `${user.name} 已${nextStatus === 'disabled' ? '停用' : '启用'}`
+    )
+    await refresh()
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '状态切换失败'))
   }
-  ElMessage.success(
-    `${user.name} 已${nextStatus === 'disabled' ? '停用' : '启用'}`
-  )
-  await fetchUsers()
 }
 
 const detailVisible = ref(false)
@@ -635,11 +562,6 @@ const handleExport = async () => {
       pageSize: 5000
     })
 
-    if (res.code !== 200) {
-      ElMessage.error(res.message || '导出失败')
-      return
-    }
-
     if (!res.data.list.length) {
       ElMessage.warning('没有可导出的数据')
       return
@@ -647,8 +569,8 @@ const handleExport = async () => {
 
     exportCsv(res.data.list)
     ElMessage.success('导出成功')
-  } catch {
-    ElMessage.error('导出失败')
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '导出失败'))
   }
 }
 
@@ -663,12 +585,12 @@ const VISITOR_NAME_KEY = 'pcdemo_visitor_name'
 const userStore = useUserStore()
 
 const resolveVisitorName = () => {
-  const userData = userStore.user || {}
+  const userData = userStore.user
   const candidates = [
-    userData.name,
-    userData.username,
-    userData.nickname,
-    userData.account
+    userData?.name,
+    userData?.username,
+    userData?.nickname,
+    userData?.account
   ]
   const named = candidates.find(
     (item) => typeof item === 'string' && item.trim()
@@ -697,16 +619,11 @@ const registerCurrentVisit = async () => {
       path: window.location.pathname
     })
 
-    if (res.code !== 200) {
-      ElMessage.warning(res.message || '访问记录写入失败')
-      return
-    }
-
     currentVisitIp.value = res.data.ip
     sessionStorage.setItem(VISIT_SESSION_KEY, '1')
     sessionStorage.setItem(VISIT_IP_KEY, res.data.ip)
-  } catch {
-    ElMessage.warning('访问记录写入失败')
+  } catch (error) {
+    ElMessage.warning(getApiErrorMessage(error, '访问记录写入失败'))
   }
 }
 
@@ -714,13 +631,9 @@ const refreshVisitLogs = async () => {
   visitLoading.value = true
   try {
     const res = await getVisitLogs({ page: 1, pageSize: 20 })
-    if (res.code !== 200) {
-      ElMessage.error(res.message || '获取访问记录失败')
-      return
-    }
     visitLogs.value = res.data.list
-  } catch {
-    ElMessage.error('获取访问记录失败')
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '获取访问记录失败'))
   } finally {
     visitLoading.value = false
   }
@@ -728,101 +641,12 @@ const refreshVisitLogs = async () => {
 
 onMounted(async () => {
   await registerCurrentVisit()
-  await Promise.all([fetchUsers(), refreshVisitLogs()])
+  await Promise.all([refresh(), refreshVisitLogs()])
 })
 </script>
 
 <style lang="scss" scoped>
-.user-list-page {
-  padding: 24px 32px 40px;
-  min-height: calc(100vh - 64px);
-  background: radial-gradient(circle at top right, #eef2ff 0%, #ffffff 55%);
-}
-
-.hero-card {
-  margin-bottom: 18px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #111827 100%);
-  color: #e2e8f0;
-}
-
-.hero-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
-
-.hero-title {
-  margin: 6px 0 8px;
-  font-size: 26px;
-  font-weight: 700;
-}
-
-.hero-desc {
-  margin: 0;
-  font-size: 13px;
-  color: rgba(226, 232, 240, 0.7);
-}
-
-.stats-row {
-  margin-bottom: 18px;
-}
-
-.stat-card {
-  height: 100%;
-}
-
-.stat-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.stat-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-size: 18px;
-}
-
-.stat-foot {
-  font-size: 12px;
-  color: #94a3b8;
-  margin-top: 8px;
-}
-
-.filter-card {
-  margin-bottom: 18px;
-}
-
-.filter-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.filter-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.table-card :deep(.el-card__body) {
-  padding: 0;
-}
-
-.table-card :deep(.el-table__cell) {
-  padding: 14px 0;
-}
-
-.table-card :deep(.el-table .cell) {
-  line-height: 1.7;
-}
+@use '@/style/page-shell.scss';
 
 .user-cell {
   display: flex;
@@ -872,39 +696,10 @@ onMounted(async () => {
   color: #94a3b8;
 }
 
-.pagination {
-  display: flex;
-  justify-content: flex-end;
-  padding: 16px;
-}
-
-.visit-card {
-  margin-top: 18px;
-}
-
-.visit-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
 .visit-meta {
   display: flex;
   gap: 10px;
   margin-bottom: 12px;
   flex-wrap: wrap;
-}
-
-@media (max-width: 1200px) {
-  .hero-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-@media (max-width: 960px) {
-  .user-list-page {
-    padding: 18px 16px 32px;
-  }
 }
 </style>

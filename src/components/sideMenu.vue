@@ -1,5 +1,5 @@
 <template>
-  <nav class="app-sidebar">
+  <div class="app-sidebar">
     <div class="sidebar-top">
       <div class="sidebar-title">
         <strong>项目导航</strong>
@@ -45,7 +45,7 @@
         </button>
       </div>
 
-      <section v-if="recentItems.length" class="sidebar-panel">
+      <div v-if="recentItems.length" class="sidebar-panel">
         <div class="panel-head">
           <span>最近访问</span>
           <button type="button" class="panel-clear" @click="clearRecentItems">
@@ -71,9 +71,9 @@
             </span>
           </span>
         </button>
-      </section>
+      </div>
 
-      <section class="nav-group">
+      <div class="nav-group">
         <div class="nav-head">
           <strong>{{ currentProject.title }}</strong>
           <span>{{ currentProject.sections.length }} 个分组</span>
@@ -131,9 +131,9 @@
             </div>
           </transition>
         </div>
-      </section>
+      </div>
     </div>
-  </nav>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -141,6 +141,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowDown } from '@element-plus/icons-vue'
 import {
+  defaultProjectWorkspace,
   projectWorkspaces,
   resolveProjectByPath,
   type MenuItem,
@@ -168,14 +169,14 @@ const isActiveMenu = (item: MenuItem) => {
 }
 
 const currentProjectKey = ref(
-  (resolveProjectByPath(activePath.value) || projectWorkspaces[0]).key
+  (resolveProjectByPath(activePath.value) || defaultProjectWorkspace).key
 )
 
 const currentProject = computed<ProjectWorkspace>(() => {
   return (
     projectWorkspaces.find(
       (project) => project.key === currentProjectKey.value
-    ) || projectWorkspaces[0]
+    ) || defaultProjectWorkspace
   )
 })
 
@@ -256,7 +257,7 @@ const goToRecentItem = (path: string) => {
 watch(
   activePath,
   (path) => {
-    const matchedProject = resolveProjectByPath(path) || projectWorkspaces[0]
+    const matchedProject = resolveProjectByPath(path) || defaultProjectWorkspace
     currentProjectKey.value = matchedProject.key
     ensureProjectSections(matchedProject)
     recordRecentPath(path)

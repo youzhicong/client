@@ -1,17 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { AuthUser } from '@/services/auth'
+
 export const useUserStore = defineStore(
   'cp-user',
   () => {
-    // 用户信息
-    const user = ref<any>()
-    // 设置用户，登录后使用
-    const setUser = (u: any) => {
-      user.value = u
+    const user = ref<AuthUser>()
+
+    const setUser = (nextUser: AuthUser) => {
+      user.value = nextUser
     }
-    // 清空用户，退出后使用
+
     const delUser = () => {
       user.value = undefined
     }
+
     return { user, setUser, delUser }
   },
   {

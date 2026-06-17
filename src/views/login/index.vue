@@ -183,6 +183,8 @@
 import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useAccountStore, useUserStore } from '@/stores'
+import { login } from '@/services/auth'
+import { getApiErrorMessage } from '@/utils/request'
 
 const demoAccounts = [
   { name: 'admin', role: '管理员' },
@@ -224,14 +226,6 @@ const applyDemo = (name: string) => {
   form.password = '123456'
 }
 
-const resolveRole = (name: string) => {
-  const normalized = name.trim().toLowerCase()
-  if (normalized === 'admin' || normalized.includes('manage')) return '管理员'
-  if (normalized.includes('design')) return '设计'
-  if (normalized.includes('operate')) return '运营'
-  return '研发'
-}
-
 const resolveDeviceName = () => {
   const ua = window.navigator.userAgent
   if (ua.includes('Edg')) return 'Edge 浏览器'
@@ -255,18 +249,11 @@ const onSubmit = async () => {
   submitting.value = true
   try {
     const accountName = form.name.trim()
-    const role = resolveRole(accountName)
-    const user = {
-      token: `dev-token-${Date.now()}`,
-      name: accountName,
-      username: accountName,
-      nickname: accountName,
+    const res = await login({
       account: accountName,
-      email: `${accountName}@yzcTool.com`,
-      role,
-      city: '上海',
-      avatar: `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(accountName)}`
-    }
+      password: form.password.trim()
+    })
+    const user = res.data.user
 
     userStore.setUser(user)
     accountStore.hydrateFromUser(user)
@@ -275,7 +262,7 @@ const onSubmit = async () => {
       city: user.city
     })
 
-    ElMessage.success(`欢迎回来，${accountName}`)
+    ElMessage.success(`欢迎回来，${user.name || accountName}`)
 
     const returnUrl =
       typeof route.query.returnUrl === 'string'
@@ -283,6 +270,8 @@ const onSubmit = async () => {
         : '/home'
 
     await router.push(returnUrl || '/home')
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '登录失败'))
   } finally {
     submitting.value = false
   }

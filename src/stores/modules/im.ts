@@ -274,10 +274,9 @@ export const useImStore = defineStore('im', () => {
     }
 
     messages[convId]!.push(assistantMessage)
-    const streamingMessage = messages[convId]![messages[convId]!.length - 1]
     updateConversationPreview(convId, {
       lastMessage: '',
-      lastTime: streamingMessage.createdAt
+      lastTime: assistantMessage.createdAt
     })
 
     let cursor = 0
@@ -287,10 +286,10 @@ export const useImStore = defineStore('im', () => {
       const chunkSize = getStreamChunkSize(remaining)
       const chunk = content.slice(cursor, cursor + chunkSize)
 
-      streamingMessage.content += chunk
+      assistantMessage.content += chunk
       updateConversationPreview(convId, {
-        lastMessage: streamingMessage.content,
-        lastTime: streamingMessage.createdAt
+        lastMessage: assistantMessage.content,
+        lastTime: assistantMessage.createdAt
       })
       cursor += chunk.length
       await wait(resolveChunkDelay(chunk))

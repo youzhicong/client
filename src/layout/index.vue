@@ -1,10 +1,10 @@
 <template>
   <div class="app-layout">
-    <!-- 头部 -->
+    <!-- Header -->
     <headerNav></headerNav>
-    <!-- 侧边栏 -->
+    <!-- Sidebar -->
     <sideMenu></sideMenu>
-    <!-- 主内容区 -->
+    <!-- Main content -->
     <main class="main-content">
       <div class="breadcrumb-container">
         <AppBreadcrumb />
@@ -33,12 +33,12 @@ const VISITOR_NAME_KEY = 'pcdemo_visitor_name'
 const userStore = useUserStore()
 
 const resolveVisitorName = () => {
-  const userData = userStore.user || {}
+  const userData = userStore.user
   const candidates = [
-    userData.name,
-    userData.username,
-    userData.nickname,
-    userData.account
+    userData?.name,
+    userData?.username,
+    userData?.nickname,
+    userData?.account
   ]
   const named = candidates.find(
     (item: unknown) => typeof item === 'string' && item.trim()
@@ -61,12 +61,10 @@ onMounted(async () => {
       visitorName: resolveVisitorName(),
       path: window.location.pathname
     })
-    if (res.code === 200) {
-      sessionStorage.setItem(VISIT_SESSION_KEY, '1')
-      sessionStorage.setItem(VISIT_IP_KEY, res.data.ip)
-    }
+    sessionStorage.setItem(VISIT_SESSION_KEY, '1')
+    sessionStorage.setItem(VISIT_IP_KEY, res.data.ip)
   } catch {
-    // ignore: 访问记录失败不应影响页面渲染
+    // Ignore analytics errors so the page remains usable.
   }
 })
 </script>

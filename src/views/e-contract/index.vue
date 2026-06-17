@@ -1,47 +1,44 @@
 <template>
-  <div class="econtract-page">
-    <div class="hero panel">
-      <div>
-        <span class="hero-badge">E-CONTRACT</span>
-        <h1>电子合同签署</h1>
-        <p>支持合同创建、修改、提交签署、手写签名、驳回与重提的全流程管理。</p>
-      </div>
-      <div class="hero-right">
-        <el-input
-          v-model="operatorName"
-          size="small"
-          placeholder="当前操作人"
-        />
-        <el-segmented
-          v-model="signerRole"
-          :options="signerOptions"
-          size="small"
-        />
-      </div>
-    </div>
+  <PageShell>
+    <template #hero>
+      <PageHero
+        badge="E-CONTRACT"
+        title="电子合同签署"
+        description="支持合同创建、修改、提交签署、手写签名、驳回与重提的全流程管理。"
+      >
+        <template #actions>
+          <div class="workflow-hero-extra">
+            <el-input
+              v-model="operatorName"
+              size="small"
+              placeholder="当前操作人"
+            />
+            <el-segmented
+              v-model="signerRole"
+              :options="signerOptions"
+              size="small"
+            />
+          </div>
+        </template>
+      </PageHero>
+    </template>
 
-    <div class="stats-grid">
-      <div class="stat panel">
-        <span>合同总数</span>
-        <strong>{{ summary.total }}</strong>
-      </div>
-      <div class="stat panel">
-        <span>签署中</span>
-        <strong>{{ summary.signing }}</strong>
-      </div>
-      <div class="stat panel">
-        <span>已驳回</span>
-        <strong>{{ summary.rejected }}</strong>
-      </div>
-      <div class="stat panel">
-        <span>已完成</span>
-        <strong>{{ summary.completed }}</strong>
-      </div>
-    </div>
+    <template #stats>
+      <PageStatGrid :columns="4">
+        <PageStatCard label="合同总数" :value="summary.total" />
+        <PageStatCard label="签署中" :value="summary.signing" tone="warning" />
+        <PageStatCard label="已驳回" :value="summary.rejected" tone="danger" />
+        <PageStatCard
+          label="已完成"
+          :value="summary.completed"
+          tone="success"
+        />
+      </PageStatGrid>
+    </template>
 
-    <div class="main-grid">
-      <div class="left panel">
-        <div class="box-head">
+    <div class="workflow-main-grid workflow-main-grid--wide-left">
+      <PagePanel>
+        <div class="workflow-col-head">
           <h3>合同信息</h3>
           <el-tag v-if="currentDetail">当前：{{ currentDetail.code }}</el-tag>
         </div>
@@ -82,19 +79,21 @@
           </el-form-item>
         </el-form>
 
-        <div class="actions">
+        <div class="workflow-form-actions">
           <el-button
             type="success"
             :loading="submitting"
             @click="createNewContract"
-            >创建草稿</el-button
           >
+            创建草稿
+          </el-button>
           <el-button
             :disabled="!canEditCurrent"
             :loading="submitting"
             @click="saveCurrentDraft"
-            >保存修改</el-button
           >
+            保存修改
+          </el-button>
           <el-button
             type="primary"
             :disabled="!canSubmitCurrent"
@@ -106,16 +105,16 @@
           <el-button @click="resetFormData">清空</el-button>
         </div>
 
-        <div v-if="currentDetail?.rejectReason" class="reject-tip">
+        <div v-if="currentDetail?.rejectReason" class="workflow-reject-tip">
           <strong>驳回原因：</strong>{{ currentDetail.rejectReason }}
         </div>
-      </div>
+      </PagePanel>
 
-      <div class="right-col">
+      <div class="workflow-right-col">
         <ContractFlow :status="currentDetail?.status || 'draft'" />
 
-        <div class="sign-box panel">
-          <div class="box-head">
+        <PagePanel>
+          <div class="workflow-col-head">
             <h3>电子签名</h3>
             <el-tag type="info">当前签署方：{{ signerRoleLabel }}</el-tag>
           </div>
@@ -126,9 +125,10 @@
             type="textarea"
             :rows="2"
             placeholder="签署/驳回意见（可选）"
+            style="margin-top: 10px"
           />
 
-          <div class="actions">
+          <div class="workflow-form-actions">
             <el-button
               type="primary"
               :disabled="!canSignCurrent"
@@ -145,14 +145,14 @@
             >
               驳回合同
             </el-button>
-            <el-button :disabled="!currentDetail" @click="loadCurrentToForm"
-              >回填到左侧编辑</el-button
-            >
+            <el-button :disabled="!currentDetail" @click="loadCurrentToForm">
+              回填到左侧编辑
+            </el-button>
           </div>
-        </div>
+        </PagePanel>
 
-        <div class="record-box panel">
-          <div class="box-head">
+        <PagePanel>
+          <div class="workflow-col-head">
             <h3>签署记录</h3>
           </div>
           <el-timeline v-if="currentDetail?.records?.length">
@@ -163,24 +163,24 @@
               :type="recordTypeMap[item.action]"
             >
               <strong>{{ recordLabelMap[item.action] }}</strong>
-              <span class="record-operator"> {{ item.operator }}</span>
-              <p class="record-comment">{{ item.comment }}</p>
+              <span class="workflow-record-operator"> {{ item.operator }}</span>
+              <p class="workflow-record-comment">{{ item.comment }}</p>
             </el-timeline-item>
           </el-timeline>
           <el-empty v-else description="暂无记录" />
-        </div>
+        </PagePanel>
       </div>
     </div>
 
-    <div class="table-wrap panel">
-      <div class="table-head">
-        <div class="filters">
+    <PagePanel>
+      <PageFilterBar>
+        <template #filters>
           <el-input
             v-model="filters.keyword"
             clearable
             placeholder="搜索合同号/标题/公司"
             style="width: 240px"
-            @keyup.enter="handleSearch"
+            @keyup.enter="search"
           />
           <el-select
             v-model="filters.status"
@@ -195,11 +195,13 @@
               :value="item.value"
             />
           </el-select>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </div>
-        <el-button @click="fetchList">刷新列表</el-button>
-      </div>
+          <el-button type="primary" @click="search">搜索</el-button>
+          <el-button @click="reset">重置</el-button>
+        </template>
+        <template #extra>
+          <el-button @click="refresh">刷新列表</el-button>
+        </template>
+      </PageFilterBar>
 
       <AppDataTable :data="contractList" border v-loading="listLoading">
         <el-table-column prop="code" label="合同号" min-width="160" />
@@ -229,7 +231,7 @@
         </el-table-column>
       </AppDataTable>
 
-      <div class="pagination-wrap">
+      <div class="page-pagination">
         <el-pagination
           v-model:current-page="pagination.page"
           v-model:page-size="pagination.pageSize"
@@ -237,17 +239,25 @@
           :page-sizes="[8, 16, 24]"
           layout="total, sizes, prev, pager, next"
           @size-change="handleSizeChange"
-          @current-change="fetchList"
+          @current-change="refresh"
         />
       </div>
-    </div>
-  </div>
+    </PagePanel>
+  </PageShell>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import PageFilterBar from '@/components/page/PageFilterBar.vue'
+import PageHero from '@/components/page/PageHero.vue'
+import PagePanel from '@/components/page/PagePanel.vue'
+import PageShell from '@/components/page/PageShell.vue'
+import PageStatCard from '@/components/page/PageStatCard.vue'
+import PageStatGrid from '@/components/page/PageStatGrid.vue'
+import { usePaginatedQuery } from '@/composables/usePaginatedQuery'
 import { useUserStore } from '@/stores'
+import { getApiErrorMessage } from '@/utils/request'
 import {
   createContract,
   getContractDetail,
@@ -258,6 +268,7 @@ import {
   updateContract,
   type ContractItem,
   type ContractListItem,
+  type ContractListResult,
   type ContractStatus,
   type ContractSummary,
   type SignerRole
@@ -268,8 +279,8 @@ import ContractFlow from './components/ContractFlow.vue'
 const userStore = useUserStore()
 
 const resolveOperatorName = () => {
-  const user = userStore.user || {}
-  const candidates = [user.name, user.username, user.nickname, user.account]
+  const user = userStore.user
+  const candidates = [user?.name, user?.username, user?.nickname, user?.account]
   const named = candidates.find(
     (item: unknown) => typeof item === 'string' && item.trim()
   )
@@ -312,6 +323,64 @@ const statusOptions = [
   { label: '已完成', value: 'completed' }
 ]
 
+type ContractFilters = {
+  keyword: string
+  status: ContractStatus | ''
+}
+
+const summary = ref<ContractSummary>({
+  total: 0,
+  draft: 0,
+  signing: 0,
+  rejected: 0,
+  completed: 0
+})
+
+const currentDetail = ref<ContractItem | null>(null)
+const selectedContractId = ref<number | null>(null)
+
+const syncSelectionAfterList = (items: ContractListItem[]) => {
+  if (!items.length) {
+    currentDetail.value = null
+    selectedContractId.value = null
+    return
+  }
+
+  const hasSelected = items.some((item) => item.id === selectedContractId.value)
+  const nextId = hasSelected ? selectedContractId.value : items[0]?.id
+  if (typeof nextId === 'number') {
+    void selectContract(nextId)
+  }
+}
+
+const {
+  filters,
+  pagination,
+  loading: listLoading,
+  list: contractList,
+  refresh,
+  search,
+  reset,
+  handleSizeChange
+} = usePaginatedQuery<ContractListItem, ContractFilters, ContractListResult>({
+  defaultFilters: {
+    keyword: '',
+    status: ''
+  },
+  pageSize: 8,
+  errorMessage: '获取合同列表失败',
+  fetcher: (query) => getContractList(query),
+  onLoaded: (data) => {
+    summary.value = data.summary
+    syncSelectionAfterList(data.list)
+  }
+})
+
+const formRef = ref<FormInstance>()
+const signaturePadRef = ref<InstanceType<typeof SignaturePad> | null>(null)
+const submitting = ref(false)
+const actionComment = ref('')
+
 const recordLabelMap: Record<string, string> = {
   create: '创建合同',
   update: '修改合同',
@@ -330,35 +399,6 @@ const recordTypeMap: Record<
   sign: 'success',
   reject: 'danger'
 }
-
-const filters = reactive({
-  keyword: '',
-  status: '' as ContractStatus | ''
-})
-
-const pagination = reactive({
-  page: 1,
-  pageSize: 8,
-  total: 0
-})
-
-const summary = ref<ContractSummary>({
-  total: 0,
-  draft: 0,
-  signing: 0,
-  rejected: 0,
-  completed: 0
-})
-
-const listLoading = ref(false)
-const contractList = ref<ContractListItem[]>([])
-const currentDetail = ref<ContractItem | null>(null)
-const selectedContractId = ref<number | null>(null)
-
-const formRef = ref<FormInstance>()
-const signaturePadRef = ref<InstanceType<typeof SignaturePad> | null>(null)
-const submitting = ref(false)
-const actionComment = ref('')
 
 const formData = reactive({
   title: '',
@@ -428,69 +468,14 @@ const validateForm = async () => {
   return !!(await formRef.value.validate().catch(() => false))
 }
 
-const fetchList = async () => {
-  listLoading.value = true
-  try {
-    const res = await getContractList({
-      keyword: filters.keyword,
-      status: filters.status,
-      page: pagination.page,
-      pageSize: pagination.pageSize
-    })
-    if (res.code !== 200) {
-      ElMessage.error(res.message || '获取合同列表失败')
-      return
-    }
-
-    contractList.value = res.data.list
-    pagination.total = res.data.total
-    summary.value = res.data.summary
-
-    if (!contractList.value.length) {
-      currentDetail.value = null
-      selectedContractId.value = null
-      return
-    }
-
-    const hasSelected = contractList.value.some(
-      (item) => item.id === selectedContractId.value
-    )
-    const nextId = hasSelected
-      ? selectedContractId.value
-      : contractList.value[0]?.id
-    if (typeof nextId === 'number') await selectContract(nextId)
-  } catch {
-    ElMessage.error('获取合同列表失败')
-  } finally {
-    listLoading.value = false
-  }
-}
-
 const selectContract = async (id: number) => {
   selectedContractId.value = id
-  const res = await getContractDetail(id)
-  if (res.code !== 200) {
-    ElMessage.error(res.message || '获取合同详情失败')
-    return
+  try {
+    const res = await getContractDetail(id)
+    currentDetail.value = res.data
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '获取合同详情失败'))
   }
-  currentDetail.value = res.data
-}
-
-const handleSearch = () => {
-  pagination.page = 1
-  void fetchList()
-}
-
-const handleReset = () => {
-  filters.keyword = ''
-  filters.status = ''
-  pagination.page = 1
-  void fetchList()
-}
-
-const handleSizeChange = () => {
-  pagination.page = 1
-  void fetchList()
 }
 
 const createNewContract = async () => {
@@ -506,17 +491,13 @@ const createNewContract = async () => {
       content: formData.content,
       createdBy: operatorName.value.trim() || '合同发起人'
     })
-    if (res.code !== 200) {
-      ElMessage.error(res.message || '创建失败')
-      return
-    }
     ElMessage.success('合同草稿已创建')
     selectedContractId.value = res.data.id
     actionComment.value = ''
     signaturePadRef.value?.clearPad()
-    await fetchList()
-  } catch {
-    ElMessage.error('创建失败')
+    await refresh()
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '创建失败'))
   } finally {
     submitting.value = false
   }
@@ -529,7 +510,7 @@ const saveCurrentDraft = async () => {
 
   submitting.value = true
   try {
-    const res = await updateContract({
+    await updateContract({
       id: currentDetail.value.id,
       title: formData.title,
       counterparty: formData.counterparty,
@@ -537,14 +518,10 @@ const saveCurrentDraft = async () => {
       content: formData.content,
       operator: operatorName.value.trim() || '合同发起人'
     })
-    if (res.code !== 200) {
-      ElMessage.error(res.message || '保存失败')
-      return
-    }
     ElMessage.success('合同已保存')
-    await fetchList()
-  } catch {
-    ElMessage.error('保存失败')
+    await refresh()
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '保存失败'))
   } finally {
     submitting.value = false
   }
@@ -554,21 +531,17 @@ const submitCurrentContract = async () => {
   if (!currentDetail.value) return
   submitting.value = true
   try {
-    const res = await submitContract({
+    await submitContract({
       id: currentDetail.value.id,
       operator: operatorName.value.trim() || '合同发起人',
       comment: actionComment.value.trim()
     })
-    if (res.code !== 200) {
-      ElMessage.error(res.message || '提交失败')
-      return
-    }
     ElMessage.success('已提交签署')
     actionComment.value = ''
     signaturePadRef.value?.clearPad()
-    await fetchList()
-  } catch {
-    ElMessage.error('提交失败')
+    await refresh()
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '提交失败'))
   } finally {
     submitting.value = false
   }
@@ -584,23 +557,19 @@ const signCurrentContract = async () => {
 
   submitting.value = true
   try {
-    const res = await signContract({
+    await signContract({
       id: currentDetail.value.id,
       signerRole: signerRole.value,
       signatureData,
       operator: operatorName.value.trim() || '签署人',
       comment: actionComment.value.trim()
     })
-    if (res.code !== 200) {
-      ElMessage.error(res.message || '签署失败')
-      return
-    }
     ElMessage.success('签署成功')
     actionComment.value = ''
     signaturePadRef.value?.clearPad()
-    await fetchList()
-  } catch {
-    ElMessage.error('签署失败')
+    await refresh()
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '签署失败'))
   } finally {
     submitting.value = false
   }
@@ -610,21 +579,17 @@ const rejectCurrentContract = async () => {
   if (!currentDetail.value) return
   submitting.value = true
   try {
-    const res = await rejectContract({
+    await rejectContract({
       id: currentDetail.value.id,
       operator: operatorName.value.trim() || '审批人',
       comment: actionComment.value.trim()
     })
-    if (res.code !== 200) {
-      ElMessage.error(res.message || '驳回失败')
-      return
-    }
     ElMessage.success('合同已驳回')
     actionComment.value = ''
     signaturePadRef.value?.clearPad()
-    await fetchList()
-  } catch {
-    ElMessage.error('驳回失败')
+    await refresh()
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '驳回失败'))
   } finally {
     submitting.value = false
   }
@@ -635,216 +600,9 @@ const loadCurrentToForm = () => {
   applyDetailToForm(currentDetail.value)
   ElMessage.info('已回填到左侧，可继续编辑')
 }
-
-onMounted(() => {
-  void fetchList()
-})
 </script>
 
 <style scoped lang="scss">
-.econtract-page {
-  --bg: #f1f7fa;
-  --panel: rgba(255, 255, 255, 0.9);
-  --line: #d6e6ee;
-  --text-main: #153846;
-  --text-sub: #69818d;
-  --shadow: 0 20px 40px rgba(19, 56, 70, 0.12);
-
-  min-height: calc(100vh - 64px);
-  padding: 22px;
-  background:
-    radial-gradient(circle at 8% 8%, #d7f2ef 0%, transparent 35%),
-    radial-gradient(circle at 90% 10%, #ffe9d7 0%, transparent 32%), var(--bg);
-  color: var(--text-main);
-  font-family: 'Outfit', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-}
-
-.panel {
-  border-radius: 20px;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(10px);
-}
-
-.hero {
-  padding: 22px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 14px;
-}
-
-.hero-badge {
-  display: inline-flex;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  color: #fff;
-  letter-spacing: 0.08em;
-  background: linear-gradient(135deg, #0f8f92 0%, #2f6ed8 100%);
-}
-
-.hero h1 {
-  margin: 12px 0 8px;
-  font-size: 32px;
-}
-
-.hero p {
-  margin: 0;
-  color: var(--text-sub);
-  font-size: 14px;
-}
-
-.hero-right {
-  width: 240px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.stats-grid {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.stat {
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.stat span {
-  color: var(--text-sub);
-  font-size: 12px;
-}
-
-.stat strong {
-  font-size: 30px;
-  line-height: 1;
-}
-
-.main-grid {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: 420px 1fr;
-  gap: 12px;
-}
-
-.left {
-  padding: 16px;
-}
-
-.right-col {
-  display: grid;
-  gap: 12px;
-}
-
-.sign-box,
-.record-box {
-  padding: 14px;
-}
-
-.box-head {
-  margin-bottom: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-
-.box-head h3 {
-  margin: 0;
-  font-size: 16px;
-  color: #183c4c;
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-
-.reject-tip {
-  margin-top: 10px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: #fff3f3;
-  color: #9b2c2c;
-  font-size: 13px;
-}
-
-.record-operator {
-  margin-left: 8px;
-  color: #5c7888;
-}
-
-.record-comment {
-  margin: 4px 0 0;
-  color: #456474;
-  font-size: 13px;
-}
-
-.table-wrap {
-  margin-top: 14px;
-  padding: 14px;
-}
-
-.table-head {
-  margin-bottom: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.filters {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.pagination-wrap {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-@media (max-width: 1200px) {
-  .main-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 960px) {
-  .econtract-page {
-    padding: 16px;
-  }
-
-  .hero {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .hero-right {
-    width: 100%;
-    max-width: 320px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-}
+@use '@/style/page-shell.scss';
+@use '@/style/workflow-page.scss';
 </style>

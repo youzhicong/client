@@ -1,15 +1,18 @@
 <template>
-  <div class="announcement-publish-page">
-    <div class="hero panel">
-      <div>
-        <span class="hero-badge">EDITOR</span>
-        <h1>{{ isEditMode ? '编辑公告' : '发布公告' }}</h1>
-        <p>使用富文本编辑正文内容，支持先保存草稿再正式发布。</p>
-      </div>
-      <el-button @click="goList">返回列表</el-button>
-    </div>
+  <PageShell>
+    <template #hero>
+      <PageHero
+        badge="EDITOR"
+        :title="isEditMode ? '编辑公告' : '发布公告'"
+        description="使用富文本编辑正文内容，支持先保存草稿再正式发布。"
+      >
+        <template #actions>
+          <el-button @click="goList">返回列表</el-button>
+        </template>
+      </PageHero>
+    </template>
 
-    <div class="panel form-panel">
+    <PagePanel>
       <el-form
         ref="formRef"
         :model="formData"
@@ -35,21 +38,25 @@
         </el-form-item>
       </el-form>
 
-      <div class="actions">
+      <div class="page-form-actions">
         <el-button :loading="submitting" @click="saveDraft">保存草稿</el-button>
-        <el-button type="primary" :loading="submitting" @click="publishNow"
-          >立即发布</el-button
-        >
+        <el-button type="primary" :loading="submitting" @click="publishNow">
+          立即发布
+        </el-button>
       </div>
-    </div>
-  </div>
+    </PagePanel>
+  </PageShell>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
+import PageHero from '@/components/page/PageHero.vue'
+import PagePanel from '@/components/page/PagePanel.vue'
+import PageShell from '@/components/page/PageShell.vue'
 import { useUserStore } from '@/stores'
+import { getApiErrorMessage } from '@/utils/request'
 import {
   createAnnouncement,
   getAnnouncementDetail,
@@ -67,8 +74,8 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const resolveAuthor = () => {
-  const user = userStore.user || {}
-  const candidates = [user.name, user.username, user.nickname, user.account]
+  const user = userStore.user
+  const candidates = [user?.name, user?.username, user?.nickname, user?.account]
   const named = candidates.find(
     (item: unknown) => typeof item === 'string' && item.trim()
   )
@@ -109,15 +116,15 @@ const validateForm = async () => {
 }
 
 const loadDetail = async (id: number) => {
-  const res = await getAnnouncementDetail(id)
-  if (res.code !== 200) {
-    ElMessage.error(res.message || '获取公告详情失败')
-    return
+  try {
+    const res = await getAnnouncementDetail(id)
+    formData.title = res.data.title
+    formData.summary = res.data.summary
+    formData.cover = res.data.cover
+    formData.content = res.data.content
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '获取公告详情失败'))
   }
-  formData.title = res.data.title
-  formData.summary = res.data.summary
-  formData.cover = res.data.cover
-  formData.content = res.data.content
 }
 
 const save = async () => {
@@ -137,18 +144,10 @@ const save = async () => {
       id: editId.value,
       ...payload
     })
-    if (res.code !== 200) {
-      ElMessage.error(res.message || '保存失败')
-      return null
-    }
     return res.data
   }
 
   const res = await createAnnouncement(payload)
-  if (res.code !== 200) {
-    ElMessage.error(res.message || '创建失败')
-    return null
-  }
   return res.data
 }
 
@@ -164,8 +163,8 @@ const saveDraft = async () => {
         query: { id: String(data.id) }
       })
     }
-  } catch {
-    ElMessage.error('保存失败')
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '保存失败'))
   } finally {
     submitting.value = false
   }
@@ -176,15 +175,11 @@ const publishNow = async () => {
   try {
     const data = await save()
     if (!data) return
-    const publishRes = await publishAnnouncement(data.id)
-    if (publishRes.code !== 200) {
-      ElMessage.error(publishRes.message || '发布失败')
-      return
-    }
+    await publishAnnouncement(data.id)
     ElMessage.success('公告发布成功')
     void router.push('/announcement/list')
-  } catch {
-    ElMessage.error('发布失败')
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '发布失败'))
   } finally {
     submitting.value = false
   }
@@ -198,68 +193,5 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.announcement-publish-page {
-  min-height: calc(100vh - 64px);
-  padding: 22px;
-  background:
-    radial-gradient(circle at 8% 8%, #dcf2f4 0%, transparent 34%),
-    radial-gradient(circle at 92% 10%, #fcebd7 0%, transparent 30%), #f1f7fb;
-}
-
-.panel {
-  border-radius: 18px;
-  border: 1px solid #d4e3ea;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 18px 34px rgba(16, 53, 71, 0.08);
-}
-
-.hero {
-  padding: 18px 22px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 12px;
-}
-
-.hero-badge {
-  display: inline-flex;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #118a8d 0%, #366cd7 100%);
-  color: #fff;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-}
-
-.hero h1 {
-  margin: 10px 0 6px;
-}
-
-.hero p {
-  margin: 0;
-  color: #668392;
-}
-
-.form-panel {
-  margin-top: 12px;
-  padding: 16px;
-}
-
-.actions {
-  margin-top: 14px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-@media (max-width: 960px) {
-  .announcement-publish-page {
-    padding: 16px;
-  }
-
-  .hero {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
+@use '@/style/page-shell.scss';
 </style>

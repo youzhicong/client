@@ -20,9 +20,13 @@ const instance = axios.create({
 instance.interceptors.request.use(
   (config) => {
     const store = useUserStore()
-    if (store.user?.token && config.headers) {
-      config.headers['Authorization'] = `Bearer ${store.user?.token}`
+    const token = store.user?.token
+
+    if (token) {
+      config.headers = config.headers ?? {}
+      config.headers.Authorization = `Bearer ${token}`
     }
+
     return config
   },
   (err) => Promise.reject(err)
@@ -47,10 +51,21 @@ instance.interceptors.response.use(
 
 export { baseURL, instance }
 
-type Data<T> = {
+export type ApiResponse<T> = {
   code: number
   message: string
   data: T
+}
+
+export const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = String(
+      (error as { message?: unknown }).message || ''
+    ).trim()
+    if (message) return message
+  }
+
+  return fallback
 }
 
 export const request = <T>(
@@ -60,7 +75,7 @@ export const request = <T>(
   config?: AxiosRequestConfig
 ) => {
   const dataKey = method.toLowerCase() === 'get' ? 'params' : 'data'
-  return instance.request<T, Data<T>>({
+  return instance.request<T, ApiResponse<T>>({
     url,
     method,
     ...config,

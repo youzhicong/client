@@ -4,6 +4,7 @@ import router from './router'
 import { useUserStore } from './stores'
 
 const WHITE_LIST = ['/login']
+const APP_TITLE = '数字化平台'
 
 router.beforeEach((to) => {
   NProgress.start()
@@ -30,5 +31,5 @@ router.beforeEach((to) => {
 router.afterEach((to) => {
   NProgress.done()
   const title = typeof to.meta.title === 'string' ? to.meta.title : ''
-  document.title = title ? `${title} - 数字化平台` : '数字化平台'
+  document.title = title ? `${title} - ${APP_TITLE}` : APP_TITLE
 })

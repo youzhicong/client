@@ -35,9 +35,7 @@ const getArgValue = (flag) => {
   return args[index + 1] ?? ''
 }
 
-const configPath = path.resolve(
-  getArgValue('--config') || DEFAULT_CONFIG_PATH
-)
+const configPath = path.resolve(getArgValue('--config') || DEFAULT_CONFIG_PATH)
 const explicitOutput = getArgValue('--output')
 
 const decodeHtmlEntities = (value) =>
@@ -70,11 +68,7 @@ const createSlug = (value) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 48)
 
-const normalizeTitle = (value) =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '')
+const normalizeTitle = (value) => value.trim().toLowerCase().replace(/\s+/g, '')
 
 const ensureArray = (value) => {
   if (Array.isArray(value)) return value
@@ -205,7 +199,9 @@ const extractFromJson = (payload, source) => {
 
   return items.slice(0, source.maxItems ?? items.length).map((item, index) => {
     const title = String(getByPath(item, source.titlePath) ?? '').trim()
-    const tagValues = source.tagsPath ? ensureArray(getByPath(item, source.tagsPath)) : []
+    const tagValues = source.tagsPath
+      ? ensureArray(getByPath(item, source.tagsPath))
+      : []
     const tags = tagValues
       .map((tag) => {
         if (source.tagsItemPath && tag && typeof tag === 'object') {
@@ -215,7 +211,9 @@ const extractFromJson = (payload, source) => {
         return String(tag).trim()
       })
       .filter(Boolean)
-    const answerValue = source.answerPath ? getByPath(item, source.answerPath) : undefined
+    const answerValue = source.answerPath
+      ? getByPath(item, source.answerPath)
+      : undefined
     const answer = Array.isArray(answerValue)
       ? answerValue.map((line) => String(line).trim()).filter(Boolean)
       : splitAnswerText(String(answerValue ?? ''))
@@ -238,7 +236,9 @@ const extractFromJson = (payload, source) => {
 
 const extractFromHtml = (html, source) => {
   const normalizedHtml = extractNextDataContent(html, source.contentPath)
-  const blocks = runGlobalMatches(normalizedHtml, source.itemPattern, { raw: true })
+  const blocks = runGlobalMatches(normalizedHtml, source.itemPattern, {
+    raw: true
+  })
   const items = (blocks.length ? blocks : [normalizedHtml]).slice(
     0,
     source.maxItems ?? (blocks.length || 1)
@@ -246,7 +246,9 @@ const extractFromHtml = (html, source) => {
 
   return items.map((item, index) => {
     const title = runFirstMatch(item, source.titlePatterns)
-    const tags = source.tagPattern ? runGlobalMatches(item, source.tagPattern) : []
+    const tags = source.tagPattern
+      ? runGlobalMatches(item, source.tagPattern)
+      : []
     const answerLines = source.answerItemPattern
       ? runGlobalMatches(item, source.answerItemPattern)
       : []
@@ -332,7 +334,12 @@ const buildSection = (source, framework, questions) => ({
 
 const toTsArray = (sections) => JSON.stringify(sections, null, 2)
 
-const renderModule = ({ buckets, generatedAt, sourceCount, questionCount }) => `import type { InterviewSection } from './types'
+const renderModule = ({
+  buckets,
+  generatedAt,
+  sourceCount,
+  questionCount
+}) => `import type { InterviewSection } from './types'
 
 export const generatedFoundationSections: InterviewSection[] = ${toTsArray(
   buckets.foundation
@@ -360,8 +367,12 @@ export const generatedQuestionBankMeta = {
 const main = async () => {
   const rawConfig = await fs.readFile(configPath, 'utf8')
   const config = JSON.parse(rawConfig)
-  const outputPath = path.resolve(explicitOutput || config.output || DEFAULT_OUTPUT_PATH)
-  const sources = (config.sources ?? []).filter((source) => source.enabled !== false)
+  const outputPath = path.resolve(
+    explicitOutput || config.output || DEFAULT_OUTPUT_PATH
+  )
+  const sources = (config.sources ?? []).filter(
+    (source) => source.enabled !== false
+  )
   const generatedAt = new Date().toISOString()
 
   const buckets = {
@@ -376,7 +387,9 @@ const main = async () => {
 
   for (const source of sources) {
     if (!FRAMEWORK_KEYS.includes(source.framework)) {
-      throw new Error(`source ${source.id} 的 framework 不合法: ${source.framework}`)
+      throw new Error(
+        `source ${source.id} 的 framework 不合法: ${source.framework}`
+      )
     }
 
     const body = await fetchSourceBody(source)

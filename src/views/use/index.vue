@@ -499,8 +499,11 @@ const openEditProfile = () => {
 }
 
 const syncUserStore = () => {
+  const current = userStore.user
+  if (!current) return
+
   userStore.setUser({
-    ...(userStore.user || {}),
+    ...current,
     name: accountStore.profile.name,
     username: accountStore.profile.name,
     nickname: accountStore.profile.name,

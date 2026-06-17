@@ -25,6 +25,11 @@ const route = useRoute()
 const router = useRouter()
 const breadcrumbs = ref<RouteLocationMatched[]>([])
 
+const homeCrumb = {
+  path: '/home',
+  meta: { title: '首页' }
+} as unknown as RouteLocationMatched
+
 const isHome = (route: RouteLocationMatched) => {
   const name = route && route.name
   if (!name) {
@@ -38,12 +43,7 @@ const getBreadcrumb = () => {
   const first = matched[0]
 
   if (!first || !isHome(first)) {
-    matched = [
-      {
-        path: '/home',
-        meta: { title: '首页' }
-      } as unknown as RouteLocationMatched
-    ].concat(matched)
+    matched = [homeCrumb, ...matched]
   }
 
   breadcrumbs.value = matched.filter(
@@ -62,11 +62,10 @@ const getBreadcrumb = () => {
     )
 
     if (!hasProjectCrumb) {
-      breadcrumbs.value = [
-        breadcrumbs.value[0],
-        projectCrumb,
-        ...breadcrumbs.value.slice(1)
-      ]
+      const [rootCrumb, ...restCrumbs] = breadcrumbs.value
+      breadcrumbs.value = rootCrumb
+        ? [rootCrumb, projectCrumb, ...restCrumbs]
+        : [homeCrumb, projectCrumb]
     }
   }
 }

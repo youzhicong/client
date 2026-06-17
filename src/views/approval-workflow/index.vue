@@ -1,49 +1,43 @@
 <template>
-  <div class="approval-page">
-    <div class="hero panel">
-      <div>
-        <span class="hero-badge">WORKFLOW</span>
-        <h1>审批流程可视化</h1>
-        <p>
-          业务闭环：发起审批 → 审批驳回 → 申请人修改 → 重新提交 / 审批通过。
-        </p>
-      </div>
+  <PageShell>
+    <template #hero>
+      <PageHero
+        badge="WORKFLOW"
+        title="审批流程可视化"
+        description="业务闭环：发起审批 → 审批驳回 → 申请人修改 → 重新提交 / 审批通过。"
+      >
+        <template #actions>
+          <div class="workflow-hero-extra">
+            <el-radio-group v-model="operatorRole" size="small">
+              <el-radio-button label="applicant">申请人视角</el-radio-button>
+              <el-radio-button label="approver">审批人视角</el-radio-button>
+            </el-radio-group>
+            <el-input
+              v-model="operatorName"
+              size="small"
+              placeholder="当前操作人姓名"
+            />
+          </div>
+        </template>
+      </PageHero>
+    </template>
 
-      <div class="hero-right">
-        <el-radio-group v-model="operatorRole" size="small">
-          <el-radio-button label="applicant">申请人视角</el-radio-button>
-          <el-radio-button label="approver">审批人视角</el-radio-button>
-        </el-radio-group>
-        <el-input
-          v-model="operatorName"
-          size="small"
-          placeholder="当前操作人姓名"
+    <template #stats>
+      <PageStatGrid :columns="4">
+        <PageStatCard label="流程总数" :value="summary.total" />
+        <PageStatCard label="审批中" :value="summary.pending" tone="warning" />
+        <PageStatCard
+          label="已驳回 / 待改"
+          :value="summary.rejected + summary.modified"
+          tone="danger"
         />
-      </div>
-    </div>
+        <PageStatCard label="已通过" :value="summary.approved" tone="success" />
+      </PageStatGrid>
+    </template>
 
-    <div class="stats-grid">
-      <div class="stat-card panel">
-        <span>流程总数</span>
-        <strong>{{ summary.total }}</strong>
-      </div>
-      <div class="stat-card panel warning">
-        <span>审批中</span>
-        <strong>{{ summary.pending }}</strong>
-      </div>
-      <div class="stat-card panel danger">
-        <span>已驳回 / 待改</span>
-        <strong>{{ summary.rejected + summary.modified }}</strong>
-      </div>
-      <div class="stat-card panel success">
-        <span>已通过</span>
-        <strong>{{ summary.approved }}</strong>
-      </div>
-    </div>
-
-    <div class="main-grid">
-      <div class="left-col panel">
-        <div class="col-head">
+    <div class="workflow-main-grid">
+      <PagePanel>
+        <div class="workflow-col-head">
           <h3>申请单编辑</h3>
           <el-tag v-if="canModifyCurrent" type="warning">当前单可修改</el-tag>
         </div>
@@ -86,7 +80,7 @@
           </el-form-item>
         </el-form>
 
-        <div class="form-actions">
+        <div class="workflow-form-actions">
           <el-button
             v-if="canModifyCurrent"
             type="warning"
@@ -112,16 +106,16 @@
             发起新审批
           </el-button>
         </div>
-      </div>
+      </PagePanel>
 
-      <div class="right-col">
+      <div class="workflow-right-col">
         <WorkflowGraph
           :status="currentDetail?.status || 'pending'"
           :reject-count="currentDetail?.rejectCount || 0"
         />
 
-        <div class="action-panel panel">
-          <div class="col-head">
+        <PagePanel>
+          <div class="workflow-col-head">
             <h3>审批动作</h3>
             <el-tag type="info" effect="plain">
               当前流程：{{ currentDetail?.code || '未选择' }}
@@ -135,7 +129,7 @@
             placeholder="请输入审批意见（可选）"
           />
 
-          <div class="action-buttons">
+          <div class="workflow-action-buttons">
             <el-button
               type="success"
               :disabled="!canApproveCurrent"
@@ -159,21 +153,21 @@
               驳回单回填到表单
             </el-button>
           </div>
-        </div>
+        </PagePanel>
 
         <WorkflowRecordTimeline :records="currentDetail?.records || []" />
       </div>
     </div>
 
-    <div class="table-panel panel">
-      <div class="table-head">
-        <div class="table-filters">
+    <PagePanel>
+      <PageFilterBar>
+        <template #filters>
           <el-input
             v-model="filters.keyword"
             clearable
             placeholder="搜索流程号 / 标题 / 申请人"
             style="width: 260px"
-            @keyup.enter="handleSearch"
+            @keyup.enter="search"
           />
           <el-select
             v-model="filters.status"
@@ -188,11 +182,13 @@
               :value="item.value"
             />
           </el-select>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </div>
-        <el-button @click="fetchList">刷新列表</el-button>
-      </div>
+          <el-button type="primary" @click="search">搜索</el-button>
+          <el-button @click="reset">重置</el-button>
+        </template>
+        <template #extra>
+          <el-button @click="refresh">刷新列表</el-button>
+        </template>
+      </PageFilterBar>
 
       <AppDataTable :data="workflowList" border v-loading="listLoading">
         <el-table-column prop="code" label="流程号" min-width="160" />
@@ -227,7 +223,7 @@
         </el-table-column>
       </AppDataTable>
 
-      <div class="pagination-wrap">
+      <div class="page-pagination">
         <el-pagination
           v-model:current-page="pagination.page"
           v-model:page-size="pagination.pageSize"
@@ -235,17 +231,25 @@
           :page-sizes="[8, 16, 24]"
           layout="total, sizes, prev, pager, next"
           @size-change="handleSizeChange"
-          @current-change="fetchList"
+          @current-change="refresh"
         />
       </div>
-    </div>
-  </div>
+    </PagePanel>
+  </PageShell>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import PageFilterBar from '@/components/page/PageFilterBar.vue'
+import PageHero from '@/components/page/PageHero.vue'
+import PagePanel from '@/components/page/PagePanel.vue'
+import PageShell from '@/components/page/PageShell.vue'
+import PageStatCard from '@/components/page/PageStatCard.vue'
+import PageStatGrid from '@/components/page/PageStatGrid.vue'
+import { usePaginatedQuery } from '@/composables/usePaginatedQuery'
 import { useUserStore } from '@/stores'
+import { getApiErrorMessage } from '@/utils/request'
 import {
   getWorkflowDetail,
   getWorkflowList,
@@ -254,6 +258,7 @@ import {
   type StartWorkflowPayload,
   type WorkflowInstance,
   type WorkflowListItem,
+  type WorkflowListResult,
   type WorkflowStatus,
   type WorkflowSummary
 } from '@/services/approvalWorkflow'
@@ -263,8 +268,8 @@ import WorkflowRecordTimeline from './components/WorkflowRecordTimeline.vue'
 const userStore = useUserStore()
 
 const resolveDefaultApplicant = () => {
-  const user = userStore.user || {}
-  const candidates = [user.name, user.username, user.nickname, user.account]
+  const user = userStore.user
+  const candidates = [user?.name, user?.username, user?.nickname, user?.account]
   const named = candidates.find(
     (item: unknown) => typeof item === 'string' && item.trim()
   )
@@ -296,16 +301,10 @@ const statusFilters = [
   { label: '已通过', value: 'approved' }
 ]
 
-const filters = reactive({
-  keyword: '',
-  status: '' as WorkflowStatus | ''
-})
-
-const pagination = reactive({
-  page: 1,
-  pageSize: 8,
-  total: 0
-})
+type WorkflowFilters = {
+  keyword: string
+  status: WorkflowStatus | ''
+}
 
 const summary = ref<WorkflowSummary>({
   total: 0,
@@ -315,10 +314,45 @@ const summary = ref<WorkflowSummary>({
   approved: 0
 })
 
-const listLoading = ref(false)
-const workflowList = ref<WorkflowListItem[]>([])
 const selectedWorkflowId = ref<number | null>(null)
 const currentDetail = ref<WorkflowInstance | null>(null)
+
+const syncSelectionAfterList = (items: WorkflowListItem[]) => {
+  if (!items.length) {
+    currentDetail.value = null
+    selectedWorkflowId.value = null
+    return
+  }
+
+  const hasSelected = items.some((item) => item.id === selectedWorkflowId.value)
+  const nextId = hasSelected ? selectedWorkflowId.value : items[0]?.id
+  if (typeof nextId === 'number') {
+    void selectWorkflow(nextId)
+  }
+}
+
+const {
+  filters,
+  pagination,
+  loading: listLoading,
+  list: workflowList,
+  refresh,
+  search,
+  reset,
+  handleSizeChange
+} = usePaginatedQuery<WorkflowListItem, WorkflowFilters, WorkflowListResult>({
+  defaultFilters: {
+    keyword: '',
+    status: ''
+  },
+  pageSize: 8,
+  errorMessage: '获取列表失败',
+  fetcher: (query) => getWorkflowList(query),
+  onLoaded: (data) => {
+    summary.value = data.summary
+    syncSelectionAfterList(data.list)
+  }
+})
 
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
@@ -388,72 +422,14 @@ const resetFormData = () => {
   formData.reason = ''
 }
 
-const fetchList = async () => {
-  listLoading.value = true
-  try {
-    const res = await getWorkflowList({
-      keyword: filters.keyword,
-      status: filters.status,
-      page: pagination.page,
-      pageSize: pagination.pageSize
-    })
-
-    if (res.code !== 200) {
-      ElMessage.error(res.message || '获取列表失败')
-      return
-    }
-
-    workflowList.value = res.data.list
-    summary.value = res.data.summary
-    pagination.total = res.data.total
-
-    if (!workflowList.value.length) {
-      currentDetail.value = null
-      selectedWorkflowId.value = null
-      return
-    }
-
-    const hasSelected = workflowList.value.some(
-      (item) => item.id === selectedWorkflowId.value
-    )
-    const nextId = hasSelected
-      ? selectedWorkflowId.value
-      : workflowList.value[0]?.id
-    if (typeof nextId === 'number') {
-      await selectWorkflow(nextId)
-    }
-  } catch {
-    ElMessage.error('获取列表失败')
-  } finally {
-    listLoading.value = false
-  }
-}
-
 const selectWorkflow = async (id: number) => {
   selectedWorkflowId.value = id
-  const res = await getWorkflowDetail(id)
-  if (res.code !== 200) {
-    ElMessage.error(res.message || '获取流程详情失败')
-    return
+  try {
+    const res = await getWorkflowDetail(id)
+    currentDetail.value = res.data
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '获取流程详情失败'))
   }
-  currentDetail.value = res.data
-}
-
-const handleSearch = () => {
-  pagination.page = 1
-  void fetchList()
-}
-
-const handleReset = () => {
-  filters.keyword = ''
-  filters.status = ''
-  pagination.page = 1
-  void fetchList()
-}
-
-const handleSizeChange = () => {
-  pagination.page = 1
-  void fetchList()
 }
 
 const validateForm = async () => {
@@ -477,18 +453,14 @@ const startNewWorkflow = async () => {
       amount: Number(formData.amount),
       reason: formData.reason
     })
-    if (res.code !== 200) {
-      ElMessage.error(res.message || '发起流程失败')
-      return
-    }
 
     ElMessage.success('审批流程已发起')
     selectedWorkflowId.value = res.data.id
     actionComment.value = ''
-    await fetchList()
+    await refresh()
     resetFormData()
-  } catch {
-    ElMessage.error('发起流程失败')
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '发起流程失败'))
   } finally {
     submitting.value = false
   }
@@ -501,7 +473,7 @@ const runCurrentAction = async (
   if (!currentDetail.value) return
   submitting.value = true
   try {
-    const res = await runWorkflowAction({
+    await runWorkflowAction({
       id: currentDetail.value.id,
       action,
       operator: operatorName.value.trim() || '系统用户',
@@ -517,16 +489,11 @@ const runCurrentAction = async (
           : undefined
     })
 
-    if (res.code !== 200) {
-      ElMessage.error(res.message || '操作失败')
-      return
-    }
-
     ElMessage.success(successText)
     actionComment.value = ''
-    await fetchList()
-  } catch {
-    ElMessage.error('操作失败')
+    await refresh()
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '操作失败'))
   } finally {
     submitting.value = false
   }
@@ -561,225 +528,9 @@ const loadCurrentToForm = () => {
   applyDetailToForm(currentDetail.value)
   ElMessage.info('已回填到左侧表单，可继续修改')
 }
-
-onMounted(() => {
-  void fetchList()
-})
 </script>
 
 <style scoped lang="scss">
-.approval-page {
-  --bg: #f0f7fa;
-  --panel: rgba(255, 255, 255, 0.88);
-  --line: #d6e6ec;
-  --text-main: #133645;
-  --text-sub: #5f7885;
-  --brand: #19839a;
-  --shadow: 0 20px 44px rgba(17, 50, 64, 0.12);
-
-  min-height: calc(100vh - 64px);
-  padding: 22px;
-  background:
-    radial-gradient(circle at 6% 8%, #d8f2f2 0%, transparent 32%),
-    radial-gradient(circle at 95% 10%, #ffe5cf 0%, transparent 30%), var(--bg);
-  color: var(--text-main);
-  font-family: 'Outfit', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-}
-
-.panel {
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--panel);
-  backdrop-filter: blur(12px);
-  box-shadow: var(--shadow);
-}
-
-.hero {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 22px 24px;
-}
-
-.hero-badge {
-  display: inline-flex;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: #fff;
-  background: linear-gradient(135deg, #0f8f92 0%, #2f6ed8 100%);
-}
-
-.hero h1 {
-  margin: 12px 0 8px;
-  font-size: 32px;
-  line-height: 1.1;
-}
-
-.hero p {
-  margin: 0;
-  color: var(--text-sub);
-  font-size: 14px;
-}
-
-.hero-right {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 260px;
-}
-
-.stats-grid {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.stat-card {
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.stat-card span {
-  color: var(--text-sub);
-  font-size: 12px;
-}
-
-.stat-card strong {
-  font-size: 30px;
-  line-height: 1;
-}
-
-.stat-card.warning {
-  background: linear-gradient(
-    160deg,
-    rgba(255, 245, 227, 0.9),
-    rgba(255, 255, 255, 0.88)
-  );
-}
-
-.stat-card.danger {
-  background: linear-gradient(
-    160deg,
-    rgba(255, 236, 236, 0.9),
-    rgba(255, 255, 255, 0.88)
-  );
-}
-
-.stat-card.success {
-  background: linear-gradient(
-    160deg,
-    rgba(232, 250, 238, 0.9),
-    rgba(255, 255, 255, 0.88)
-  );
-}
-
-.main-grid {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: 12px;
-}
-
-.left-col {
-  padding: 16px;
-}
-
-.right-col {
-  display: grid;
-  gap: 12px;
-}
-
-.action-panel {
-  padding: 16px;
-}
-
-.col-head {
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.col-head h3 {
-  margin: 0;
-  font-size: 16px;
-  color: #153544;
-}
-
-.form-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.action-buttons {
-  margin-top: 10px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.table-panel {
-  margin-top: 14px;
-  padding: 14px;
-}
-
-.table-head {
-  margin-bottom: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.table-filters {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.pagination-wrap {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-@media (max-width: 1180px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .main-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .hero {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .hero-right {
-    width: 100%;
-    max-width: 360px;
-  }
-}
-
-@media (max-width: 768px) {
-  .approval-page {
-    padding: 16px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-}
+@use '@/style/page-shell.scss';
+@use '@/style/workflow-page.scss';
 </style>
