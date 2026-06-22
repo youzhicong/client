@@ -164,7 +164,6 @@ export const useImStore = defineStore('im', () => {
 
     try {
       const response = await getConversationMessages(convId)
-      if (response.code !== 200) return false
       messages[convId] = response.data.list
       rememberLoaded(convId)
       return true
@@ -182,7 +181,6 @@ export const useImStore = defineStore('im', () => {
 
     try {
       const response = await getImBootstrap()
-      if (response.code !== 200) return false
 
       const userStore = useUserStore()
       currentUser.value = resolveLoggedInImUser(
@@ -472,36 +470,35 @@ export const useImStore = defineStore('im', () => {
       return
     }
 
-    const response = await sendConversationMessage({
-      convId: activeId.value,
-      content,
-      type,
-      fileName,
-      senderId: currentUser.value.id
-    }).catch(() => null)
+    try {
+      const response = await sendConversationMessage({
+        convId: activeId.value,
+        content,
+        type,
+        fileName,
+        senderId: currentUser.value.id
+      })
 
-    if (!response || response.code !== 200) {
+      const list = messages[activeId.value] || []
+      const sentMessage: MessageItem = {
+        ...response.data,
+        convId: activeId.value,
+        senderId: currentUser.value.id,
+        senderName: currentUser.value.name
+      }
+      replaceMessageById(list, tempMessage.id, sentMessage)
+      updateConversationPreview(activeId.value, {
+        lastMessage: sentMessage.fileName || sentMessage.content,
+        lastTime: sentMessage.createdAt
+      })
+    } catch {
       const list = messages[activeId.value] || []
       replaceMessageById(
         list,
         tempMessage.id,
         markMessageFailed(tempMessage, CHAT_SEND_ERROR_MESSAGE)
       )
-      return
     }
-
-    const list = messages[activeId.value] || []
-    const sentMessage: MessageItem = {
-      ...response.data,
-      convId: activeId.value,
-      senderId: currentUser.value.id,
-      senderName: currentUser.value.name
-    }
-    replaceMessageById(list, tempMessage.id, sentMessage)
-    updateConversationPreview(activeId.value, {
-      lastMessage: sentMessage.fileName || sentMessage.content,
-      lastTime: sentMessage.createdAt
-    })
   }
 
   const togglePin = async (convId: string) => {

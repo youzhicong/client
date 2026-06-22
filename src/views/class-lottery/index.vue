@@ -1,16 +1,12 @@
 <template>
-  <div class="class-lottery-page">
-    <el-card class="hero-card" shadow="never">
-      <div class="hero-content">
-        <div class="hero-text">
-          <p class="hero-kicker">CLASSROOM RANDOM CALL</p>
-          <h1>上课抽奖提问</h1>
-          <p>
-            先导入学生名单（会通过后端
-            接口保存），老师点击抽奖即可随机点名提问，支持本轮不重复。
-          </p>
-        </div>
-        <div class="hero-actions">
+  <PageShell>
+    <template #hero>
+      <PageHero
+        badge="CLASSROOM RANDOM CALL"
+        title="上课抽奖提问"
+        description="先导入学生名单（会通过后端接口保存），老师点击抽奖即可随机点名提问，支持本轮不重复。"
+      >
+        <template #actions>
           <el-button
             type="primary"
             :icon="Upload"
@@ -25,9 +21,17 @@
           <el-button :icon="RefreshRight" @click="resetRound">
             重置轮次
           </el-button>
-        </div>
-      </div>
-    </el-card>
+        </template>
+      </PageHero>
+    </template>
+
+    <template #stats>
+      <PageStatGrid>
+        <PageStatCard label="学生总数" :value="students.length" />
+        <PageStatCard label="本轮已点名" :value="calledCount" />
+        <PageStatCard label="本轮剩余" :value="remainingCount" />
+      </PageStatGrid>
+    </template>
 
     <input
       ref="fileInputRef"
@@ -36,48 +40,6 @@
       accept=".csv,.txt,text/csv,text/plain"
       @change="onFileChange"
     />
-
-    <el-row :gutter="14" class="summary-row">
-      <el-col :span="8">
-        <el-card class="summary-card" shadow="never">
-          <div class="summary-item">
-            <div class="summary-icon total">
-              <el-icon><User /></el-icon>
-            </div>
-            <div>
-              <div class="summary-label">学生总数</div>
-              <div class="summary-value">{{ students.length }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card class="summary-card" shadow="never">
-          <div class="summary-item">
-            <div class="summary-icon called">
-              <el-icon><School /></el-icon>
-            </div>
-            <div>
-              <div class="summary-label">本轮已点名</div>
-              <div class="summary-value">{{ calledCount }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card class="summary-card" shadow="never">
-          <div class="summary-item">
-            <div class="summary-icon remain">
-              <el-icon><Tickets /></el-icon>
-            </div>
-            <div>
-              <div class="summary-label">本轮剩余</div>
-              <div class="summary-value">{{ remainingCount }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
 
     <el-row :gutter="14" class="main-row">
       <el-col :span="14">
@@ -195,7 +157,7 @@
         </el-card>
       </el-col>
     </el-row>
-  </div>
+  </PageShell>
 </template>
 
 <script lang="ts" setup>
@@ -205,16 +167,18 @@ import {
   Download,
   Pointer,
   RefreshRight,
-  School,
-  Tickets,
-  Upload,
-  User
+  Upload
 } from '@element-plus/icons-vue'
+import PageHero from '@/components/page/PageHero.vue'
+import PageShell from '@/components/page/PageShell.vue'
+import PageStatCard from '@/components/page/PageStatCard.vue'
+import PageStatGrid from '@/components/page/PageStatGrid.vue'
 import {
   getClassStudents,
   saveClassStudents,
   type ClassStudent
 } from '@/services/classLottery'
+import { getApiErrorMessage } from '@/utils/request'
 
 interface DrawHistoryItem {
   id: string
@@ -369,33 +333,30 @@ const nowText = () => {
   return `${year}-${month}-${day} ${hour}:${minute}:${second}`
 }
 
+const applyStudentSnapshot = (data: {
+  list: ClassStudent[]
+  updatedAt: string
+}) => {
+  students.value = data.list
+  updatedAt.value = data.updatedAt
+
+  const currentNameSet = new Set(students.value.map((item) => item.name))
+  roundPicked.value = roundPicked.value.filter((name) =>
+    currentNameSet.has(name)
+  )
+  history.value = history.value.filter((item) => currentNameSet.has(item.name))
+  if (currentPicked.value && !currentNameSet.has(currentPicked.value)) {
+    currentPicked.value = ''
+  }
+}
+
 const syncStudentsFromServer = async () => {
   loadingStudents.value = true
   try {
     const response = await getClassStudents()
-    if (response.code !== 200) {
-      throw new Error(response.message || '获取学生名单失败')
-    }
-
-    students.value = response.data.list
-    updatedAt.value = response.data.updatedAt
-
-    const currentNameSet = new Set(students.value.map((item) => item.name))
-    roundPicked.value = roundPicked.value.filter((name) =>
-      currentNameSet.has(name)
-    )
-    history.value = history.value.filter((item) =>
-      currentNameSet.has(item.name)
-    )
-    if (currentPicked.value && !currentNameSet.has(currentPicked.value)) {
-      currentPicked.value = ''
-    }
+    applyStudentSnapshot(response.data)
   } catch (error) {
-    if (error instanceof Error && error.message) {
-      ElMessage.error(error.message)
-    } else {
-      ElMessage.error('获取学生名单失败')
-    }
+    ElMessage.error(getApiErrorMessage(error, '获取学生名单失败'))
   } finally {
     loadingStudents.value = false
   }
@@ -405,12 +366,7 @@ const saveNameList = async (names: string[], successText?: string) => {
   savingStudents.value = true
   try {
     const response = await saveClassStudents(normalizeList(names))
-    if (response.code !== 200) {
-      throw new Error(response.message || '保存学生名单失败')
-    }
-
-    students.value = response.data.list
-    updatedAt.value = response.data.updatedAt
+    applyStudentSnapshot(response.data)
 
     if (successText) {
       ElMessage.success(successText)
@@ -457,11 +413,7 @@ const onFileChange = async (event: Event) => {
     if (error === 'cancel' || error === 'close') {
       return
     }
-    if (error instanceof Error && error.message) {
-      ElMessage.error(error.message)
-    } else {
-      ElMessage.error('导入失败，请检查文件格式')
-    }
+    ElMessage.error(getApiErrorMessage(error, '导入失败，请检查文件格式'))
   } finally {
     importing.value = false
     input.value = ''
@@ -486,11 +438,7 @@ const addStudent = async () => {
     )
     draftName.value = ''
   } catch (error) {
-    if (error instanceof Error && error.message) {
-      ElMessage.error(error.message)
-    } else {
-      ElMessage.error('添加失败')
-    }
+    ElMessage.error(getApiErrorMessage(error, '添加失败'))
   }
 }
 
@@ -512,11 +460,7 @@ const removeStudent = async (name: string) => {
       currentPicked.value = ''
     }
   } catch (error) {
-    if (error instanceof Error && error.message) {
-      ElMessage.error(error.message)
-    } else {
-      ElMessage.error('删除失败')
-    }
+    ElMessage.error(getApiErrorMessage(error, '删除失败'))
   }
 }
 
@@ -593,118 +537,14 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.class-lottery-page {
-  padding: 24px 28px 34px;
-  min-height: calc(100vh - 64px);
-  background:
-    radial-gradient(
-      circle at 10% 0%,
-      rgba(59, 130, 246, 0.18) 0%,
-      transparent 34%
-    ),
-    radial-gradient(
-      circle at 95% 8%,
-      rgba(16, 185, 129, 0.14) 0%,
-      transparent 32%
-    ),
-    #f8fafc;
-}
-
-.hero-card {
-  margin-bottom: 14px;
-  border: 0;
-  background: linear-gradient(135deg, #10203a 0%, #1e40af 58%, #0f766e 100%);
-  box-shadow: 0 18px 46px rgba(16, 32, 58, 0.25);
-}
-
-.hero-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.hero-kicker {
-  margin: 0 0 8px;
-  font-size: 12px;
-  color: rgba(191, 219, 254, 0.95);
-  letter-spacing: 0.12em;
-  font-weight: 700;
-}
-
-.hero-text h1 {
-  margin: 0;
-  font-size: 30px;
-  color: #f8fafc;
-}
-
-.hero-text p {
-  margin: 10px 0 0;
-  max-width: 700px;
-  color: rgba(248, 250, 252, 0.88);
-  line-height: 1.72;
-}
-
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
+@use '@/style/page-shell.scss';
 
 .hidden-file-input {
   display: none;
 }
 
-.summary-row {
-  margin-bottom: 14px;
-}
-
-.summary-card {
-  border-radius: 14px;
-}
-
-.summary-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.summary-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-size: 18px;
-}
-
-.summary-icon.total {
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
-}
-
-.summary-icon.called {
-  background: linear-gradient(135deg, #0f766e, #14b8a6);
-}
-
-.summary-icon.remain {
-  background: linear-gradient(135deg, #ea580c, #f97316);
-}
-
-.summary-label {
-  font-size: 12px;
-  color: #64748b;
-}
-
-.summary-value {
-  margin-top: 2px;
-  font-size: 21px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
 .main-row {
+  margin-top: 12px;
   margin-bottom: 14px;
 }
 

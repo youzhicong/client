@@ -1,86 +1,77 @@
 <template>
-  <div class="vending-page">
-    <div class="bg-shape shape-a"></div>
-    <div class="bg-shape shape-b"></div>
+  <PageShell class="vending-page">
+    <template #hero>
+      <PageHero
+        badge="DEVICE OPS"
+        title="贩卖机管理控制台"
+        description="统一管理设备状态、销售表现和维护记录，支持快速筛选与即时操作。"
+      >
+        <template #actions>
+          <el-button @click="refresh">刷新列表</el-button>
+          <el-button type="primary" :icon="Plus" @click="handleAdd">
+            新增设备
+          </el-button>
+        </template>
+      </PageHero>
+    </template>
 
-    <div class="hero panel">
-      <div>
-        <span class="hero-badge">DEVICE OPS</span>
-        <h1>贩卖机管理控制台</h1>
-        <p>统一管理设备状态、销售表现和维护记录，支持快速筛选与即时操作。</p>
-      </div>
-      <div class="hero-actions">
-        <el-button @click="fetchList">刷新列表</el-button>
-        <el-button type="primary" :icon="Plus" @click="handleAdd"
-          >新增设备</el-button
-        >
-      </div>
-    </div>
+    <template #stats>
+      <PageStatGrid :columns="4">
+        <PageStatCard label="当前页设备" :value="pageStats.total" />
+        <PageStatCard
+          label="在线设备"
+          :value="pageStats.online"
+          tone="success"
+        />
+        <PageStatCard
+          label="告警设备"
+          :value="pageStats.warning"
+          tone="warning"
+        />
+        <PageStatCard
+          label="今日营收"
+          :value="formatCurrency(pageStats.revenue)"
+        />
+      </PageStatGrid>
+    </template>
 
-    <div class="stats-grid">
-      <div class="stat-card panel">
-        <span class="label">当前页设备</span>
-        <strong class="value">{{ pageStats.total }}</strong>
-        <span class="hint">总设备数（当前页）</span>
-      </div>
+    <PagePanel>
+      <PageFilterBar>
+        <template #filters>
+          <el-input
+            v-model="filters.keyword"
+            placeholder="搜索名称 / 位置 / 编号"
+            clearable
+            class="search-input"
+            @keyup.enter="search"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
 
-      <div class="stat-card panel online">
-        <span class="label">在线设备</span>
-        <strong class="value">{{ pageStats.online }}</strong>
-        <span class="hint">状态正常可服务</span>
-      </div>
+          <el-select
+            v-model="filters.status"
+            placeholder="状态筛选"
+            clearable
+            class="status-select"
+          >
+            <el-option label="在线" value="online" />
+            <el-option label="离线" value="offline" />
+            <el-option label="告警" value="warning" />
+          </el-select>
 
-      <div class="stat-card panel warning">
-        <span class="label">告警设备</span>
-        <strong class="value">{{ pageStats.warning }}</strong>
-        <span class="hint">建议优先巡检</span>
-      </div>
+          <el-button type="primary" @click="search">搜索</el-button>
+          <el-button @click="reset">重置</el-button>
+        </template>
+        <template #extra>
+          <span class="toolbar-meta">在线率：{{ onlineRate }}</span>
+          <span class="toolbar-meta">平均温度：{{ averageTemperature }}</span>
+        </template>
+      </PageFilterBar>
 
-      <div class="stat-card panel">
-        <span class="label">今日营收</span>
-        <strong class="value">{{ formatCurrency(pageStats.revenue) }}</strong>
-        <span class="hint">当前页累计</span>
-      </div>
-    </div>
-
-    <div class="toolbar panel">
-      <div class="toolbar-left">
-        <el-input
-          v-model="searchKeyword"
-          placeholder="搜索名称 / 位置 / 编号"
-          clearable
-          class="search-input"
-          @keyup.enter="handleSearch"
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-
-        <el-select
-          v-model="filterStatus"
-          placeholder="状态筛选"
-          clearable
-          class="status-select"
-        >
-          <el-option label="在线" value="online" />
-          <el-option label="离线" value="offline" />
-          <el-option label="告警" value="warning" />
-        </el-select>
-
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="handleReset">重置</el-button>
-      </div>
-
-      <div class="toolbar-right">
-        <span>在线率：{{ onlineRate }}</span>
-        <span>平均温度：{{ averageTemperature }}</span>
-      </div>
-    </div>
-
-    <div class="table-panel panel">
       <AppDataTable
-        :data="tableData"
+        :data="list"
         v-loading="loading"
         border
         height="560"
@@ -162,18 +153,18 @@
         </el-table-column>
       </AppDataTable>
 
-      <div class="pagination-wrap">
+      <div class="page-pagination">
         <el-pagination
           v-model:current-page="pagination.page"
           v-model:page-size="pagination.pageSize"
           :total="pagination.total"
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next, jumper"
-          @size-change="fetchList"
-          @current-change="fetchList"
+          @size-change="handleSizeChange"
+          @current-change="refresh"
         />
       </div>
-    </div>
+    </PagePanel>
 
     <el-dialog
       v-model="dialogVisible"
@@ -262,11 +253,11 @@
         >
       </template>
     </el-dialog>
-  </div>
+  </PageShell>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { Plus, Search } from '@element-plus/icons-vue'
 import {
   ElMessage,
@@ -275,25 +266,54 @@ import {
   type FormRules
 } from 'element-plus'
 import { useRouter } from 'vue-router'
+import PageFilterBar from '@/components/page/PageFilterBar.vue'
+import PageHero from '@/components/page/PageHero.vue'
+import PagePanel from '@/components/page/PagePanel.vue'
+import PageShell from '@/components/page/PageShell.vue'
+import PageStatCard from '@/components/page/PageStatCard.vue'
+import PageStatGrid from '@/components/page/PageStatGrid.vue'
+import { usePaginatedQuery } from '@/composables/usePaginatedQuery'
+import { getApiErrorMessage } from '@/utils/request'
 import {
   createVendingMachine,
   deleteVendingMachine,
   getVendingList,
   updateVendingMachine,
-  type VendingMachine
+  type VendingListResult,
+  type VendingMachine,
+  type VendingMachineStatus
 } from '@/services/vending'
 
 const router = useRouter()
 
-const loading = ref(false)
-const tableData = ref<VendingMachine[]>([])
-const searchKeyword = ref('')
-const filterStatus = ref('')
+type VendingFilters = {
+  keyword: string
+  status: VendingMachineStatus | ''
+}
 
-const pagination = reactive({
-  page: 1,
-  pageSize: 10,
-  total: 0
+const {
+  filters,
+  pagination,
+  loading,
+  list,
+  refresh,
+  search,
+  reset,
+  handleSizeChange,
+  adjustPageAfterDelete
+} = usePaginatedQuery<VendingMachine, VendingFilters, VendingListResult>({
+  defaultFilters: {
+    keyword: '',
+    status: ''
+  },
+  errorMessage: '获取列表失败',
+  fetcher: (query) =>
+    getVendingList({
+      page: query.page,
+      pageSize: query.pageSize,
+      keyword: query.keyword.trim(),
+      status: query.status
+    })
 })
 
 const dialogVisible = ref(false)
@@ -332,19 +352,12 @@ const detailData = ref<VendingMachine>({
 const dialogTitle = computed(() => (isEdit.value ? '编辑贩卖机' : '新增贩卖机'))
 
 const pageStats = computed(() => {
-  const online = tableData.value.filter(
-    (item) => item.status === 'online'
-  ).length
-  const warning = tableData.value.filter(
-    (item) => item.status === 'warning'
-  ).length
-  const revenue = tableData.value.reduce(
-    (sum, item) => sum + item.todayRevenue,
-    0
-  )
+  const online = list.value.filter((item) => item.status === 'online').length
+  const warning = list.value.filter((item) => item.status === 'warning').length
+  const revenue = list.value.reduce((sum, item) => sum + item.todayRevenue, 0)
 
   return {
-    total: tableData.value.length,
+    total: list.value.length,
     online,
     warning,
     revenue
@@ -358,7 +371,7 @@ const onlineRate = computed(() => {
 })
 
 const averageTemperature = computed(() => {
-  const valid = tableData.value.filter((item) => item.status !== 'offline')
+  const valid = list.value.filter((item) => item.status !== 'offline')
   if (!valid.length) return '-'
   const avg =
     valid.reduce((sum, item) => sum + item.temperature, 0) / valid.length
@@ -396,40 +409,65 @@ const rowClassName = ({ row }: { row: unknown }) => {
   return `row-${status}`
 }
 
-const fetchList = async () => {
-  loading.value = true
-  try {
-    const response = await getVendingList({
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-      keyword: searchKeyword.value.trim(),
-      status: filterStatus.value as VendingMachine['status'] | ''
-    })
-    const data = response
-
-    if (data.code === 200) {
-      tableData.value = data.data.list
-      pagination.total = data.data.total
-    } else {
-      ElMessage.error(data.message || '获取列表失败')
+const handleDelete = (row: VendingMachine) => {
+  ElMessageBox.confirm(
+    `确定删除设备 ${row.name} 吗？该操作不可恢复。`,
+    '删除确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
     }
-  } catch {
-    ElMessage.error('获取列表失败')
+  )
+    .then(async () => {
+      try {
+        await deleteVendingMachine(row.id)
+        ElMessage.success('删除成功')
+        adjustPageAfterDelete()
+        await refresh()
+      } catch (error) {
+        ElMessage.error(getApiErrorMessage(error, '删除失败'))
+      }
+    })
+    .catch(() => {})
+}
+
+const handleSubmit = async () => {
+  if (!formRef.value) return
+
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  submitLoading.value = true
+  try {
+    if (isEdit.value) {
+      await updateVendingMachine({
+        id: formData.id,
+        name: formData.name,
+        location: formData.location,
+        status: formData.status
+      })
+    } else {
+      await createVendingMachine({
+        name: formData.name,
+        location: formData.location,
+        status: formData.status
+      })
+    }
+    ElMessage.success(isEdit.value ? '修改成功' : '添加成功')
+    dialogVisible.value = false
+    await refresh()
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '操作失败'))
   } finally {
-    loading.value = false
+    submitLoading.value = false
   }
 }
 
-const handleSearch = () => {
-  pagination.page = 1
-  void fetchList()
-}
-
-const handleReset = () => {
-  searchKeyword.value = ''
-  filterStatus.value = ''
-  pagination.page = 1
-  void fetchList()
+const goToMonitor = (machine: VendingMachine) => {
+  detailVisible.value = false
+  if (!machine.id) return
+  router.push({ path: '/vending-monitor', query: { id: machine.id } })
 }
 
 const handleAdd = () => {
@@ -454,227 +492,14 @@ const handleView = (row: VendingMachine) => {
   detailData.value = { ...row }
   detailVisible.value = true
 }
-
-const handleDelete = (row: VendingMachine) => {
-  ElMessageBox.confirm(
-    `确定删除设备 ${row.name} 吗？该操作不可恢复。`,
-    '删除确认',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  )
-    .then(async () => {
-      try {
-        const response = await deleteVendingMachine(row.id)
-        const data = response
-        if (data.code === 200) {
-          ElMessage.success('删除成功')
-          await fetchList()
-        } else {
-          ElMessage.error(data.message || '删除失败')
-        }
-      } catch {
-        ElMessage.error('删除失败')
-      }
-    })
-    .catch(() => {})
-}
-
-const handleSubmit = async () => {
-  if (!formRef.value) return
-
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
-
-  submitLoading.value = true
-  try {
-    const response = isEdit.value
-      ? await updateVendingMachine({
-          id: formData.id,
-          name: formData.name,
-          location: formData.location,
-          status: formData.status
-        })
-      : await createVendingMachine({
-          name: formData.name,
-          location: formData.location,
-          status: formData.status
-        })
-    const data = response
-
-    if (data.code === 200) {
-      ElMessage.success(isEdit.value ? '修改成功' : '添加成功')
-      dialogVisible.value = false
-      await fetchList()
-    } else {
-      ElMessage.error(data.message || '操作失败')
-    }
-  } catch {
-    ElMessage.error('操作失败')
-  } finally {
-    submitLoading.value = false
-  }
-}
-
-const goToMonitor = (machine: VendingMachine) => {
-  detailVisible.value = false
-  if (!machine.id) return
-  router.push({ path: '/vending-monitor', query: { id: machine.id } })
-}
-
-onMounted(() => {
-  void fetchList()
-})
 </script>
 
 <style lang="scss" scoped>
-.vending-page {
-  --bg-main: #f2f5f8;
-  --panel-bg: rgba(255, 255, 255, 0.86);
-  --line: #d9e3ea;
-  --text-main: #1a3942;
-  --text-sub: #6f8790;
-  --brand: #117f86;
-  --shadow: 0 20px 42px rgba(24, 57, 69, 0.12);
+@use '@/style/page-shell.scss';
 
-  min-height: calc(100vh - 60px);
-  position: relative;
-  padding: 22px;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 6% 8%, #d7eef6 0%, transparent 32%),
-    radial-gradient(circle at 90% 10%, #ffe7d4 0%, transparent 30%),
-    var(--bg-main);
-  color: var(--text-main);
-  font-family: 'Outfit', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-}
-
-.bg-shape {
-  position: absolute;
-  border-radius: 999px;
-  filter: blur(30px);
-  opacity: 0.38;
-  pointer-events: none;
-}
-
-.shape-a {
-  width: 260px;
-  height: 260px;
-  right: -90px;
-  top: -50px;
-  background: #b8e5f0;
-}
-
-.shape-b {
-  width: 220px;
-  height: 220px;
-  left: -70px;
-  bottom: 120px;
-  background: #cae8df;
-}
-
-.panel {
-  position: relative;
-  z-index: 1;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--panel-bg);
-  backdrop-filter: blur(12px);
-  box-shadow: var(--shadow);
-}
-
-.hero {
-  padding: 22px 24px;
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: flex-end;
-}
-
-.hero-badge {
-  display: inline-flex;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: #fff;
-  background: linear-gradient(135deg, #117f86 0%, #2f6fda 100%);
-}
-
-.hero h1 {
-  margin: 12px 0 8px;
-  font-size: 32px;
-  line-height: 1.1;
-}
-
-.hero p {
-  margin: 0;
-  color: var(--text-sub);
-  font-size: 14px;
-}
-
-.hero-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.stats-grid {
-  position: relative;
-  z-index: 1;
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.stat-card {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.stat-card .label {
-  color: var(--text-sub);
+.toolbar-meta {
+  color: #6f8790;
   font-size: 12px;
-}
-
-.stat-card .value {
-  font-size: 28px;
-  line-height: 1.05;
-}
-
-.stat-card .hint {
-  color: #8ea2ab;
-  font-size: 12px;
-}
-
-.stat-card.online .value {
-  color: #15803d;
-}
-
-.stat-card.warning .value {
-  color: #d97706;
-}
-
-.toolbar {
-  position: relative;
-  z-index: 1;
-  margin-top: 14px;
-  padding: 14px;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.toolbar-left {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
 }
 
 .search-input {
@@ -683,21 +508,6 @@ onMounted(() => {
 
 .status-select {
   width: 140px;
-}
-
-.toolbar-right {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  color: var(--text-sub);
-  font-size: 12px;
-}
-
-.table-panel {
-  position: relative;
-  z-index: 1;
-  margin-top: 14px;
-  padding: 14px;
 }
 
 :deep(.el-table) {
@@ -730,47 +540,9 @@ onMounted(() => {
   ) !important;
 }
 
-.pagination-wrap {
-  margin-top: 14px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-@media (max-width: 1280px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .toolbar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
 @media (max-width: 860px) {
-  .vending-page {
-    padding: 14px;
-  }
-
-  .hero {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .hero h1 {
-    font-size: 26px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
   .search-input,
   .status-select {
-    width: 100%;
-  }
-
-  .toolbar-left {
     width: 100%;
   }
 }

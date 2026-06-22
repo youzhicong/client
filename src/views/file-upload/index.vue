@@ -327,6 +327,7 @@ import {
   uploadChunk,
   type UploadServerTask
 } from '@/services/fileUpload'
+import { getApiErrorMessage } from '@/utils/request'
 
 type FileCategory =
   | 'image'
@@ -641,7 +642,7 @@ const uploadSingleChunk = async (task: LocalTask, chunkIndex: number) => {
     try {
       const range = getChunkRange(task, chunkIndex)
       const chunkHash = `${task.fileHash}-${chunkIndex}-${range.start}-${range.end}`
-      const result = await uploadChunk(
+      await uploadChunk(
         {
           fileHash: task.fileHash,
           fileName: task.fileName,
@@ -653,10 +654,6 @@ const uploadSingleChunk = async (task: LocalTask, chunkIndex: number) => {
         },
         controller.signal
       )
-
-      if (result.code !== 200) {
-        throw new Error(result.message || '分片上传失败')
-      }
 
       task.uploadedChunkSet.add(chunkIndex)
       recalculateTask(task)
@@ -726,10 +723,6 @@ const startTask = async (task: LocalTask) => {
       totalChunks: task.totalChunks
     })
 
-    if (checkResult.code !== 200) {
-      throw new Error(checkResult.message || '上传校验失败')
-    }
-
     if (checkResult.data.merged && !checkResult.data.shouldUpload) {
       task.status = 'success'
       task.uploadedChunkSet = new Set(
@@ -767,10 +760,6 @@ const startTask = async (task: LocalTask) => {
       totalChunks: task.totalChunks
     })
 
-    if (mergeResult.code !== 200) {
-      throw new Error(mergeResult.message || '分片合并失败')
-    }
-
     task.status = 'success'
     task.fileUrl = mergeResult.data.fileUrl
     task.uploadedChunkSet = new Set(
@@ -786,7 +775,7 @@ const startTask = async (task: LocalTask) => {
     if (task.status === 'paused') return
     task.status = 'error'
     task.speed = 0
-    task.errorMessage = error instanceof Error ? error.message : '上传失败'
+    task.errorMessage = getApiErrorMessage(error, '上传失败')
     ElMessage.error(`${task.fileName}：${task.errorMessage}`)
   } finally {
     resetTaskControllers(task)
@@ -848,13 +837,9 @@ const refreshServerTasks = async () => {
   serverLoading.value = true
   try {
     const result = await getUploadTasks(serverKeyword.value)
-    if (result.code === 200) {
-      serverTasks.value = result.data.list
-      return
-    }
-    ElMessage.error(result.message || '获取服务端任务失败')
-  } catch {
-    ElMessage.error('获取服务端任务失败')
+    serverTasks.value = result.data.list
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '获取服务端任务失败'))
   } finally {
     serverLoading.value = false
   }
@@ -867,12 +852,12 @@ const removeServerTask = (fileHash: string) => {
     type: 'warning'
   })
     .then(async () => {
-      const result = await removeUploadTask(fileHash)
-      if (result.code === 200) {
+      try {
+        await removeUploadTask(fileHash)
         ElMessage.success('删除成功')
         await refreshServerTasks()
-      } else {
-        ElMessage.error(result.message || '删除失败')
+      } catch (error) {
+        ElMessage.error(getApiErrorMessage(error, '删除失败'))
       }
     })
     .catch(() => {})

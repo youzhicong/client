@@ -18,6 +18,7 @@
     "type-check": "vue-tsc --build",
     "spec-check": "node scripts/check-frontend-spec.mjs",
     "route-check": "node scripts/check-route-navigation.mjs",
+    "encoding-check": "node scripts/check-file-encoding.mjs",
     "interview:sync": "node scripts/interview-bank/sync.mjs",
     "interview:test": "node scripts/interview-bank/test.mjs",
     "lint": "eslint . --fix --cache",

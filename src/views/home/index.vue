@@ -173,6 +173,7 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import {
   getHomeDashboard,
@@ -182,6 +183,7 @@ import {
   type HomeKpiCard,
   type HomeRegionItem
 } from '@/services/homeDashboard'
+import { getApiErrorMessage } from '@/utils/request'
 
 const router = useRouter()
 const lineChartRef = ref<HTMLDivElement | null>(null)
@@ -237,18 +239,20 @@ const renderCharts = () => {
 }
 
 const loadDashboard = async () => {
-  const response = await getHomeDashboard()
-  if (response.code !== 200) return
-
-  heroStats.value = response.data.heroStats
-  weekDays.value = response.data.weekDays
-  uvData.value = response.data.uvData
-  pvData.value = response.data.pvData
-  channelData.value = response.data.channelData
-  regionData.value = response.data.regionData
-  kpiCards.value = response.data.kpiCards
-  healthMetrics.value = response.data.healthMetrics
-  renderCharts()
+  try {
+    const response = await getHomeDashboard()
+    heroStats.value = response.data.heroStats
+    weekDays.value = response.data.weekDays
+    uvData.value = response.data.uvData
+    pvData.value = response.data.pvData
+    channelData.value = response.data.channelData
+    regionData.value = response.data.regionData
+    kpiCards.value = response.data.kpiCards
+    healthMetrics.value = response.data.healthMetrics
+    renderCharts()
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '首页数据加载失败'))
+  }
 }
 
 const tooltipStyle = {

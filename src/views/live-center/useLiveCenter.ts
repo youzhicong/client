@@ -5,6 +5,7 @@ import {
   rechargeLiveCenterWallet,
   sendLiveCenterGift
 } from '@/services/liveCenter'
+import { getApiErrorMessage } from '@/utils/request'
 import type {
   AlertItem,
   ConversionRow,
@@ -120,11 +121,6 @@ export const useLiveCenter = () => {
     loading.value = true
     try {
       const response = await getLiveCenterDashboard()
-      if (response.code !== 200) {
-        ElMessage.error(response.message || '直播中心数据加载失败')
-        return
-      }
-
       const data: LiveCenterDashboardSnapshot = response.data
       heroTags.value = data.heroTags
       heroMetrics.value = data.heroMetrics
@@ -155,8 +151,8 @@ export const useLiveCenter = () => {
         selectedPackageId.value =
           data.rechargePackages[1]?.id ?? data.rechargePackages[0]?.id ?? ''
       }
-    } catch {
-      ElMessage.error('直播中心数据加载失败')
+    } catch (error) {
+      ElMessage.error(getApiErrorMessage(error, '直播中心数据加载失败'))
     } finally {
       loading.value = false
     }
@@ -170,18 +166,14 @@ export const useLiveCenter = () => {
         roomId: selectedRoom.value.id,
         giftId: selectedGiftId.value
       })
-      if (response.code !== 200) {
-        ElMessage.error(response.message || '送礼失败')
-        return
-      }
 
       applyMonetizationResult(
         { liveFeed, recentTransactions, walletSummary },
         response.data
       )
       ElMessage.success(response.message || '送礼成功')
-    } catch {
-      ElMessage.error('送礼失败')
+    } catch (error) {
+      ElMessage.error(getApiErrorMessage(error, '送礼失败'))
     } finally {
       sendingGift.value = false
     }
@@ -195,18 +187,14 @@ export const useLiveCenter = () => {
         roomId: selectedRoom.value.id,
         packageId: selectedPackageId.value
       })
-      if (response.code !== 200) {
-        ElMessage.error(response.message || '充值失败')
-        return
-      }
 
       applyMonetizationResult(
         { liveFeed, recentTransactions, walletSummary },
         response.data
       )
       ElMessage.success(response.message || '充值成功')
-    } catch {
-      ElMessage.error('充值失败')
+    } catch (error) {
+      ElMessage.error(getApiErrorMessage(error, '充值失败'))
     } finally {
       recharging.value = false
     }

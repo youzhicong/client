@@ -1,62 +1,50 @@
 <template>
-  <div class="vending-monitor-page">
-    <div class="bg-orb orb-a"></div>
-    <div class="bg-orb orb-b"></div>
+  <PageShell class="vending-monitor-page">
+    <template #hero>
+      <PageHero
+        badge="SMART RETAIL"
+        title="智能贩卖机监控中心"
+        description="实时查看设备状态、库存健康度、销售趋势和告警信息"
+      >
+        <template #actions>
+          <div class="monitor-hero-actions">
+            <div class="machine-status" :class="monitorData.machine.status">
+              <span class="status-dot"></span>
+              <span>{{ machineStatusText }}</span>
+            </div>
+            <el-button
+              type="primary"
+              :loading="refreshing"
+              @click="refreshData"
+            >
+              立即刷新
+            </el-button>
+          </div>
+        </template>
+      </PageHero>
+    </template>
 
-    <div class="page-header panel">
-      <div class="header-info">
-        <span class="header-badge">SMART RETAIL</span>
-        <h1 class="header-title">智能贩卖机监控中心</h1>
-        <p class="header-desc">
-          实时查看设备状态、库存健康度、销售趋势和告警信息
-        </p>
-      </div>
-
-      <div class="header-actions">
-        <div class="machine-status" :class="monitorData.machine.status">
-          <span class="status-dot"></span>
-          <span>{{ machineStatusText }}</span>
-        </div>
-
-        <button class="action-btn" :disabled="refreshing" @click="refreshData">
-          <span class="btn-icon">↻</span>
-          {{ refreshing ? '刷新中...' : '立即刷新' }}
-        </button>
-      </div>
-    </div>
-
-    <div class="stats-grid">
-      <div class="stat-card panel">
-        <span class="stat-label">今日销售额</span>
-        <strong class="stat-value">{{
-          formatCurrency(monitorData.sales.todayRevenue)
-        }}</strong>
-        <span class="stat-sub">销量 {{ monitorData.sales.todaySales }} 单</span>
-      </div>
-
-      <div class="stat-card panel">
-        <span class="stat-label">库存健康度</span>
-        <strong class="stat-value">{{ stockHealth }}%</strong>
-        <span class="stat-sub">低库存 {{ lowStockCount }} 个货道</span>
-      </div>
-
-      <div class="stat-card panel">
-        <span class="stat-label">设备温度</span>
-        <strong class="stat-value"
-          >{{ monitorData.machine.temperature.toFixed(1) }}°C</strong
-        >
-        <span class="stat-sub">运行 {{ uptimeDays }} 天</span>
-      </div>
-
-      <div class="stat-card panel">
-        <span class="stat-label">当前告警</span>
-        <strong class="stat-value">{{ monitorData.alerts.length }}</strong>
-        <span class="stat-sub">严重 {{ severeAlertCount }} 条</span>
-      </div>
-    </div>
+    <template #stats>
+      <PageStatGrid :columns="4">
+        <PageStatCard
+          label="今日销售额"
+          :value="formatCurrency(monitorData.sales.todayRevenue)"
+        />
+        <PageStatCard label="库存健康度" :value="`${stockHealth}%`" />
+        <PageStatCard
+          label="设备温度"
+          :value="`${monitorData.machine.temperature.toFixed(1)}°C`"
+        />
+        <PageStatCard
+          label="当前告警"
+          :value="monitorData.alerts.length"
+          :tone="severeAlertCount ? 'warning' : undefined"
+        />
+      </PageStatGrid>
+    </template>
 
     <div class="main-content">
-      <div class="scene-card panel">
+      <PagePanel body-class="monitor-scene-body">
         <div class="scene-header">
           <div>
             <h2>{{ monitorData.machine.name }}</h2>
@@ -86,24 +74,31 @@
           </div>
           <span class="updated-time">更新时间：{{ lastUpdatedText }}</span>
         </div>
-      </div>
+      </PagePanel>
 
-      <div class="panel-container panel">
+      <PagePanel body-class="monitor-panel-body">
         <MonitorPanel :data="monitorData" />
-      </div>
+      </PagePanel>
     </div>
-  </div>
+  </PageShell>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import PageHero from '@/components/page/PageHero.vue'
+import PagePanel from '@/components/page/PagePanel.vue'
+import PageShell from '@/components/page/PageShell.vue'
+import PageStatCard from '@/components/page/PageStatCard.vue'
+import PageStatGrid from '@/components/page/PageStatGrid.vue'
 import VendingMachine3D from './components/VendingMachine3D.vue'
 import MonitorPanel from './components/MonitorPanel.vue'
 import {
   getVendingMonitor,
   type VendingMonitorData as MonitorData
 } from '@/services/vending'
+import { getApiErrorMessage } from '@/utils/request'
 
 const route = useRoute()
 const monitorData = ref<MonitorData>({
@@ -138,13 +133,6 @@ const machineStatusText = computed(() => {
   return map[monitorData.value.machine.status]
 })
 
-const lowStockCount = computed(
-  () =>
-    monitorData.value.products.filter(
-      (item) => item.stock > 0 && item.stock <= 2
-    ).length
-)
-
 const severeAlertCount = computed(
   () =>
     monitorData.value.alerts.filter(
@@ -165,10 +153,6 @@ const stockHealth = computed(() => {
   return Math.round((total / max) * 100)
 })
 
-const uptimeDays = computed(() =>
-  Math.floor(monitorData.value.machine.uptime / 24)
-)
-
 const lastUpdatedText = computed(() =>
   lastUpdated.value.toLocaleTimeString('zh-CN', {
     hour: '2-digit',
@@ -182,10 +166,13 @@ const formatCurrency = (value: number) => `￥${value.toLocaleString('zh-CN')}`
 const fetchMonitorData = async () => {
   const machineId =
     typeof route.query.id === 'string' ? route.query.id.trim() : ''
-  const response = await getVendingMonitor(machineId || undefined)
-  if (response.code !== 200) return
-  monitorData.value = response.data
-  lastUpdated.value = new Date()
+  try {
+    const response = await getVendingMonitor(machineId || undefined)
+    monitorData.value = response.data
+    lastUpdated.value = new Date()
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '获取监控数据失败'))
+  }
 }
 
 const refreshData = () => {
@@ -208,109 +195,20 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@use '@/style/page-shell.scss';
+
 .vending-monitor-page {
-  --bg-main: #f3f8f7;
-  --panel: rgba(255, 255, 255, 0.82);
-  --panel-solid: #ffffff;
-  --line: #d8e8e7;
-  --text-main: #17343b;
   --text-sub: #627f85;
-  --brand: #0f9d92;
   --accent: #ef7f38;
   --danger: #dc2626;
   --ok: #16a34a;
-  --shadow: 0 20px 40px rgba(23, 52, 59, 0.12);
-
-  position: relative;
-  min-height: calc(100vh - 64px);
-  overflow: hidden;
-  padding: 24px;
-  color: var(--text-main);
-  font-family: 'Space Grotesk', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  background:
-    radial-gradient(circle at 12% -10%, #d9f5f2 0%, transparent 42%),
-    radial-gradient(circle at 100% 12%, #ffe8d9 0%, transparent 36%),
-    var(--bg-main);
 }
 
-.bg-orb {
-  position: absolute;
-  border-radius: 999px;
-  pointer-events: none;
-  filter: blur(2px);
-}
-
-.orb-a {
-  right: -80px;
-  top: -140px;
-  width: 280px;
-  height: 280px;
-  opacity: 0.45;
-  background: linear-gradient(135deg, #b5f3ed, #ffd7be);
-}
-
-.orb-b {
-  left: -120px;
-  bottom: -180px;
-  width: 340px;
-  height: 340px;
-  opacity: 0.4;
-  background: linear-gradient(135deg, #c0e9ff, #aff4d8);
-}
-
-.panel {
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  backdrop-filter: blur(12px);
-  box-shadow: var(--shadow);
-  background: var(--panel);
-}
-
-.page-header {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 22px 24px;
-}
-
-.header-info {
-  max-width: 620px;
-}
-
-.header-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid #b9ddd8;
-  background: #e8f8f5;
-  color: #0f7e75;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.header-title {
-  margin: 10px 0 6px;
-  font-size: 30px;
-  line-height: 1.1;
-  color: var(--text-main);
-}
-
-.header-desc {
-  margin: 0;
-  color: var(--text-sub);
-  font-size: 14px;
-}
-
-.header-actions {
+.monitor-hero-actions {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .machine-status {
@@ -364,85 +262,24 @@ onUnmounted(() => {
   background: var(--danger);
 }
 
-.action-btn {
-  height: 36px;
-  padding: 0 16px;
-  border: 1px solid #9fd3cc;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #11a69a, #0f8f84);
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.action-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(15, 143, 132, 0.25);
-}
-
-.action-btn:disabled {
-  opacity: 0.72;
-  cursor: not-allowed;
-}
-
-.btn-icon {
-  font-size: 14px;
-  line-height: 1;
-}
-
-.stats-grid {
-  position: relative;
-  z-index: 1;
-  margin-top: 16px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.stat-card {
-  background: rgba(255, 255, 255, 0.78);
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: var(--text-sub);
-}
-
-.stat-value {
-  font-size: 26px;
-  line-height: 1.05;
-  color: var(--text-main);
-}
-
-.stat-sub {
-  font-size: 12px;
-  color: #7a959a;
-}
-
 .main-content {
-  position: relative;
-  z-index: 1;
-  margin-top: 16px;
+  margin-top: 12px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 390px;
   gap: 16px;
   min-height: calc(100vh - 318px);
 }
 
-.scene-card {
+:deep(.monitor-scene-body) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.7);
+  padding: 0;
+}
+
+:deep(.monitor-panel-body) {
+  padding: 12px;
+  min-height: 420px;
 }
 
 .scene-header {
@@ -514,48 +351,16 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-.panel-container {
-  overflow: hidden;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.74);
-}
-
 @media (max-width: 1350px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .main-content {
     grid-template-columns: 1fr;
-  }
-
-  .panel-container {
-    min-height: 420px;
   }
 }
 
 @media (max-width: 760px) {
-  .vending-monitor-page {
-    padding: 14px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .header-actions {
+  .monitor-hero-actions {
     width: 100%;
     justify-content: space-between;
-  }
-
-  .action-btn {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
   }
 
   .scene-header {

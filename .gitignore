@@ -38,3 +38,6 @@ __pycache__/
 
 # Vitest
 __screenshots__/
+
+# Local course asset extraction (use public/course-demo instead)
+.temp-oligosaccharide/

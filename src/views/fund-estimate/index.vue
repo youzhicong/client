@@ -1,81 +1,65 @@
 <template>
-  <div class="fund-page">
-    <div class="bg-shape shape-a"></div>
-    <div class="bg-shape shape-b"></div>
-
-    <div class="hero panel">
-      <div class="hero-main">
-        <span class="hero-badge">FUND TRACKER</span>
-        <h1>基金估值驾驶舱</h1>
-        <p>实时查看持仓估值、收益变化和风险分布，支持自动刷新与快速加仓。</p>
-      </div>
-
-      <div class="hero-controls">
-        <div class="meta-row">
-          <span>上次更新：{{ lastUpdatedLabel }}</span>
-          <span
-            >自动刷新：{{
-              autoRefresh ? refreshCountdownLabel : '已暂停'
-            }}</span
-          >
-        </div>
-        <div class="action-row">
-          <el-switch
-            v-model="autoRefresh"
-            size="large"
-            active-text="自动刷新"
-            inactive-text="手动刷新"
-          />
-          <el-button
-            type="primary"
-            :icon="Refresh"
-            :loading="loading"
-            @click="fetchFundList"
-          >
-            刷新估值
-          </el-button>
-        </div>
-      </div>
-    </div>
-
-    <div class="summary-grid">
-      <div class="summary-card panel">
-        <span class="label">持仓成本</span>
-        <strong class="value">{{ formatCurrency(summary.totalCost) }}</strong>
-        <span class="hint">累计投入</span>
-      </div>
-
-      <div class="summary-card panel">
-        <span class="label">估算市值</span>
-        <strong class="value">{{ formatCurrency(summary.totalValue) }}</strong>
-        <span class="hint">实时净值估算</span>
-      </div>
-
-      <div
-        class="summary-card panel"
-        :class="summary.totalProfit >= 0 ? 'profit' : 'loss'"
+  <PageShell class="fund-page">
+    <template #hero>
+      <PageHero
+        badge="FUND TRACKER"
+        title="基金估值驾驶舱"
+        description="实时查看持仓估值、收益变化和风险分布，支持自动刷新与快速加仓。"
       >
-        <span class="label">估算盈亏</span>
-        <strong class="value">{{
-          formatSignedCurrency(summary.totalProfit)
-        }}</strong>
-        <span class="hint">总浮动收益</span>
-      </div>
+        <template #actions>
+          <div class="fund-hero-controls">
+            <div class="meta-row">
+              <span>上次更新：{{ lastUpdatedLabel }}</span>
+              <span>
+                自动刷新：{{ autoRefresh ? refreshCountdownLabel : '已暂停' }}
+              </span>
+            </div>
+            <div class="action-row">
+              <el-switch
+                v-model="autoRefresh"
+                size="large"
+                active-text="自动刷新"
+                inactive-text="手动刷新"
+              />
+              <el-button
+                type="primary"
+                :icon="Refresh"
+                :loading="loading"
+                @click="fetchFundList"
+              >
+                刷新估值
+              </el-button>
+            </div>
+          </div>
+        </template>
+      </PageHero>
+    </template>
 
-      <div
-        class="summary-card panel"
-        :class="summary.profitRate >= 0 ? 'profit' : 'loss'"
-      >
-        <span class="label">收益率</span>
-        <strong class="value">{{
-          formatSignedPercent(summary.profitRate)
-        }}</strong>
-        <span class="hint">收益 / 成本</span>
-      </div>
-    </div>
+    <template #stats>
+      <PageStatGrid :columns="4">
+        <PageStatCard
+          label="持仓成本"
+          :value="formatCurrency(summary.totalCost)"
+        />
+        <PageStatCard
+          label="估算市值"
+          :value="formatCurrency(summary.totalValue)"
+        />
+        <PageStatCard
+          label="估算盈亏"
+          :value="formatSignedCurrency(summary.totalProfit)"
+          :tone="summary.totalProfit >= 0 ? 'success' : 'danger'"
+        />
+        <PageStatCard
+          label="收益率"
+          :value="formatSignedPercent(summary.profitRate)"
+          :tone="summary.profitRate >= 0 ? 'success' : 'danger'"
+        />
+      </PageStatGrid>
+    </template>
 
     <div class="workspace-grid">
-      <div class="panel add-panel">
+      <PagePanel body-class="fund-panel-body">
         <div class="panel-head">
           <h3>新增持仓</h3>
           <span>输入基金代码后可直接加入组合</span>
@@ -110,14 +94,14 @@
             />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" :icon="Plus" @click="handleAddFund"
-              >添加基金</el-button
-            >
+            <el-button type="primary" :icon="Plus" @click="handleAddFund">
+              添加基金
+            </el-button>
           </el-form-item>
         </el-form>
-      </div>
+      </PagePanel>
 
-      <div class="panel filter-panel">
+      <PagePanel body-class="fund-panel-body">
         <div class="panel-head">
           <h3>筛选与排序</h3>
           <span>快速定位重点持仓</span>
@@ -150,10 +134,10 @@
 
           <el-button @click="resetFilters">重置筛选</el-button>
         </div>
-      </div>
+      </PagePanel>
     </div>
 
-    <div class="table-panel panel">
+    <PagePanel body-class="fund-panel-body">
       <div class="table-header">
         <div>
           <h3>持仓列表</h3>
@@ -248,20 +232,26 @@
           </template>
         </el-table-column>
       </AppDataTable>
-    </div>
-  </div>
+    </PagePanel>
+  </PageShell>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Delete, Plus, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import PageHero from '@/components/page/PageHero.vue'
+import PagePanel from '@/components/page/PagePanel.vue'
+import PageShell from '@/components/page/PageShell.vue'
+import PageStatCard from '@/components/page/PageStatCard.vue'
+import PageStatGrid from '@/components/page/PageStatGrid.vue'
 import {
   addFund,
   deleteFund,
   getFundList,
   type FundItem as Fund
 } from '@/services/fund'
+import { getApiErrorMessage } from '@/utils/request'
 
 const loading = ref(false)
 const fundList = ref<Fund[]>([])
@@ -378,16 +368,11 @@ const fetchFundList = async () => {
   loading.value = true
   try {
     const response = await getFundList()
-    const data = response
-    if (response.code === 200 && Array.isArray(response.data)) {
-      fundList.value = response.data
-      lastUpdatedAt.value = new Date()
-      refreshSeconds.value = 60
-    } else {
-      ElMessage.error(data.message || '获取基金数据失败')
-    }
-  } catch {
-    ElMessage.error('获取基金数据失败')
+    fundList.value = response.data
+    lastUpdatedAt.value = new Date()
+    refreshSeconds.value = 60
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '获取基金数据失败'))
   } finally {
     loading.value = false
   }
@@ -406,21 +391,16 @@ const handleAddFund = async () => {
   }
 
   try {
-    const response = await addFund({
+    await addFund({
       code,
       shares: newFund.value.shares,
       cost: newFund.value.cost
     })
-    const data = response
-    if (data.code === 200) {
-      ElMessage.success('基金已加入持仓')
-      newFund.value.code = ''
-      await fetchFundList()
-    } else {
-      ElMessage.error(data.message || '添加失败')
-    }
-  } catch {
-    ElMessage.error('添加失败')
+    ElMessage.success('基金已加入持仓')
+    newFund.value.code = ''
+    await fetchFundList()
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '添加失败'))
   }
 }
 
@@ -436,18 +416,13 @@ const handleDelete = (fund: Fund) => {
   )
     .then(async () => {
       try {
-        const response = await deleteFund({ code: fund.code })
-        const data = response
-        if (data.code === 200) {
-          fundList.value = fundList.value.filter(
-            (item) => item.code !== fund.code
-          )
-          ElMessage.success('删除成功')
-        } else {
-          ElMessage.error(data.message || '删除失败')
-        }
-      } catch {
-        ElMessage.error('删除失败')
+        await deleteFund({ code: fund.code })
+        fundList.value = fundList.value.filter(
+          (item) => item.code !== fund.code
+        )
+        ElMessage.success('删除成功')
+      } catch (error) {
+        ElMessage.error(getApiErrorMessage(error, '删除失败'))
       }
     })
     .catch(() => {})
@@ -509,103 +484,25 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@use '@/style/page-shell.scss';
+
 .fund-page {
-  --bg-main: #f2f6f8;
-  --panel-bg: rgba(255, 255, 255, 0.86);
-  --line: #d7e2e7;
-  --text-main: #173742;
-  --text-sub: #67828d;
-  --brand: #0f8f92;
-  --brand-strong: #0d6f74;
   --profit: #16a34a;
   --loss: #dc2626;
-  --shadow: 0 20px 44px rgba(22, 53, 66, 0.12);
-
-  min-height: calc(100vh - 60px);
-  position: relative;
-  padding: 22px;
-  overflow: hidden;
-  color: var(--text-main);
-  background:
-    radial-gradient(circle at 8% 8%, #d5efed 0%, transparent 35%),
-    radial-gradient(circle at 90% 12%, #ffe6d1 0%, transparent 30%),
-    var(--bg-main);
-  font-family: 'Manrope', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --text-sub: #67828d;
 }
 
-.bg-shape {
-  position: absolute;
-  border-radius: 999px;
-  filter: blur(32px);
-  opacity: 0.4;
-  pointer-events: none;
-}
-
-.shape-a {
-  width: 260px;
-  height: 260px;
-  top: -80px;
-  right: -60px;
-  background: #bde4f8;
-}
-
-.shape-b {
-  width: 220px;
-  height: 220px;
-  left: -70px;
-  bottom: 120px;
-  background: #d2f5e1;
-}
-
-.panel {
-  position: relative;
-  z-index: 1;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--panel-bg);
-  backdrop-filter: blur(12px);
-  box-shadow: var(--shadow);
-}
-
-.hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
-  gap: 20px;
-  padding: 22px 24px;
-}
-
-.hero-badge {
-  display: inline-flex;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: #fff;
-  background: linear-gradient(135deg, #0f8f92 0%, #2f6dd8 100%);
-}
-
-.hero-main h1 {
-  margin: 12px 0 8px;
-  font-size: 32px;
-  line-height: 1.1;
-}
-
-.hero-main p {
-  margin: 0;
-  color: var(--text-sub);
-  font-size: 14px;
-}
-
-.hero-controls {
+.fund-hero-controls {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  align-items: flex-end;
   gap: 12px;
 }
 
 .meta-row {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   gap: 6px;
   font-size: 12px;
   color: var(--text-sub);
@@ -614,60 +511,17 @@ onUnmounted(() => {
 .action-row {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 12px;
-}
-
-.summary-grid {
-  position: relative;
-  z-index: 1;
-  margin-top: 16px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.summary-card {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.summary-card .label {
-  font-size: 12px;
-  color: var(--text-sub);
-}
-
-.summary-card .value {
-  font-size: 28px;
-  line-height: 1.05;
-}
-
-.summary-card .hint {
-  font-size: 12px;
-  color: #90a5ad;
-}
-
-.summary-card.profit .value {
-  color: var(--profit);
-}
-
-.summary-card.loss .value {
-  color: var(--loss);
 }
 
 .workspace-grid {
-  position: relative;
-  z-index: 1;
-  margin-top: 16px;
+  margin-top: 12px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 420px;
   gap: 12px;
 }
 
-.add-panel,
-.filter-panel {
+:deep(.fund-panel-body) {
   padding: 16px;
 }
 
@@ -701,13 +555,6 @@ onUnmounted(() => {
 
 .filter-item {
   width: 100%;
-}
-
-.table-panel {
-  position: relative;
-  z-index: 1;
-  margin-top: 16px;
-  padding: 14px;
 }
 
 .table-header {
@@ -746,35 +593,19 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1320px) {
-  .summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .workspace-grid {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 860px) {
-  .fund-page {
-    padding: 14px;
-  }
-
-  .hero {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-main h1 {
-    font-size: 26px;
+  .fund-hero-controls,
+  .meta-row {
+    align-items: flex-start;
   }
 
   .action-row {
-    justify-content: flex-start;
     flex-wrap: wrap;
-  }
-
-  .summary-grid {
-    grid-template-columns: 1fr;
   }
 
   .filter-controls {
