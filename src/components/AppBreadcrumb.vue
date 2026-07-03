@@ -19,15 +19,20 @@
 <script lang="ts" setup>
 import { ref, watch } from 'vue'
 import { useRoute, useRouter, type RouteLocationMatched } from 'vue-router'
-import { resolveMenuItemByPath } from '@/config/navigation'
+import { defaultAppHomePath } from '@/config/portfolio'
+import { productShortName } from '@/config/product'
+import {
+  resolveBreadcrumbProject,
+  resolveMenuItemByPath
+} from '@/config/navigation'
 
 const route = useRoute()
 const router = useRouter()
 const breadcrumbs = ref<RouteLocationMatched[]>([])
 
 const homeCrumb = {
-  path: '/home',
-  meta: { title: '首页' }
+  path: defaultAppHomePath,
+  meta: { title: productShortName }
 } as unknown as RouteLocationMatched
 
 const isHome = (route: RouteLocationMatched) => {
@@ -35,7 +40,8 @@ const isHome = (route: RouteLocationMatched) => {
   if (!name) {
     return false
   }
-  return name.toString().trim().toLocaleLowerCase() === 'home'
+  const normalized = name.toString().trim().toLocaleLowerCase()
+  return normalized === 'home' || normalized === 'ai-workflow'
 }
 
 const getBreadcrumb = () => {
@@ -51,14 +57,15 @@ const getBreadcrumb = () => {
   )
 
   const menuContext = resolveMenuItemByPath(route.path)
-  if (menuContext && route.path !== '/home' && route.path !== '/business-hub') {
+  if (menuContext && route.path !== defaultAppHomePath) {
+    const breadcrumbProject = resolveBreadcrumbProject(route.path)
     const projectCrumb = {
-      path: menuContext.project.homePath,
-      meta: { title: menuContext.project.title }
+      path: breadcrumbProject.homePath,
+      meta: { title: breadcrumbProject.title }
     } as unknown as RouteLocationMatched
 
     const hasProjectCrumb = breadcrumbs.value.some(
-      (item) => item.meta?.title === menuContext.project.title
+      (item) => item.meta?.title === breadcrumbProject.title
     )
 
     if (!hasProjectCrumb) {
@@ -92,10 +99,32 @@ watch(
 
 <style lang="scss" scoped>
 .app-breadcrumb.el-breadcrumb {
-  display: inline-block;
-  font-size: 14px;
-  line-height: 50px;
-  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  line-height: 1;
+  margin-left: 0;
+
+  :deep(.el-breadcrumb__inner),
+  :deep(.el-breadcrumb__separator) {
+    color: var(--app-text-faint);
+    font-weight: 500;
+  }
+
+  :deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
+    color: var(--app-text-main);
+    font-weight: 600;
+  }
+
+  :deep(.el-breadcrumb__inner a) {
+    color: var(--app-text-sub);
+    font-weight: 500;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: var(--app-accent);
+    }
+  }
 
   .no-redirect {
     color: var(--app-text-sub);

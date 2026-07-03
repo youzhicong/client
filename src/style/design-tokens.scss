@@ -1,0 +1,224 @@
+﻿/* FlowAgent Design System - Swiss Minimal / Enterprise SaaS */
+
+:root {
+  color-scheme: light;
+
+  --app-font:
+    'Plus Jakarta Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --app-font-mono: ui-monospace, 'Cascadia Code', monospace;
+
+  --app-header-height: 64px;
+  --app-sidebar-width: 264px;
+  --app-breadcrumb-height: 52px;
+
+  --app-radius-xl: 20px;
+  --app-radius-lg: 16px;
+  --app-radius-md: 12px;
+  --app-radius-sm: 8px;
+  --app-radius-xs: 6px;
+
+  --app-accent: #2563eb;
+  --app-accent-strong: #1d4ed8;
+  --app-accent-soft: rgba(37, 99, 235, 0.08);
+  --app-accent-muted: rgba(37, 99, 235, 0.14);
+  --app-secondary: #0891b2;
+  --app-warning: #d97706;
+  --app-danger: #dc2626;
+  --app-success: #16a34a;
+
+  --app-bg: #f8fafc;
+  --app-bg-start: #f8fafc;
+  --app-bg-end: #eef2ff;
+  --app-bg-soft: #ffffff;
+  --app-surface: #ffffff;
+  --app-surface-strong: #ffffff;
+  --app-surface-muted: #f1f5f9;
+  --app-surface-hover: #f8fafc;
+
+  --app-border: rgba(15, 23, 42, 0.07);
+  --app-border-strong: rgba(15, 23, 42, 0.12);
+  --app-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.03);
+  --app-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+  --app-shadow-strong: 0 20px 50px rgba(15, 23, 42, 0.1);
+
+  --app-text-main: #09090b;
+  --app-text-sub: #52525b;
+  --app-text-faint: #a1a1aa;
+
+  --app-shell-bg:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(37, 99, 235, 0.08), transparent),
+    linear-gradient(180deg, var(--app-bg-start) 0%, var(--app-bg-end) 100%);
+  --app-header-bg: rgba(255, 255, 255, 0.78);
+  --app-header-border: var(--app-border);
+  --app-header-shadow: var(--app-shadow-sm);
+  --app-header-text: var(--app-text-main);
+  --app-header-muted: var(--app-text-sub);
+  --app-header-subtle: var(--app-text-faint);
+  --app-header-hover: rgba(9, 9, 11, 0.04);
+  --app-header-active-bg: var(--app-accent-soft);
+  --app-header-active-border: var(--app-accent-muted);
+  --app-header-surface: var(--app-surface-muted);
+  --app-header-surface-border: var(--app-border);
+  --app-header-hover-surface: #ffffff;
+  --app-header-hover-border: var(--app-accent-muted);
+
+  --app-search-bg: var(--app-surface-muted);
+  --app-search-bg-focus: #ffffff;
+  --app-search-border: var(--app-border);
+  --app-search-focus-border: rgba(37, 99, 235, 0.35);
+  --app-search-focus-color: var(--app-accent);
+  --app-search-focus-shadow: 0 0 0 3px var(--app-accent-soft);
+  --app-search-shortcut-bg: #ffffff;
+  --app-search-shortcut-border: var(--app-border);
+  --app-search-panel-bg: #ffffff;
+  --app-search-panel-hover: #f8fafc;
+  --app-search-panel-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+
+  --app-sidebar-bg: #ffffff;
+  --app-sidebar-border: var(--app-border);
+  --app-sidebar-shadow: none;
+  --app-sidebar-scrollbar: rgba(161, 161, 170, 0.45);
+  --app-sidebar-text: #3f3f46;
+  --app-sidebar-muted: var(--app-text-faint);
+  --app-sidebar-hover: rgba(9, 9, 11, 0.04);
+  --app-sidebar-section-active-bg: var(--app-accent-soft);
+  --app-sidebar-section-active-text: var(--app-text-main);
+  --app-sidebar-icon-bg: var(--app-surface-muted);
+  --app-sidebar-arrow: var(--app-text-faint);
+
+  --app-breadcrumb-bg: rgba(255, 255, 255, 0.72);
+  --app-breadcrumb-shadow: none;
+  --app-content-glow-a: rgba(37, 99, 235, 0.06);
+  --app-content-glow-b: rgba(8, 145, 178, 0.05);
+
+  --app-dropdown-bg: #ffffff;
+  --app-dropdown-border: var(--app-border);
+  --app-dropdown-shadow: var(--app-shadow-strong);
+  --app-dropdown-header-bg: var(--app-surface-muted);
+  --app-dropdown-text: var(--app-text-main);
+  --app-dropdown-muted: var(--app-text-sub);
+  --app-dropdown-hover: var(--app-accent-soft);
+
+  --app-gradient-brand: linear-gradient(135deg, #18181b 0%, #2563eb 100%);
+  --app-gradient-soft: linear-gradient(
+    135deg,
+    var(--app-accent-soft),
+    rgba(8, 145, 178, 0.06)
+  );
+
+  --page-hero-badge-bg: var(--app-text-main);
+  --page-hero-badge-text: #ffffff;
+  --page-panel-bg: var(--app-surface);
+  --page-panel-border: var(--app-border);
+  --page-panel-shadow: var(--app-shadow-sm);
+
+  --studio-workspace-bg: rgba(255, 255, 255, 0.88);
+  --studio-side-bg: rgba(248, 250, 252, 0.72);
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --app-accent: #3b82f6;
+  --app-accent-strong: #60a5fa;
+  --app-accent-soft: rgba(59, 130, 246, 0.12);
+  --app-accent-muted: rgba(59, 130, 246, 0.22);
+  --app-secondary: #22d3ee;
+  --app-warning: #fbbf24;
+  --app-danger: #f87171;
+  --app-success: #4ade80;
+
+  --app-bg: #09090b;
+  --app-bg-start: #09090b;
+  --app-bg-end: #18181b;
+  --app-bg-soft: #0c0c0e;
+  --app-surface: #18181b;
+  --app-surface-strong: #1c1c1f;
+  --app-surface-muted: #27272a;
+  --app-surface-hover: #1f1f23;
+
+  --app-border: rgba(255, 255, 255, 0.08);
+  --app-border-strong: rgba(255, 255, 255, 0.14);
+  --app-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --app-shadow: 0 8px 28px rgba(0, 0, 0, 0.32);
+  --app-shadow-strong: 0 20px 56px rgba(0, 0, 0, 0.45);
+
+  --app-text-main: #fafafa;
+  --app-text-sub: #a1a1aa;
+  --app-text-faint: #71717a;
+
+  --app-shell-bg:
+    radial-gradient(ellipse 70% 40% at 50% -10%, rgba(59, 130, 246, 0.12), transparent),
+    linear-gradient(180deg, var(--app-bg-start) 0%, var(--app-bg-end) 100%);
+  --app-header-bg: rgba(9, 9, 11, 0.86);
+  --studio-workspace-bg: rgba(24, 24, 27, 0.92);
+  --studio-side-bg: rgba(12, 12, 14, 0.55);
+  --app-content-glow-a: rgba(59, 130, 246, 0.08);
+  --app-content-glow-b: rgba(34, 211, 238, 0.06);
+  --app-header-border: var(--app-border);
+  --app-header-shadow: var(--app-shadow-sm);
+  --app-header-text: var(--app-text-main);
+  --app-header-muted: var(--app-text-sub);
+  --app-header-subtle: var(--app-text-faint);
+  --app-header-hover: rgba(255, 255, 255, 0.06);
+  --app-header-active-bg: var(--app-accent-soft);
+  --app-header-active-border: var(--app-accent-muted);
+  --app-header-surface: var(--app-surface-muted);
+  --app-header-surface-border: var(--app-border);
+  --app-header-hover-surface: var(--app-surface);
+  --app-header-hover-border: var(--app-accent-muted);
+
+  --app-search-bg: var(--app-surface-muted);
+  --app-search-bg-focus: var(--app-surface);
+  --app-search-border: var(--app-border);
+  --app-search-focus-border: rgba(59, 130, 246, 0.4);
+  --app-search-focus-color: #93c5fd;
+  --app-search-focus-shadow: 0 0 0 3px var(--app-accent-soft);
+  --app-search-shortcut-bg: var(--app-surface);
+  --app-search-shortcut-border: var(--app-border);
+  --app-search-panel-bg: var(--app-surface-strong);
+  --app-search-panel-hover: var(--app-surface-muted);
+  --app-search-panel-shadow: var(--app-shadow-strong);
+
+  --app-sidebar-bg: #0c0c0e;
+  --app-sidebar-border: var(--app-border);
+  --app-sidebar-shadow: none;
+  --app-sidebar-scrollbar: rgba(113, 113, 122, 0.4);
+  --app-sidebar-text: #d4d4d8;
+  --app-sidebar-muted: var(--app-text-faint);
+  --app-sidebar-hover: rgba(255, 255, 255, 0.05);
+  --app-sidebar-section-active-bg: var(--app-accent-soft);
+  --app-sidebar-section-active-text: #fafafa;
+  --app-sidebar-icon-bg: var(--app-surface-muted);
+  --app-sidebar-arrow: var(--app-text-faint);
+
+  --app-breadcrumb-bg: rgba(9, 9, 11, 0.72);
+  --app-breadcrumb-shadow: none;
+
+  --app-dropdown-bg: #18181b;
+  --app-dropdown-border: var(--app-border);
+  --app-dropdown-shadow: var(--app-shadow-strong);
+  --app-dropdown-header-bg: var(--app-surface-muted);
+  --app-dropdown-text: var(--app-text-main);
+  --app-dropdown-muted: var(--app-text-sub);
+  --app-dropdown-hover: var(--app-accent-soft);
+
+  --page-hero-badge-bg: #fafafa;
+  --page-hero-badge-text: #09090b;
+  --page-panel-bg: var(--app-surface);
+  --page-panel-border: var(--app-border);
+  --page-panel-shadow: var(--app-shadow-sm);
+
+  --el-bg-color: #18181b;
+  --el-bg-color-page: #09090b;
+  --el-bg-color-overlay: #18181b;
+  --el-fill-color-blank: #18181b;
+  --el-fill-color-light: #27272a;
+  --el-fill-color-lighter: #3f3f46;
+  --el-border-color: #3f3f46;
+  --el-border-color-light: #27272a;
+  --el-text-color-primary: #fafafa;
+  --el-text-color-regular: #d4d4d8;
+  --el-text-color-secondary: #a1a1aa;
+  --el-mask-color: rgba(0, 0, 0, 0.72);
+}

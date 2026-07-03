@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { resolveMenuItemByPath } from '@/config/navigation'
 
 const STORAGE_KEY = 'pcdemo_recent_navigation'
@@ -64,8 +64,10 @@ export const useRecentNavigation = () => {
     persistRecentItems()
   }
 
+  const visibleRecentItems = computed(() => recentItems.value)
+
   return {
-    recentItems,
+    recentItems: visibleRecentItems,
     recordRecentPath,
     clearRecentItems
   }

@@ -1,6 +1,7 @@
 {
-  "name": "vue-pcdemo",
+  "name": "flowagent",
   "version": "0.0.0",
+  "description": "FlowAgent - Multi-Agent product workflow platform (Vue 3 + Vite + Electron)",
   "private": true,
   "type": "module",
   "main": "./src-electron/main.ts",
@@ -19,6 +20,8 @@
     "spec-check": "node scripts/check-frontend-spec.mjs",
     "route-check": "node scripts/check-route-navigation.mjs",
     "encoding-check": "node scripts/check-file-encoding.mjs",
+    "quality-check": "run-p type-check route-check encoding-check",
+    "product:sync": "node scripts/write-product-config.cjs",
     "interview:sync": "node scripts/interview-bank/sync.mjs",
     "interview:test": "node scripts/interview-bank/test.mjs",
     "lint": "eslint . --fix --cache",
@@ -32,7 +35,7 @@
     ]
   },
   "build": {
-    "productName": "yzcTool",
+    "productName": "FlowAgent",
     "appId": "dyy.dongyuanwai",
     "copyright": "dyy.dongyuanwai © 2024",
     "compression": "maximum",

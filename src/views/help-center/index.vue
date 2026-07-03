@@ -1,45 +1,65 @@
 <template>
-  <div class="help-page">
-    <el-card class="hero-card" shadow="never">
-      <div class="hero-content">
-        <div>
-          <el-text class="hero-kicker">HELP CENTER</el-text>
-          <h1>帮助中心</h1>
-          <p>集中查看常见问题、快捷入口和账号使用说明。</p>
-        </div>
-        <el-input
-          v-model="keyword"
-          class="search-input"
-          clearable
-          placeholder="搜索问题、功能、页面"
-        />
-      </div>
-    </el-card>
-
-    <div class="shortcut-grid">
-      <el-card
-        v-for="item in shortcuts"
-        :key="item.title"
-        class="shortcut-card"
-        shadow="never"
-        @click="goShortcut(item.path)"
+  <PageShell>
+    <template #hero>
+      <PageHero
+        badge="HELP CENTER"
+        title="帮助中心"
+        description="集中查看常见问题、快捷入口和账号使用说明。"
       >
-        <div class="shortcut-icon">{{ item.icon }}</div>
-        <strong>{{ item.title }}</strong>
-        <p>{{ item.desc }}</p>
-      </el-card>
-    </div>
-
-    <div class="content-grid">
-      <el-card shadow="never">
-        <template #header>
-          <div class="panel-head">
-            <span>常见问题</span>
-            <el-tag type="info">{{ filteredFaqs.length }} 条</el-tag>
-          </div>
+        <template #actions>
+          <el-input
+            v-model="keyword"
+            clearable
+            placeholder="搜索问题、功能、页面"
+            :prefix-icon="Search"
+            class="search-input"
+          />
         </template>
+      </PageHero>
+    </template>
 
-        <el-collapse accordion>
+    <template #stats>
+      <PageStatGrid :columns="3">
+        <PageStatCard label="快捷入口" :value="shortcuts.length" />
+        <PageStatCard label="常见问题" :value="faqs.length" />
+        <PageStatCard label="当前匹配" :value="filteredFaqs.length" />
+      </PageStatGrid>
+    </template>
+
+    <section class="page-inline-section">
+      <div class="page-inline-section__head">
+        <h2>快捷入口</h2>
+        <span>常用页面一键跳转</span>
+      </div>
+
+      <div class="shortcut-grid">
+        <button
+          v-for="item in shortcuts"
+          :key="item.title"
+          type="button"
+          class="shortcut-card"
+          @click="goShortcut(item.path)"
+        >
+          <div class="shortcut-icon">
+            <el-icon :size="22"><component :is="item.icon" /></el-icon>
+          </div>
+          <div class="shortcut-copy">
+            <strong>{{ item.title }}</strong>
+            <p>{{ item.desc }}</p>
+          </div>
+          <el-icon class="shortcut-arrow" :size="16"><ArrowRight /></el-icon>
+        </button>
+      </div>
+    </section>
+
+    <div class="content-grid page-inline-section">
+      <PagePanel>
+        <div class="panel-head panel-head--section">
+          <span>常见问题</span>
+          <el-tag type="info">{{ filteredFaqs.length }} 条</el-tag>
+        </div>
+
+        <el-collapse v-if="filteredFaqs.length" accordion>
           <el-collapse-item
             v-for="item in filteredFaqs"
             :key="item.title"
@@ -55,14 +75,13 @@
             </div>
           </el-collapse-item>
         </el-collapse>
-      </el-card>
+        <el-empty v-else description="没有匹配到相关问题" :image-size="72" />
+      </PagePanel>
 
-      <el-card shadow="never">
-        <template #header>
-          <div class="panel-head">
-            <span>快速说明</span>
-          </div>
-        </template>
+      <PagePanel>
+        <div class="panel-head panel-head--section">
+          <span>快速说明</span>
+        </div>
 
         <div class="guide-list">
           <div class="guide-item">
@@ -93,13 +112,37 @@
             <el-button @click="goShortcut('/profile')">打开个人中心</el-button>
           </div>
         </div>
-      </el-card>
+      </PagePanel>
     </div>
-  </div>
+  </PageShell>
 </template>
 
 <script lang="ts" setup>
+import type { Component } from 'vue'
 import { computed, ref } from 'vue'
+import {
+  ArrowRight,
+  ChatDotRound,
+  DataAnalysis,
+  Grid,
+  MagicStick,
+  Notebook,
+  Search,
+  Setting,
+  User
+} from '@element-plus/icons-vue'
+import PageHero from '@/components/page/PageHero.vue'
+import PagePanel from '@/components/page/PagePanel.vue'
+import PageShell from '@/components/page/PageShell.vue'
+import PageStatCard from '@/components/page/PageStatCard.vue'
+import PageStatGrid from '@/components/page/PageStatGrid.vue'
+
+type ShortcutItem = {
+  icon: Component
+  title: string
+  desc: string
+  path: string
+}
 
 type FaqItem = {
   title: string
@@ -111,30 +154,48 @@ type FaqItem = {
 const router = useRouter()
 const keyword = ref('')
 
-const shortcuts = [
+const shortcuts: ShortcutItem[] = [
   {
-    icon: '👤',
+    icon: Grid,
+    title: '工作台概览',
+    desc: '用量配额、能力成熟度、最近 Trace 与会话。',
+    path: '/ai/dashboard'
+  },
+  {
+    icon: MagicStick,
+    title: '产品工作流',
+    desc: 'Multi-Agent 研究、创意、评估与电子签章。',
+    path: '/ai/workflow?q=咖啡&run=1'
+  },
+  {
+    icon: ChatDotRound,
+    title: 'Agent 聊天',
+    desc: 'ReAct 工具调用、知识库检索与流式对话。',
+    path: '/ai/chat'
+  },
+  {
+    icon: Notebook,
+    title: '知识库',
+    desc: '上传文档，Agent 自动检索回答。',
+    path: '/ai/knowledge'
+  },
+  {
+    icon: DataAnalysis,
+    title: '观测 Trace',
+    desc: '查看工作流、聊天与自动化调用记录。',
+    path: '/ai/observability'
+  },
+  {
+    icon: Setting,
+    title: '模型配置',
+    desc: 'API Key 与 OpenAI 兼容接口。',
+    path: '/ai/settings'
+  },
+  {
+    icon: User,
     title: '个人中心',
     desc: '编辑资料、导出档案、查看动态。',
     path: '/profile'
-  },
-  {
-    icon: '⚙️',
-    title: '账号设置',
-    desc: '通知偏好、安全设置、账单资产。',
-    path: '/account-settings'
-  },
-  {
-    icon: '🧑‍🤝‍🧑',
-    title: '用户管理',
-    desc: '查看成员、访问记录和当前访问 IP。',
-    path: '/users'
-  },
-  {
-    icon: '🤖',
-    title: 'AI 设置',
-    desc: '配置模型、API Key 和连接测试。',
-    path: '/ai/settings'
   }
 ]
 
@@ -168,11 +229,74 @@ const faqs: FaqItem[] = [
     path: '/profile'
   },
   {
+    title: 'FlowAgent 包含哪些功能？',
+    answer:
+      '工作台含概览、应用广场、自动化；构建含 Multi-Agent 工作流、Agent 聊天、知识库、Prompt 工程、工具插件；运维含 Playground、观测 Trace、模型配置与 API 文档。',
+    category: '导航',
+    path: '/ai/dashboard'
+  },
+  {
+    title: '知识库如何被 Agent 使用？',
+    answer:
+      '在知识库添加文档后，Agent 聊天与工作流可通过 search_knowledge_base 工具检索内容。可在聊天中提问「根据知识库回答…」验证效果。',
+    category: 'AI',
+    path: '/ai/knowledge'
+  },
+  {
+    title: '如何查看调用记录？',
+    answer:
+      '概览页「最近 Trace」或运维模块「观测 Trace」可查看工作流、聊天、自动化等调用记录，并跳转回来源模块。',
+    category: 'AI',
+    path: '/ai/observability'
+  },
+  {
+    title: '如何启动 Multi-Agent 工作流？',
+    answer:
+      '进入产品工作流页，输入关键词（如咖啡、宠物用品）后点击启动，系统将依次执行研究、创意、评估三阶段 Agent。',
+    category: 'AI',
+    path: '/ai/workflow'
+  },
+  {
     title: '如何修改 AI 接口配置？',
     answer:
-      '进入 AI 工作流设置页，填写 Base URL、API Key 和模型信息后保存即可。',
+      '进入模型配置页，填写 Base URL、API Key 和模型名称后保存，聊天与工作流将共用同一配置。',
     category: 'AI',
     path: '/ai/settings'
+  },
+  {
+    title: '顶部通知中心如何工作？',
+    answer:
+      '工作流、聊天、自动化完成时会写入通知中心。点击铃铛可查看最近 8 条，支持全部已读、清空，并跳转回来源页面或观测 Trace。',
+    category: '平台',
+    path: '/ai/dashboard'
+  },
+  {
+    title: '如何全局搜索内容？',
+    answer:
+      '顶部搜索框支持 Ctrl+K 聚焦，可检索菜单、知识库、Prompt、工作流历史、Trace 与聊天会话，点击结果直接跳转。',
+    category: '平台',
+    path: '/ai/dashboard'
+  },
+  {
+    title: '用量与配额在哪里查看？',
+    answer:
+      '概览页「用量与配额」展示工作流运行、聊天轮次、本地存储与 Trace 的试用额度。接近上限时会高亮提醒，可前往账单页了解升级方案。',
+    category: '平台',
+    path: '/ai/dashboard'
+  },
+  {
+    title: '如何备份工作区数据？',
+    answer:
+      '概览页点击「导出备份」，会下载 JSON 文件，包含知识库、Prompt、Trace、聊天会话与自动化配置等 localStorage 数据，便于迁移或归档。',
+    category: '数据',
+    path: '/ai/dashboard'
+  },
+  {
+    title: 'Platform API 何时可用？',
+    answer:
+      'API 文档页已列出规划中的 REST 接口（会话、工作流、Trace、用量）。当前为前端演示版，正式接入需后端服务上线。',
+    category: '平台',
+    path: '/ai/api'
   }
 ]
 
@@ -192,73 +316,77 @@ const goShortcut = (path: string) => {
 </script>
 
 <style lang="scss" scoped>
-.help-page {
-  padding: 24px;
-  min-height: calc(100vh - 64px);
-}
-
-.hero-card,
-.shortcut-card,
-.content-grid :deep(.el-card) {
-  border: 1px solid var(--app-border);
-}
-
-.hero-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.hero-kicker {
-  letter-spacing: 0.12em;
-}
-
-.hero-content h1 {
-  margin: 8px 0;
-  font-size: 28px;
-}
-
-.hero-content p {
-  margin: 0;
-  color: var(--app-text-sub);
-}
+@use '@/style/page-shell.scss';
+@use '@/style/platform-page.scss';
 
 .search-input {
-  width: 320px;
+  width: min(320px, 100%);
+}
+
+:deep(.page-hero) {
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  background:
+    radial-gradient(circle at 88% 12%, rgba(8, 145, 178, 0.1), transparent 42%),
+    linear-gradient(135deg, #eff6ff 0%, var(--app-surface) 55%, #f5f3ff 100%);
+  box-shadow: var(--app-shadow-sm);
 }
 
 .shortcut-grid {
-  margin-top: 16px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
 .shortcut-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--app-border);
+  border-radius: 16px;
+  background: var(--app-surface-muted);
+  box-shadow: var(--app-shadow-sm);
   cursor: pointer;
+  text-align: left;
   transition:
     transform 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .shortcut-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow: var(--app-shadow);
+  border-color: var(--app-accent-muted);
+  background: var(--app-surface);
 }
 
 .shortcut-icon {
-  font-size: 28px;
-  margin-bottom: 12px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: var(--app-radius-md);
+  background: var(--app-accent-soft);
+  color: var(--app-accent);
 }
 
-.shortcut-card strong {
+.shortcut-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.shortcut-copy strong {
   display: block;
-  margin-bottom: 8px;
-  font-size: 16px;
+  margin-bottom: 6px;
+  font-size: 15px;
+  color: var(--app-text-main);
 }
 
-.shortcut-card p,
+.shortcut-copy p,
 .faq-answer,
 .guide-item p,
 .contact-card p {
@@ -267,8 +395,21 @@ const goShortcut = (path: string) => {
   color: var(--app-text-sub);
 }
 
+.shortcut-arrow {
+  flex: 0 0 auto;
+  margin-top: 4px;
+  color: var(--app-text-faint);
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
+}
+
+.shortcut-card:hover .shortcut-arrow {
+  transform: translateX(2px);
+  color: var(--app-accent);
+}
+
 .content-grid {
-  margin-top: 16px;
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
   gap: 12px;
@@ -278,6 +419,13 @@ const goShortcut = (path: string) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-head--section {
+  margin: -4px 0 12px;
+  font-weight: 700;
+  color: var(--app-text-main);
 }
 
 .faq-footer {
@@ -290,30 +438,40 @@ const goShortcut = (path: string) => {
 
 .guide-list {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .guide-item {
   border: 1px solid var(--app-border);
-  border-radius: 14px;
+  border-radius: var(--app-radius-md);
   padding: 14px 16px;
+  background: var(--app-surface-muted);
+}
+
+.guide-item strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--app-text-main);
 }
 
 .contact-card {
-  margin-top: 18px;
+  margin-top: 16px;
   border: 1px solid var(--app-border);
-  border-radius: 16px;
+  border-radius: var(--app-radius-md);
   padding: 16px;
+  background: var(--app-accent-soft);
 }
 
 .contact-card strong {
   display: block;
   margin-bottom: 8px;
+  color: var(--app-text-main);
 }
 
 .contact-actions {
   margin-top: 14px;
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -328,16 +486,6 @@ const goShortcut = (path: string) => {
 }
 
 @media (max-width: 768px) {
-  .help-page {
-    padding: 16px;
-  }
-
-  .hero-content,
-  .contact-actions {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .search-input,
   .shortcut-grid {
     width: 100%;
@@ -345,6 +493,11 @@ const goShortcut = (path: string) => {
 
   .shortcut-grid {
     grid-template-columns: 1fr;
+  }
+
+  .contact-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 </style>

@@ -1,17 +1,19 @@
 <template>
-  <div class="app-layout">
+  <div class="app-layout" :class="{ 'studio-route': isStudioRoute }">
     <!-- Header -->
     <headerNav></headerNav>
     <!-- Sidebar -->
     <sideMenu></sideMenu>
     <!-- Main content -->
     <main class="main-content">
-      <div class="breadcrumb-container">
-        <AppBreadcrumb />
+      <div v-if="!isStudioRoute" class="breadcrumb-container">
+        <div class="breadcrumb-inner">
+          <AppBreadcrumb />
+        </div>
       </div>
-      <div class="content-scroll">
+      <div class="content-scroll" :class="{ 'studio-scroll': isStudioRoute }">
         <router-view v-slot="{ Component }">
-          <transition name="page" mode="out-in">
+          <transition :name="isStudioRoute ? '' : 'page'" mode="out-in">
             <component :is="Component" />
           </transition>
         </router-view>
@@ -21,10 +23,18 @@
 </template>
 
 <script lang="ts" setup>
+import { computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import AppBreadcrumb from '@/components/AppBreadcrumb.vue'
-import { onMounted } from 'vue'
 import { useUserStore } from '@/stores'
 import { registerVisit } from '@/services/users'
+import {
+  startAutomationScheduler,
+  stopAutomationScheduler
+} from '@/services/ai-automation/scheduler'
+
+const route = useRoute()
+const isStudioRoute = computed(() => route.path.startsWith('/ai'))
 
 const VISIT_SESSION_KEY = 'pcdemo_visit_registered'
 const VISIT_IP_KEY = 'pcdemo_current_visit_ip'
@@ -54,6 +64,7 @@ const resolveVisitorName = () => {
 }
 
 onMounted(async () => {
+  startAutomationScheduler()
   if (sessionStorage.getItem(VISIT_SESSION_KEY)) return
 
   try {
@@ -67,20 +78,21 @@ onMounted(async () => {
     // Ignore analytics errors so the page remains usable.
   }
 })
+
+onUnmounted(() => {
+  stopAutomationScheduler()
+})
 </script>
 
 <style lang="scss" scoped>
 .app-layout {
-  --app-header-height: 72px;
-  --app-breadcrumb-height: 75px;
-
   min-height: 100vh;
   background: var(--app-shell-bg);
 }
 
 .main-content {
   margin-top: var(--app-header-height);
-  margin-left: 280px;
+  margin-left: var(--app-sidebar-width);
   min-height: calc(100vh - var(--app-header-height));
 }
 
@@ -90,28 +102,41 @@ onMounted(async () => {
   );
 }
 
+.content-scroll.studio-scroll {
+  min-height: calc(100vh - var(--app-header-height));
+  height: calc(100vh - var(--app-header-height));
+  overflow: hidden;
+  padding: 0 4px 4px;
+  box-sizing: border-box;
+}
+
+.studio-route .breadcrumb-inner {
+  max-width: none;
+}
+
 /* Page transition */
 .page-enter-active,
 .page-leave-active {
-  transition: all 0.3s ease;
+  transition: opacity 0.22s ease;
 }
 
-.page-enter-from {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
+.page-enter-from,
 .page-leave-to {
   opacity: 0;
-  transform: translateY(-10px);
 }
 
 .breadcrumb-container {
-  padding: 12px 24px;
   background: var(--app-breadcrumb-bg);
   border-bottom: 1px solid var(--app-border);
-  box-shadow: var(--app-breadcrumb-shadow);
-  backdrop-filter: blur(8px);
+}
+
+.breadcrumb-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+  min-height: var(--app-breadcrumb-height);
+  display: flex;
+  align-items: center;
 }
 
 @media (max-width: 1120px) {
@@ -121,10 +146,6 @@ onMounted(async () => {
 }
 
 @media (max-width: 820px) {
-  .app-layout {
-    --app-header-height: 152px;
-  }
-
   .main-content {
     margin-top: var(--app-header-height);
     margin-left: 0;

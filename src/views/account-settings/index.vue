@@ -1,52 +1,56 @@
 <template>
-  <div class="settings-page">
-    <el-card class="hero-card" shadow="never">
-      <div class="hero-content">
+  <div class="settings-page account-page">
+    <section class="account-hero">
+      <div class="account-hero-inner">
         <div>
-          <el-text class="hero-kicker">ACCOUNT SETTINGS</el-text>
+          <span class="account-kicker">Account Settings</span>
           <h1>账号设置</h1>
           <p>统一管理个人资料、通知偏好、安全设置和账单信息。</p>
         </div>
-        <div class="hero-actions">
+        <div class="account-hero-actions">
           <el-button @click="exportArchive">导出档案</el-button>
           <el-button type="primary" @click="saveCurrentTab"
             >保存当前页</el-button
           >
         </div>
       </div>
-    </el-card>
+    </section>
 
-    <div class="summary-grid">
-      <el-card class="summary-card" shadow="never">
-        <div class="summary-label">当前套餐</div>
-        <div class="summary-value">{{ accountStore.assets.plan }}</div>
-        <div class="summary-desc">
+    <div class="account-summary-grid">
+      <div class="account-summary-card">
+        <span class="account-summary-label">当前套餐</span>
+        <strong class="account-summary-value">{{
+          accountStore.assets.plan
+        }}</strong>
+        <div class="account-summary-desc">
           续费日期 {{ accountStore.assets.renewalDate }}
         </div>
-      </el-card>
-      <el-card class="summary-card" shadow="never">
-        <div class="summary-label">设备数量</div>
-        <div class="summary-value">{{ accountStore.security.deviceCount }}</div>
-        <div class="summary-desc">当前登录设备已自动标记为可信</div>
-      </el-card>
-      <el-card class="summary-card" shadow="never">
-        <div class="summary-label">邮箱状态</div>
-        <div class="summary-value">
-          {{ accountStore.security.emailVerified ? '已验证' : '待验证' }}
-        </div>
-        <div class="summary-desc">用于找回账号和接收安全提醒</div>
-      </el-card>
-      <el-card class="summary-card" shadow="never">
-        <div class="summary-label">存储用量</div>
-        <div class="summary-value">{{ storagePercent }}%</div>
-        <div class="summary-desc">
+      </div>
+      <div class="account-summary-card">
+        <span class="account-summary-label">设备数量</span>
+        <strong class="account-summary-value">{{
+          accountStore.security.deviceCount
+        }}</strong>
+        <div class="account-summary-desc">当前登录设备已自动标记为可信</div>
+      </div>
+      <div class="account-summary-card">
+        <span class="account-summary-label">邮箱状态</span>
+        <strong class="account-summary-value">{{
+          accountStore.security.emailVerified ? '已验证' : '待验证'
+        }}</strong>
+        <div class="account-summary-desc">用于找回账号和接收安全提醒</div>
+      </div>
+      <div class="account-summary-card">
+        <span class="account-summary-label">存储用量</span>
+        <strong class="account-summary-value">{{ storagePercent }}%</strong>
+        <div class="account-summary-desc">
           {{ accountStore.assets.storageUsedGB }} /
           {{ accountStore.assets.storageCapacityGB }} GB
         </div>
-      </el-card>
+      </div>
     </div>
 
-    <el-card shadow="never">
+    <el-card shadow="never" class="account-panel">
       <el-tabs v-model="activeTab" class="settings-tabs">
         <el-tab-pane label="基本资料" name="profile">
           <div class="tab-layout">
@@ -105,28 +109,28 @@
 
         <el-tab-pane label="通知偏好" name="notifications">
           <div class="notify-list">
-            <div class="notify-item">
+            <div class="account-notify-item notify-item">
               <div>
                 <strong>站内消息通知</strong>
                 <p>系统更新、项目协作、审批提醒等消息。</p>
               </div>
               <el-switch v-model="notificationForm.siteNotice" />
             </div>
-            <div class="notify-item">
+            <div class="account-notify-item notify-item">
               <div>
                 <strong>每周摘要邮件</strong>
                 <p>每周五发送工作概览和活跃统计。</p>
               </div>
               <el-switch v-model="notificationForm.weeklyDigest" />
             </div>
-            <div class="notify-item">
+            <div class="account-notify-item notify-item">
               <div>
                 <strong>登录安全提醒</strong>
                 <p>新设备登录或异地登录时实时提醒。</p>
               </div>
               <el-switch v-model="notificationForm.loginAlert" />
             </div>
-            <div class="notify-item">
+            <div class="account-notify-item notify-item">
               <div>
                 <strong>审批与公告提醒</strong>
                 <p>审批流变更、公告发布和待办同步。</p>
@@ -484,68 +488,17 @@ const saveCurrentTab = () => {
 </script>
 
 <style lang="scss" scoped>
+@use '@/style/account-page.scss';
+
 .settings-page {
-  padding: 24px;
-  min-height: calc(100vh - 64px);
+  padding: 0;
+  min-height: auto;
 }
 
-.hero-card {
-  margin-bottom: 16px;
-  border: 1px solid var(--app-border);
-}
-
-.hero-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.hero-kicker {
-  letter-spacing: 0.12em;
-}
-
-.hero-content h1 {
-  margin: 8px 0;
-  font-size: 28px;
-}
-
-.hero-content p {
-  margin: 0;
-  color: var(--app-text-sub);
-}
-
-.hero-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.summary-card {
-  border: 1px solid var(--app-border);
-}
-
-.summary-label {
-  font-size: 12px;
-  color: var(--app-text-sub);
-}
-
-.summary-value {
-  margin-top: 10px;
-  font-size: 28px;
-  font-weight: 700;
-}
-
-.summary-desc {
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--app-text-sub);
+.account-panel {
+  :deep(.el-card__body) {
+    padding: 16px 18px;
+  }
 }
 
 .tab-layout {
@@ -709,10 +662,6 @@ const saveCurrentTab = () => {
 }
 
 @media (max-width: 1200px) {
-  .summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .tab-layout {
     grid-template-columns: 1fr;
   }
@@ -724,13 +673,12 @@ const saveCurrentTab = () => {
   }
 
   .hero-content,
-  .notify-item,
+  .account-notify-item,
   .device-item {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .summary-grid,
   .asset-grid {
     grid-template-columns: 1fr;
   }

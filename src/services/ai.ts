@@ -18,6 +18,27 @@ export interface GenerationResult {
     products: ProductIdea[]
   }[]
   timestamp: number
+  summary?: string
+  topPicks?: string[]
+  businessSnapshot?: {
+    approvalCode: string
+    contractCode: string
+    approvalStatus: string
+    contractStatus: string
+    contractTitle?: string
+    contractContent?: string
+    amount?: number
+    partyA?: string
+    partyB?: string
+    sealImages?: { partyA: string; partyB: string }
+    sealsApplied: string[]
+    closureSteps?: Array<{
+      key: string
+      label: string
+      status: string
+      detail: string
+    }>
+  }
 }
 
 /**
@@ -55,6 +76,8 @@ export interface AIMessage {
 export interface AIChatOptions {
   temperature?: number
   maxTokens?: number
+  signal?: AbortSignal
+  onDelta?: (chunk: string) => void
 }
 
 export interface ProductDetail {
@@ -252,14 +275,143 @@ export const getAISettings = (): AISettings => {
   return normalizeAISettings(DEFAULT_AI_SETTINGS)
 }
 
+const AI_WORKFLOW_MODEL_KEY = 'ai-workflow-model-config'
+
+export type WorkflowAgentPhase =
+  | 'research'
+  | 'ideation'
+  | 'evaluation'
+  | 'compliance'
+
+export const WORKFLOW_AGENT_PHASES: WorkflowAgentPhase[] = [
+  'research',
+  'ideation',
+  'evaluation',
+  'compliance'
+]
+
+export type WorkflowModelConfig = {
+  provider: string
+  model: string
+  perAgent: boolean
+  agents: Partial<Record<WorkflowAgentPhase, string>>
+}
+
+const buildDefaultWorkflowModelConfig = (): WorkflowModelConfig => {
+  const global = getAISettings()
+  return {
+    provider: global.provider,
+    model: global.model,
+    perAgent: false,
+    agents: {}
+  }
+}
+
+export const getWorkflowModelConfig = (): WorkflowModelConfig => {
+  const saved = localStorage.getItem(AI_WORKFLOW_MODEL_KEY)
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved) as WorkflowModelConfig
+      const fallback = getAISettings()
+      return {
+        provider: parsed.provider || fallback.provider,
+        model: parsed.model || fallback.model,
+        perAgent: Boolean(parsed.perAgent),
+        agents: parsed.agents || {}
+      }
+    } catch {
+      // ignore parse error
+    }
+  }
+
+  return buildDefaultWorkflowModelConfig()
+}
+
+export const saveWorkflowModelConfig = (config: WorkflowModelConfig): void => {
+  localStorage.setItem(AI_WORKFLOW_MODEL_KEY, JSON.stringify(config))
+}
+
+/** 将全局模型配置同步到工作流（含分 Agent 模式） */
+export const syncWorkflowModelFromGlobalSettings = (): WorkflowModelConfig => {
+  const global = getAISettings()
+  const current = getWorkflowModelConfig()
+  const next: WorkflowModelConfig = {
+    ...current,
+    provider: global.provider,
+    model: global.model,
+    agents: { ...current.agents }
+  }
+
+  if (next.perAgent) {
+    for (const phase of WORKFLOW_AGENT_PHASES) {
+      next.agents[phase] = global.model
+    }
+  }
+
+  saveWorkflowModelConfig(next)
+  return next
+}
+
+/** 全局模型已更新，且工作流各 Agent 仍使用同一旧模型时自动同步 */
+export const shouldAutoSyncWorkflowModel = (): boolean => {
+  const global = getAISettings()
+  const config = getWorkflowModelConfig()
+
+  if (!config.perAgent) {
+    return config.provider !== global.provider || config.model !== global.model
+  }
+
+  const agentModels = WORKFLOW_AGENT_PHASES.map(
+    (phase) => config.agents[phase] || config.model
+  )
+
+  const uniform = agentModels.every((model) => model === config.model)
+  return (
+    uniform &&
+    (config.provider !== global.provider || config.model !== global.model)
+  )
+}
+
 /**
- * 保存 AI 设置
+ * 保存 AI 设置，并同步工作流模型配置
  */
 export const saveAISettings = (settings: AISettings): void => {
   localStorage.setItem(
     AI_SETTINGS_STORAGE_KEY,
     JSON.stringify(normalizeAISettings(settings))
   )
+  syncWorkflowModelFromGlobalSettings()
+}
+
+export const resolveWorkflowAgentSettings = (
+  agentId: WorkflowAgentPhase,
+  config: WorkflowModelConfig,
+  baseSettings?: AISettings
+): AISettings => {
+  const base = normalizeAISettings(baseSettings || getAISettings())
+  const provider = config.provider || base.provider
+  const providerOption = getAIProviderById(provider)
+  const model =
+    config.perAgent && config.agents[agentId]
+      ? String(config.agents[agentId]).trim()
+      : config.model || base.model
+
+  return normalizeAISettings({
+    provider,
+    baseUrl: providerOption?.baseUrl || base.baseUrl,
+    apiKey: base.apiKey,
+    model
+  })
+}
+
+export const getWorkflowModelLabel = (
+  config: WorkflowModelConfig,
+  agentId?: WorkflowAgentPhase
+): string => {
+  if (config.perAgent && agentId && config.agents[agentId]) {
+    return config.agents[agentId]!
+  }
+  return config.model || '未设置'
 }
 
 export const getAIProviderById = (providerId: string) => {
@@ -353,22 +505,71 @@ const requestAIChatCompletion = async (
   }
 
   const endpoint = getAIChatEndpoint(normalizedSettings)
+  const useStream = Boolean(options.onDelta)
+
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${normalizedSettings.apiKey}`
     },
+    signal: options.signal,
     body: JSON.stringify({
       model: normalizedSettings.model,
       messages,
       temperature: options.temperature,
-      max_tokens: options.maxTokens
+      max_tokens: options.maxTokens,
+      stream: useStream
     })
   })
 
   if (!response.ok) {
     throw new Error(await readErrorMessage(response))
+  }
+
+  if (useStream) {
+    if (!response.body) {
+      throw new Error('当前接口不支持流式响应')
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder('utf-8')
+    let buffer = ''
+    let fullText = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (!trimmed.startsWith('data:')) continue
+        const payload = trimmed.slice(5).trim()
+        if (!payload || payload === '[DONE]') continue
+
+        try {
+          const parsed = JSON.parse(payload) as {
+            choices?: Array<{ delta?: { content?: string } }>
+          }
+          const delta = parsed.choices?.[0]?.delta?.content || ''
+          if (!delta) continue
+          fullText += delta
+          options.onDelta?.(delta)
+        } catch {
+          // ignore malformed sse chunk
+        }
+      }
+    }
+
+    if (!fullText.trim()) {
+      throw new Error('流式响应为空，请检查模型或接口兼容性')
+    }
+
+    return fullText.trim()
   }
 
   const data = (await response.json()) as AICompletionPayload
@@ -577,7 +778,8 @@ const getDemoData = (keyword: string): GenerationResult => {
  * 根据关键词生成产品创意
  */
 export const generateProductIdeas = async (
-  keyword: string
+  keyword: string,
+  settings?: AISettings
 ): Promise<GenerationResult> => {
   const prompt = `你是一个产品创意专家。用户输入一个关键词，请根据这个关键词生成一系列相关的产品创意。
 
@@ -608,7 +810,7 @@ export const generateProductIdeas = async (
 
   try {
     const content = await requestAIChatCompletion(
-      getAISettings(),
+      settings || getAISettings(),
       [
         {
           role: 'user',
@@ -642,6 +844,14 @@ export const getHistory = (): GenerationResult[] => {
   const stored = localStorage.getItem(AI_WORKFLOW_HISTORY_KEY)
   return stored ? JSON.parse(stored) : []
 }
+
+export const getHistoryItemByTimestamp = (
+  timestamp: number
+): GenerationResult | undefined =>
+  getHistory().find((item) => item.timestamp === timestamp)
+
+export const countWorkflowProducts = (item: GenerationResult): number =>
+  item.categories.reduce((sum, category) => sum + category.products.length, 0)
 
 /**
  * 保存到历史记录

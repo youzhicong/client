@@ -1,29 +1,25 @@
 import {
-  Aim,
-  Calendar,
   ChatDotRound,
-  Compass,
-  Document,
-  EditPen,
-  Food,
+  Connection,
+  DataAnalysis,
   Grid,
-  House,
   MagicStick,
-  MapLocation,
   Monitor,
   Notebook,
-  OfficeBuilding,
-  Promotion,
+  Odometer,
+  Operation,
   Reading,
-  Rank,
-  School,
   Setting,
-  TrendCharts,
-  TrophyBase,
-  Upload,
-  UserFilled,
-  View
+  Timer,
+  Tools,
+  UserFilled
 } from '@element-plus/icons-vue'
+import {
+  aiModuleIconThemes,
+  aiPlatformSections,
+  type AiModuleKey
+} from './ai-platform'
+import { defaultHomePath } from './product'
 import { routeNameByPath } from './routes'
 
 export type MenuItem = {
@@ -54,76 +50,55 @@ export type ProjectWorkspace = {
   sections: MenuSection[]
 }
 
-export const projectWorkspaces: ProjectWorkspace[] = [
+const moduleIcons: Record<AiModuleKey, unknown> = {
+  dashboard: Odometer,
+  apps: Grid,
+  workflow: MagicStick,
+  chat: ChatDotRound,
+  knowledge: Notebook,
+  prompts: Reading,
+  tools: Tools,
+  playground: Operation,
+  observability: Monitor,
+  settings: Setting,
+  api: Connection,
+  automation: Timer
+}
+
+const buildAiSections = (): MenuSection[] =>
+  aiPlatformSections.map((section) => ({
+    key: section.key,
+    title: section.title,
+    icon: MagicStick,
+    items: section.modules.map((module) => ({
+      index: module.path,
+      label: module.label,
+      desc: module.desc,
+      icon: moduleIcons[module.key],
+      theme: aiModuleIconThemes[module.key],
+      routeName: module.routeName,
+      matchPaths: module.matchPaths ?? [module.path]
+    }))
+  }))
+
+export const allProjectWorkspaces: ProjectWorkspace[] = [
   {
-    key: 'collaboration',
-    title: '协同工作台',
-    subtitle: '消息、公告、审批与账号协同',
-    icon: ChatDotRound,
-    homePath: '/home',
+    key: 'ai-workspace',
+    title: 'FlowAgent',
+    subtitle: '企业级 AI Agent 平台',
+    icon: MagicStick,
+    homePath: defaultHomePath,
     sections: [
+      ...buildAiSections(),
       {
-        key: 'workspace-core',
-        title: '工作台',
-        icon: House,
-        items: [
-          {
-            index: '/home',
-            label: '首页',
-            desc: '数据概览',
-            icon: House,
-            theme: 'theme-home',
-            routeName: 'home'
-          },
-          {
-            index: '/business-hub',
-            label: '业务中台',
-            desc: '项目总览',
-            icon: Grid,
-            theme: 'theme-h5config',
-            routeName: 'business-hub'
-          },
-          {
-            index: '/im',
-            label: '即时通信',
-            desc: '消息中心与 AI 接待',
-            icon: ChatDotRound,
-            theme: 'theme-im',
-            routeName: 'im',
-            badge: 3
-          },
-          {
-            index: '/announcement/list',
-            label: '公告管理',
-            desc: '发布与统计',
-            icon: Document,
-            theme: 'theme-announcement',
-            routeName: 'announcement-list',
-            matchPaths: [
-              '/announcement/list',
-              '/announcement/publish',
-              '/announcement/detail'
-            ]
-          }
-        ]
-      },
-      {
-        key: 'workspace-members',
-        title: '成员与支持',
+        key: 'account',
+        title: '账号',
         icon: UserFilled,
         items: [
           {
-            index: '/users',
-            label: '用户列表',
-            desc: '成员管理',
-            icon: UserFilled,
-            theme: 'theme-users',
-            routeName: 'users'
-          },
-          {
             index: '/profile',
             label: '个人中心',
-            desc: '个人资料与资产',
+            desc: '个人资料',
             icon: UserFilled,
             theme: 'theme-users',
             routeName: 'profile'
@@ -139,377 +114,10 @@ export const projectWorkspaces: ProjectWorkspace[] = [
           {
             index: '/help-center',
             label: '帮助中心',
-            desc: '快速指引',
-            icon: Reading,
+            desc: '平台使用说明',
+            icon: DataAnalysis,
             theme: 'theme-interview',
             routeName: 'help-center'
-          }
-        ]
-      },
-      {
-        key: 'workspace-process',
-        title: '协同流程',
-        icon: Document,
-        items: [
-          {
-            index: '/approval-workflow',
-            label: '审批流程',
-            desc: '发起、驳回与修改',
-            icon: Document,
-            theme: 'theme-workflow',
-            routeName: 'approval-workflow'
-          },
-          {
-            index: '/e-contract',
-            label: '电子合同签署',
-            desc: '在线签章',
-            icon: Document,
-            theme: 'theme-econtract',
-            routeName: 'e-contract'
-          }
-        ]
-      }
-    ]
-  },
-  {
-    key: 'ai-workspace',
-    title: 'AI 工作台',
-    subtitle: '聊天、工作流与模型配置',
-    icon: MagicStick,
-    homePath: '/ai/workflow',
-    sections: [
-      {
-        key: 'ai-core',
-        title: 'AI 能力',
-        icon: MagicStick,
-        items: [
-          {
-            index: '/ai/chat',
-            label: 'AI 聊天',
-            desc: '模型对话测试',
-            icon: ChatDotRound,
-            theme: 'theme-ai-chat',
-            routeName: 'ai-chat',
-            matchPaths: ['/ai/chat']
-          },
-          {
-            index: '/ai/workflow',
-            label: 'AI 工作流',
-            desc: '产品创意生成',
-            icon: MagicStick,
-            theme: 'theme-ai',
-            routeName: 'ai-workflow',
-            matchPaths: ['/ai/workflow']
-          },
-          {
-            index: '/ai/settings',
-            label: 'AI 设置',
-            desc: '模型与接口配置',
-            icon: Setting,
-            theme: 'theme-ai-settings',
-            routeName: 'ai-settings',
-            matchPaths: ['/ai/settings']
-          }
-        ]
-      }
-    ]
-  },
-  {
-    key: 'teaching',
-    title: '教学工具',
-    subtitle: '排课、抽问与面试训练',
-    icon: School,
-    homePath: '/high-school-schedule',
-    sections: [
-      {
-        key: 'teaching-tools',
-        title: '教学菜单',
-        icon: School,
-        items: [
-          {
-            index: '/high-school-schedule',
-            label: '高中课表',
-            desc: '教师排课',
-            icon: Calendar,
-            theme: 'theme-schedule',
-            routeName: 'high-school-schedule'
-          },
-          {
-            index: '/class-lottery',
-            label: '课堂抽奖',
-            desc: '随机提问',
-            icon: School,
-            theme: 'theme-classlottery',
-            routeName: 'class-lottery'
-          },
-          {
-            index: '/frontend-interview',
-            label: '前端面试',
-            desc: 'Vue 与 React',
-            icon: Reading,
-            theme: 'theme-interview',
-            routeName: 'frontend-interview'
-          },
-          {
-            index: '/course-player',
-            label: 'MAIC 课程播放',
-            desc: 'Manifest 伪视频演示',
-            icon: View,
-            theme: 'theme-preview',
-            routeName: 'course-player',
-            matchPaths: ['/course-player', '/course-player/oligosaccharide']
-          }
-        ]
-      }
-    ]
-  },
-  {
-    key: 'live-operations',
-    title: '直播与运营',
-    subtitle: '直播中心与业务执行',
-    icon: Monitor,
-    homePath: '/live-center/overview',
-    sections: [
-      {
-        key: 'live-center',
-        title: '直播模块',
-        icon: Monitor,
-        items: [
-          {
-            index: '/live-center/overview',
-            label: '直播总览',
-            desc: '模块总控台',
-            icon: Monitor,
-            theme: 'theme-live',
-            routeName: 'live-center-overview'
-          },
-          {
-            index: '/live-center/data',
-            label: '直播数据',
-            desc: '趋势与大盘',
-            icon: TrendCharts,
-            theme: 'theme-live-data',
-            routeName: 'live-center-data'
-          },
-          {
-            index: '/live-center/rooms',
-            label: '直播间',
-            desc: '观看与切流',
-            icon: View,
-            theme: 'theme-live-room',
-            routeName: 'live-center-rooms'
-          },
-          {
-            index: '/live-center/monetization',
-            label: '礼物充值',
-            desc: '互动与转化',
-            icon: Promotion,
-            theme: 'theme-live-money',
-            routeName: 'live-center-monetization'
-          },
-          {
-            index: '/live-center/operations',
-            label: '运营协同',
-            desc: '排班与执行',
-            icon: Setting,
-            theme: 'theme-live-ops',
-            routeName: 'live-center-operations'
-          }
-        ]
-      }
-    ]
-  },
-  {
-    key: 'tools',
-    title: '轻工具箱',
-    subtitle: '零散能力收进一个项目里',
-    icon: Setting,
-    homePath: '/fund-estimate',
-    sections: [
-      {
-        key: 'office-tools',
-        title: '业务工具',
-        icon: Setting,
-        items: [
-          {
-            index: '/fund-estimate',
-            label: '基金估算',
-            desc: '实时追踪',
-            icon: TrendCharts,
-            theme: 'theme-fund',
-            routeName: 'fund-estimate'
-          },
-          {
-            index: '/h5-project-config',
-            label: 'H5 项目配置',
-            desc: '后台数据编排',
-            icon: Grid,
-            theme: 'theme-h5config',
-            routeName: 'h5-project-config'
-          },
-          {
-            index: '/pc-builder',
-            label: '自选装机',
-            desc: '电商比价',
-            icon: Setting,
-            theme: 'theme-pc',
-            routeName: 'pc-builder'
-          },
-          {
-            index: '/map',
-            label: '地图菜单',
-            desc: '位置服务',
-            icon: MapLocation,
-            theme: 'theme-map',
-            routeName: 'map'
-          },
-          {
-            index: '/meal-lottery',
-            label: '三餐抽奖',
-            desc: '今天吃什么',
-            icon: Food,
-            theme: 'theme-meal',
-            routeName: 'meal-lottery'
-          },
-          {
-            index: '/company-lottery',
-            label: '公司抽奖',
-            desc: '年会活动现场',
-            icon: TrophyBase,
-            theme: 'theme-live-money',
-            routeName: 'company-lottery'
-          },
-          {
-            index: '/yuanyuan-diary',
-            label: '圆圆舔狗日记',
-            desc: '追爱复盘',
-            icon: Notebook,
-            theme: 'theme-diary',
-            routeName: 'yuanyuan-diary'
-          }
-        ]
-      },
-      {
-        key: 'editor-tools',
-        title: '内容与编辑',
-        icon: EditPen,
-        items: [
-          {
-            index: '/preview',
-            label: '在线预览',
-            desc: '文档预览',
-            icon: Document,
-            theme: 'theme-preview',
-            routeName: 'preview'
-          },
-          {
-            index: '/rich-text-editor',
-            label: '富文本编辑器',
-            desc: '内容排版工作台',
-            icon: EditPen,
-            theme: 'theme-editor',
-            routeName: 'rich-text-editor'
-          },
-          {
-            index: '/file-upload',
-            label: '文件上传',
-            desc: '分片续传',
-            icon: Upload,
-            theme: 'theme-upload',
-            routeName: 'file-upload'
-          },
-          {
-            index: '/drag',
-            label: '拖拽功能',
-            desc: '表单构建',
-            icon: Rank,
-            theme: 'theme-drag',
-            routeName: 'drag'
-          }
-        ]
-      },
-      {
-        key: 'games',
-        title: '游戏中心',
-        icon: TrophyBase,
-        items: [
-          {
-            index: '/games',
-            label: '游戏大厅',
-            desc: '前端小游戏',
-            icon: Compass,
-            theme: 'theme-game-hall',
-            routeName: 'games',
-            exact: true
-          },
-          {
-            index: '/games/snake',
-            label: '贪吃蛇',
-            desc: '经典街机',
-            icon: Aim,
-            theme: 'theme-game-snake'
-          },
-          {
-            index: '/games/2048',
-            label: '2048',
-            desc: '合并数字',
-            icon: Grid,
-            theme: 'theme-game-merge'
-          },
-          {
-            index: '/games/memory',
-            label: '记忆翻牌',
-            desc: '考验记忆',
-            icon: MagicStick,
-            theme: 'theme-game-memory'
-          }
-        ]
-      }
-    ]
-  },
-  {
-    key: 'visualization',
-    title: '可视化中心',
-    subtitle: '设备、三维与数字场景',
-    icon: View,
-    homePath: '/vending-monitor',
-    sections: [
-      {
-        key: 'visual-scenes',
-        title: '可视化模块',
-        icon: View,
-        items: [
-          {
-            index: '/vending-monitor',
-            label: '3D 贩卖机',
-            desc: '实时监控',
-            icon: Monitor,
-            theme: 'theme-monitor',
-            routeName: 'vending-monitor'
-          },
-          {
-            index: '/vending-list',
-            label: '贩卖机管理',
-            desc: '设备列表',
-            icon: Promotion,
-            theme: 'theme-vending',
-            routeName: 'vending-list'
-          },
-          {
-            index: '/spline-3d',
-            label: '3D 可视化',
-            desc: 'Spline 场景',
-            icon: View,
-            theme: 'theme-spline',
-            routeName: 'spline-3d'
-          },
-          {
-            index: '/campus-3d',
-            label: '校园全景',
-            desc: '数字校园',
-            icon: OfficeBuilding,
-            theme: 'theme-campus',
-            routeName: 'campus-3d'
           }
         ]
       }
@@ -517,11 +125,12 @@ export const projectWorkspaces: ProjectWorkspace[] = [
   }
 ]
 
+export const projectWorkspaces = allProjectWorkspaces
 export const defaultProjectWorkspace: ProjectWorkspace = projectWorkspaces[0]!
 
 export const resolveProjectByPath = (path: string) => {
   return (
-    projectWorkspaces.find((project) =>
+    allProjectWorkspaces.find((project) =>
       project.sections.some((section) =>
         section.items.some((item) => {
           const matchPaths = item.matchPaths ?? [item.index]
@@ -536,7 +145,7 @@ export const resolveProjectByPath = (path: string) => {
 }
 
 export const resolveMenuItemByPath = (path: string) => {
-  for (const project of projectWorkspaces) {
+  for (const project of allProjectWorkspaces) {
     for (const section of project.sections) {
       for (const item of section.items) {
         const matchPaths = item.matchPaths ?? [item.index]
@@ -552,6 +161,19 @@ export const resolveMenuItemByPath = (path: string) => {
   }
 
   return null
+}
+
+export const resolveVisibleProjectByPath = (path: string): ProjectWorkspace => {
+  return resolveProjectByPath(path) ?? defaultProjectWorkspace
+}
+
+export const isPathVisibleInNavigation = (path: string) =>
+  resolveMenuItemByPath(path) !== null
+
+export const resolveBreadcrumbProject = (path: string): ProjectWorkspace => {
+  const menuContext = resolveMenuItemByPath(path)
+  if (!menuContext) return defaultProjectWorkspace
+  return menuContext.project
 }
 
 export const resolveRouteNameByPath = (path: string) => routeNameByPath[path]

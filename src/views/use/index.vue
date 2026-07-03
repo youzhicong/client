@@ -1,5 +1,5 @@
 <template>
-  <div class="profile-page">
+  <div class="profile-page account-page">
     <div class="bg-shape shape-a"></div>
     <div class="bg-shape shape-b"></div>
 
@@ -11,7 +11,7 @@
         </div>
 
         <div class="identity-main">
-          <span class="hero-badge">PERSONAL CENTER</span>
+          <span class="hero-badge account-kicker">Personal Center</span>
           <h1>{{ profile.name }}</h1>
           <p>
             {{ profile.title }} · {{ profile.company }} · {{ profile.city }}
@@ -581,12 +581,14 @@ const onAction = (name: string) => {
 </script>
 
 <style lang="scss" scoped>
+@use '@/style/account-page.scss';
+
 .profile-page {
   --bg-main: #eef5f4;
   --panel-bg: rgba(255, 255, 255, 0.86);
   --line: #d6e5e3;
   --text-main: #183a40;
-  --text-sub: #6d888d;
+  --text-sub: var(--app-text-sub);
   --brand: #11838a;
   --brand-deep: #0f6f75;
   --danger: #dc2626;
@@ -740,7 +742,7 @@ const onAction = (name: string) => {
   display: grid;
   place-items: center;
   font-size: 20px;
-  background: #ebf8f7;
+  background: var(--app-accent-soft);
 }
 
 .metric-main {

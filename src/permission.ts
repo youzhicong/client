@@ -2,9 +2,9 @@ import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 import router from './router'
 import { useUserStore } from './stores'
+import { defaultHomePath, documentTitle } from '@/config/product'
 
 const WHITE_LIST = ['/login']
-const APP_TITLE = '数字化平台'
 
 router.beforeEach((to) => {
   NProgress.start()
@@ -14,7 +14,9 @@ router.beforeEach((to) => {
 
   if (hasToken && to.path === '/login') {
     const returnUrl =
-      typeof to.query.returnUrl === 'string' ? to.query.returnUrl : '/home'
+      typeof to.query.returnUrl === 'string'
+        ? to.query.returnUrl
+        : defaultHomePath
     return returnUrl
   }
 
@@ -30,6 +32,6 @@ router.beforeEach((to) => {
 
 router.afterEach((to) => {
   NProgress.done()
-  const title = typeof to.meta.title === 'string' ? to.meta.title : ''
-  document.title = title ? `${title} - ${APP_TITLE}` : APP_TITLE
+  const title = typeof to.meta.title === 'string' ? to.meta.title : undefined
+  document.title = documentTitle(title)
 })

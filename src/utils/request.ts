@@ -58,6 +58,15 @@ export type ApiResponse<T> = {
 }
 
 export const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof AxiosError) {
+    const data = error.response?.data as { message?: string } | undefined
+    if (data?.message) return data.message
+    if (error.response?.status === 500) {
+      return '服务器接口异常(500)，请检查 Mock 是否开启或后端是否可用'
+    }
+    if (error.message) return error.message
+  }
+
   if (error && typeof error === 'object' && 'message' in error) {
     const message = String(
       (error as { message?: unknown }).message || ''

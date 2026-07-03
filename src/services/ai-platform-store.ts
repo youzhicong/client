@@ -1,0 +1,244 @@
+import { notifyFromTrace } from '@/services/platform-notifications'
+
+export type KnowledgeDoc = {
+  id: string
+  title: string
+  content: string
+  createdAt: number
+}
+
+export type KnowledgeBase = {
+  id: string
+  name: string
+  desc: string
+  docs: KnowledgeDoc[]
+  createdAt: number
+}
+
+export type PromptTemplate = {
+  id: string
+  name: string
+  content: string
+  tags: string[]
+  updatedAt: number
+}
+
+export type PlatformTraceType =
+  | 'workflow'
+  | 'chat'
+  | 'automation'
+  | 'playground'
+  | 'agent'
+
+export type PlatformTrace = {
+  id: string
+  type: PlatformTraceType
+  title: string
+  detail: string
+  status: 'success' | 'error' | 'running'
+  durationMs?: number
+  createdAt: number
+  sourcePath?: string
+  sessionId?: string
+}
+
+export type TraceSessionGroup = {
+  sessionId: string
+  label: string
+  traces: PlatformTrace[]
+  latestAt: number
+  status: 'success' | 'error' | 'running'
+  types: PlatformTraceType[]
+}
+
+const KB_KEY = 'flowagent-knowledge-bases'
+const PROMPTS_KEY = 'flowagent-prompt-templates'
+const TRACES_KEY = 'flowagent-platform-traces'
+const MAX_TRACES = 80
+
+const readJson = <T>(key: string, fallback: T): T => {
+  if (typeof window === 'undefined') return fallback
+  try {
+    const raw = window.localStorage.getItem(key)
+    return raw ? (JSON.parse(raw) as T) : fallback
+  } catch {
+    return fallback
+  }
+}
+
+const writeJson = (key: string, value: unknown) => {
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(key, JSON.stringify(value))
+  }
+}
+
+export const getKnowledgeBases = () => readJson<KnowledgeBase[]>(KB_KEY, [])
+
+export const saveKnowledgeBases = (items: KnowledgeBase[]) =>
+  writeJson(KB_KEY, items)
+
+export const createKnowledgeBase = (name: string, desc = '') => {
+  const item: KnowledgeBase = {
+    id: `kb-${Date.now()}`,
+    name: name.trim(),
+    desc: desc.trim() || '本地知识库',
+    docs: [],
+    createdAt: Date.now()
+  }
+  saveKnowledgeBases([item, ...getKnowledgeBases()])
+  return item
+}
+
+export const deleteKnowledgeBase = (id: string) =>
+  saveKnowledgeBases(getKnowledgeBases().filter((item) => item.id !== id))
+
+export const addKnowledgeDoc = (
+  kbId: string,
+  title: string,
+  content: string
+) => {
+  const doc: KnowledgeDoc = {
+    id: `doc-${Date.now()}`,
+    title: title.trim() || '未命名文档',
+    content: content.trim(),
+    createdAt: Date.now()
+  }
+  const items = getKnowledgeBases().map((kb) =>
+    kb.id === kbId ? { ...kb, docs: [doc, ...kb.docs] } : kb
+  )
+  saveKnowledgeBases(items)
+  return doc
+}
+
+export const searchKnowledge = (query: string, limit = 8) => {
+  const q = query.trim().toLowerCase()
+  if (!q) return []
+  const hits: Array<{ kb: string; doc: KnowledgeDoc; score: number }> = []
+  for (const kb of getKnowledgeBases()) {
+    for (const doc of kb.docs) {
+      const hay = `${doc.title} ${doc.content}`.toLowerCase()
+      if (!hay.includes(q)) continue
+      const score = (hay.match(new RegExp(q, 'g')) || []).length
+      hits.push({ kb: kb.name, doc, score })
+    }
+  }
+  return hits.sort((a, b) => b.score - a.score).slice(0, limit)
+}
+
+export const getPromptTemplates = () =>
+  readJson<PromptTemplate[]>(PROMPTS_KEY, [])
+
+export const savePromptTemplate = (payload: {
+  id?: string
+  name: string
+  content: string
+  tags?: string[]
+}) => {
+  const items = getPromptTemplates()
+  const now = Date.now()
+  if (payload.id) {
+    const next = items.map((item) =>
+      item.id === payload.id
+        ? {
+            ...item,
+            name: payload.name.trim(),
+            content: payload.content.trim(),
+            tags: payload.tags ?? item.tags,
+            updatedAt: now
+          }
+        : item
+    )
+    writeJson(PROMPTS_KEY, next)
+    return next.find((item) => item.id === payload.id) || null
+  }
+  const created: PromptTemplate = {
+    id: `prompt-${now}`,
+    name: payload.name.trim() || '未命名模板',
+    content: payload.content.trim(),
+    tags: payload.tags ?? [],
+    updatedAt: now
+  }
+  writeJson(PROMPTS_KEY, [created, ...items])
+  return created
+}
+
+export const deletePromptTemplate = (id: string) =>
+  writeJson(
+    PROMPTS_KEY,
+    getPromptTemplates().filter((item) => item.id !== id)
+  )
+
+export const getPlatformTraces = () => readJson<PlatformTrace[]>(TRACES_KEY, [])
+
+export const appendPlatformTrace = (
+  trace: Omit<PlatformTrace, 'id' | 'createdAt'> & { id?: string }
+) => {
+  const item: PlatformTrace = {
+    id: trace.id || `trace-${Date.now()}`,
+    type: trace.type,
+    title: trace.title,
+    detail: trace.detail,
+    status: trace.status,
+    durationMs: trace.durationMs,
+    sourcePath: trace.sourcePath,
+    sessionId: trace.sessionId,
+    createdAt: Date.now()
+  }
+  writeJson(TRACES_KEY, [item, ...getPlatformTraces()].slice(0, MAX_TRACES))
+  notifyFromTrace(item)
+  return item
+}
+
+export const groupPlatformTraces = (
+  traces: PlatformTrace[]
+): TraceSessionGroup[] => {
+  const buckets = new Map<string, PlatformTrace[]>()
+  for (const trace of traces) {
+    const key = trace.sessionId || `solo-${trace.id}`
+    const list = buckets.get(key) || []
+    list.push(trace)
+    buckets.set(key, list)
+  }
+
+  return [...buckets.entries()]
+    .map(([sessionId, items]) => {
+      const sorted = [...items].sort((a, b) => b.createdAt - a.createdAt)
+      const types = [...new Set(sorted.map((item) => item.type))]
+      return {
+        sessionId,
+        label: sorted[0]?.title || sessionId,
+        traces: sorted,
+        latestAt: sorted[0]?.createdAt || 0,
+        status: sorted.some((item) => item.status === 'error')
+          ? 'error'
+          : sorted.some((item) => item.status === 'running')
+            ? 'running'
+            : 'success',
+        types
+      } satisfies TraceSessionGroup
+    })
+    .sort((a, b) => b.latestAt - a.latestAt)
+}
+
+export const resolveTraceSourcePath = (
+  trace: PlatformTrace
+): string | { path: string; query?: Record<string, string> } => {
+  if (trace.sourcePath) {
+    if (trace.sourcePath.includes('?')) {
+      const [pathPart, search = ''] = trace.sourcePath.split('?')
+      const query = Object.fromEntries(new URLSearchParams(search))
+      return { path: pathPart || trace.sourcePath, query }
+    }
+    return trace.sourcePath
+  }
+  const map: Record<PlatformTraceType, string> = {
+    workflow: '/ai/workflow',
+    chat: '/ai/chat',
+    agent: '/ai/chat',
+    automation: '/ai/automation',
+    playground: '/ai/playground'
+  }
+  return map[trace.type] || '/ai/dashboard'
+}
+
+export const clearPlatformTraces = () => writeJson(TRACES_KEY, [])

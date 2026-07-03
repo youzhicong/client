@@ -1,6 +1,6 @@
-# vue-pcdemo
+# FlowAgent (vue-pcdemo)
 
-基于 Vue 3 + Vite + Electron 的桌面客户端。
+基于 Vue 3 + Vite + Electron 的 **Multi-Agent 产品工作流** 桌面客户端。
 
 ## 技术栈
 
@@ -69,6 +69,37 @@ pnpm install
 ```sh
 pnpm dev
 ```
+
+## 产品模式（FlowAgent）
+
+默认开启（`VITE_PORTFOLIO_MODE=true`）。主仓以 **FlowAgent Multi-Agent 工作流** 为核心产品：
+
+- **工作流核心**：产品工作流、Agent 聊天、模型配置
+- **系统能力**：公告、用户、审批、合同、IM 等协同模块
+- **扩展能力**：MAIC 课程播放及其他亮点演示
+
+其余 demo（直播、工具箱、3D 等）仍保留路由，但从侧边栏隐藏，计划在独立仓库维护：
+
+| 计划仓库 | 说明 |
+| --- | --- |
+| `vue-pcdemo-live` | 直播与运营 |
+| `vue-pcdemo-tools` | 轻工具箱 |
+| `vue-pcdemo-3d` | 可视化中心 |
+| `vue-pcdemo-teaching` | 教学扩展包 |
+
+恢复完整多项目导航：在 `.env.development` 中设置 `VITE_PORTFOLIO_MODE=false` 后重启 dev server。
+
+相关配置：`src/config/product.ts`、`src/config/portfolio.ts`、`src/config/navigation.ts`
+
+### 抽奖工具
+
+`/lottery` 统一入口，包含三个子场景（旧路径会自动重定向）：
+
+| 路径 | 说明 |
+| --- | --- |
+| `/lottery/class` | 课堂点名（原 `/class-lottery`） |
+| `/lottery/meal` | 三餐抽签（原 `/meal-lottery`） |
+| `/lottery/company` | 年会抽奖（原 `/company-lottery`） |
 
 ## 构建
 

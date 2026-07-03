@@ -1,183 +1,227 @@
-<template>
-  <div class="settings-page">
-    <div class="settings-header">
-      <div class="header-content">
-        <h1>⚙️ AI 设置</h1>
-        <p>统一配置工作流和聊天模块共用的模型、API Key 与兼容接口。</p>
-      </div>
-      <router-link to="/ai/chat" class="chat-entry">打开聊天模块</router-link>
-    </div>
+﻿<template>
+  <div class="ai-settings-page ai-agent-shell">
+    <AgentStudioHeader title="" description="" active="settings" compact />
 
-    <div class="settings-form">
-      <div class="form-group">
-        <label>选择服务商</label>
-        <div class="provider-grid">
-          <div
-            v-for="provider in providers"
-            :key="provider.id"
-            class="provider-card"
-            :class="{ active: settings.provider === provider.id }"
-            @click="selectProvider(provider)"
-          >
-            <span class="provider-icon">{{ provider.icon }}</span>
-            <span class="provider-name">{{ provider.name }}</span>
-            <span v-if="provider.free" class="free-tag">有免费额度</span>
+    <header class="platform-hero settings-hero">
+      <div class="platform-hero-inner">
+        <div>
+          <span class="platform-kicker">Model Settings</span>
+          <h2>模型配置</h2>
+          <p>统一配置工作流与聊天共用的 API Key、模型与兼容接口</p>
+        </div>
+        <div class="platform-hero-actions">
+          <div class="platform-hero-stat">
+            <strong>{{ isConfigured ? '✓' : '—' }}</strong>
+            <span>{{ isConfigured ? '已就绪' : '待配置' }}</span>
+          </div>
+          <div class="platform-hero-stat">
+            <strong>{{ settings.model || '—' }}</strong>
+            <span>当前模型</span>
           </div>
         </div>
       </div>
+    </header>
 
-      <div class="form-group">
-        <label>API 地址</label>
-        <input
-          v-model="settings.baseUrl"
-          type="text"
-          class="form-input"
-          placeholder="https://api.example.com/v1"
-        />
-        <span class="form-hint">
-          {{
-            currentProvider?.hint ||
-            '支持填写 OpenAI 兼容地址，保存时会自动规范化。'
-          }}
-        </span>
-        <span v-if="resolvedEndpoint" class="form-hint endpoint-hint">
-          实际测试接口：{{ resolvedEndpoint }}
-        </span>
-      </div>
+    <div class="ai-agent-settings-layout studio-workspace">
+      <section
+        class="ai-agent-panel ai-agent-settings-main studio-workspace-main"
+      >
+        <div class="ai-agent-panel-head">
+          <strong>连接配置</strong>
+          <span>保存后聊天与工作流共用</span>
+        </div>
 
-      <div class="form-group">
-        <label>API Key</label>
-        <div class="key-input-wrapper">
+        <div class="form-group">
+          <label>选择服务商</label>
+          <div class="provider-grid">
+            <button
+              v-for="provider in providers"
+              :key="provider.id"
+              type="button"
+              class="provider-card"
+              :class="{ active: settings.provider === provider.id }"
+              @click="selectProvider(provider)"
+            >
+              <span class="provider-icon">{{ provider.icon }}</span>
+              <span class="provider-name">{{ provider.name }}</span>
+              <span v-if="provider.free" class="free-tag">免费额度</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>API 地址</label>
           <input
-            v-model="settings.apiKey"
-            :type="showKey ? 'text' : 'password'"
+            v-model="settings.baseUrl"
+            type="text"
             class="form-input"
-            placeholder="sk-xxxxxxxxxxxxxxxx"
+            placeholder="https://api.example.com/v1"
           />
-          <button type="button" class="toggle-btn" @click="showKey = !showKey">
-            {{ showKey ? '🙈' : '👁️' }}
+          <span class="form-hint">
+            {{
+              currentProvider?.hint ||
+              '支持 OpenAI 兼容地址，保存时会自动规范化。'
+            }}
+          </span>
+          <span v-if="resolvedEndpoint" class="form-hint endpoint-hint">
+            实际接口：{{ resolvedEndpoint }}
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label>API Key</label>
+          <div class="key-input-wrapper">
+            <input
+              v-model="settings.apiKey"
+              :type="showKey ? 'text' : 'password'"
+              class="form-input"
+              placeholder="sk-xxxxxxxxxxxxxxxx"
+            />
+            <button
+              type="button"
+              class="toggle-btn"
+              @click="showKey = !showKey"
+            >
+              <el-icon><component :is="showKey ? Hide : View" /></el-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>模型名称</label>
+          <input
+            v-model="settings.model"
+            list="model-options"
+            type="text"
+            class="form-input"
+            placeholder="输入或选择模型名"
+          />
+          <datalist id="model-options">
+            <option
+              v-for="model in currentModels"
+              :key="model.id"
+              :value="model.id"
+            >
+              {{ model.name }}
+            </option>
+          </datalist>
+        </div>
+
+        <div class="form-actions">
+          <button
+            class="ai-agent-btn-primary"
+            type="button"
+            @click="handleSaveSettings"
+          >
+            保存设置
+          </button>
+          <button
+            class="ai-agent-btn-ghost"
+            type="button"
+            :disabled="testing"
+            @click="handleTestConnection"
+          >
+            {{ testing ? '测试中...' : '测试连接' }}
+          </button>
+          <button
+            class="ai-agent-icon-btn"
+            type="button"
+            @click="resetSettings"
+          >
+            重置
           </button>
         </div>
-        <span class="form-hint">请前往服务商控制台获取 API Key。</span>
-      </div>
 
-      <div class="form-group">
-        <label>模型名称</label>
-        <input
-          v-model="settings.model"
-          list="model-options"
-          type="text"
-          class="form-input"
-          placeholder="输入模型名，或从建议列表中选择"
-        />
-        <datalist id="model-options">
-          <option
-            v-for="model in currentModels"
-            :key="model.id"
-            :value="model.id"
-          >
-            {{ model.name }}
-          </option>
-        </datalist>
-        <span class="form-hint">
-          可直接手填模型名。LongCat 建议从 `LongCat-Flash-Chat` 开始测试。
-        </span>
-      </div>
-
-      <div class="form-actions">
-        <button class="save-btn" @click="handleSaveSettings">
-          <span>💾</span> 保存设置
-        </button>
-        <button class="test-btn" @click="handleTestConnection">
-          <span v-if="!testing">🔗</span>
-          <span v-else class="spin">⏳</span>
-          {{ testing ? '测试中...' : '测试连接' }}
-        </button>
-        <button class="reset-btn" @click="resetSettings">
-          <span>🔄</span> 重置
-        </button>
-      </div>
-
-      <div
-        v-if="testResult"
-        class="test-result"
-        :class="testResult.success ? 'success' : 'error'"
-      >
-        <span class="result-icon">{{ testResult.success ? '✅' : '❌' }}</span>
-        <span class="result-text">{{ testResult.message }}</span>
-      </div>
-    </div>
-
-    <div class="help-section">
-      <h3>📖 接入说明</h3>
-      <div class="help-cards">
-        <div class="help-card">
-          <h4>🟠 LongCat</h4>
-          <ol>
-            <li>
-              获取 key 后直接选择 `LongCat`，或手填
-              <code>https://api.longcat.chat/openai</code>
-            </li>
-            <li>模型建议先用 `LongCat-Flash-Chat`</li>
-            <li>测试连接会自动请求 `/openai/v1/chat/completions`</li>
-            <li>
-              文档：
-              <a href="https://docs.longcat.chat/" target="_blank"
-                >docs.longcat.chat</a
-              >
-            </li>
-          </ol>
+        <div
+          v-if="testResult"
+          class="test-result"
+          :class="testResult.success ? 'success' : 'error'"
+        >
+          <el-icon
+            ><component :is="testResult.success ? CircleCheck : CircleClose"
+          /></el-icon>
+          <span>{{ testResult.message }}</span>
         </div>
-        <div class="help-card">
-          <h4>🔵 DeepSeek</h4>
-          <ol>
-            <li>
-              访问
+      </section>
+
+      <aside
+        class="ai-agent-panel ai-agent-settings-help studio-workspace-side"
+      >
+        <div class="settings-status-card" :class="{ ready: isConfigured }">
+          <div class="settings-status-head">
+            <span class="settings-status-dot"></span>
+            <strong>{{ isConfigured ? '配置完整' : '待完善配置' }}</strong>
+          </div>
+          <div class="settings-status-row">
+            <span>Provider</span>
+            <strong>{{ settings.provider || 'custom' }}</strong>
+          </div>
+          <div class="settings-status-row">
+            <span>Model</span>
+            <strong>{{ settings.model || '未设置' }}</strong>
+          </div>
+          <div class="settings-status-actions">
+            <button
+              type="button"
+              @click="router.push('/ai/workflow?q=咖啡&run=1')"
+            >
+              一键体验示例工作流
+            </button>
+            <button type="button" @click="router.push('/ai/chat')">
+              去 Agent 聊天
+            </button>
+          </div>
+        </div>
+
+        <div class="ai-agent-panel-head">
+          <strong>接入说明</strong>
+          <span>常用服务商</span>
+        </div>
+        <div class="help-cards">
+          <div class="help-card">
+            <h4>LongCat</h4>
+            <p>Base URL: <code>https://api.longcat.chat/openai</code></p>
+            <p>模型建议：<code>LongCat-Flash-Chat</code></p>
+          </div>
+          <div class="help-card">
+            <h4>DeepSeek</h4>
+            <p>
+              控制台：
               <a href="https://platform.deepseek.com" target="_blank"
                 >platform.deepseek.com</a
               >
-            </li>
-            <li>注册账号并登录</li>
-            <li>进入控制台 → API Keys</li>
-            <li>创建新的 API Key</li>
-          </ol>
-        </div>
-        <div class="help-card">
-          <h4>🟢 通义千问</h4>
-          <ol>
-            <li>
-              访问
+            </p>
+          </div>
+          <div class="help-card">
+            <h4>通义千问</h4>
+            <p>
+              控制台：
               <a href="https://dashscope.aliyun.com" target="_blank"
                 >dashscope.aliyun.com</a
               >
-            </li>
-            <li>使用阿里云账号登录</li>
-            <li>进入 API-KEY 管理</li>
-            <li>创建新的 API Key</li>
-          </ol>
-        </div>
-        <div class="help-card">
-          <h4>🟣 智谱 GLM</h4>
-          <ol>
-            <li>
-              访问
+            </p>
+          </div>
+          <div class="help-card">
+            <h4>智谱 GLM</h4>
+            <p>
+              控制台：
               <a href="https://open.bigmodel.cn" target="_blank"
                 >open.bigmodel.cn</a
               >
-            </li>
-            <li>注册并登录账号</li>
-            <li>进入个人中心 → API Keys</li>
-            <li>创建新的 API Key</li>
-          </ol>
+            </p>
+          </div>
         </div>
-      </div>
+      </aside>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { CircleCheck, CircleClose, Hide, View } from '@element-plus/icons-vue'
+import AgentStudioHeader from '@/components/agent/AgentStudioHeader.vue'
 import {
   AI_PROVIDERS,
   getAIChatEndpoint,
@@ -194,6 +238,7 @@ defineOptions({
   name: 'AiWorkflowSettingsPage'
 })
 
+const router = useRouter()
 const showKey = ref(false)
 const testing = ref(false)
 const testResult = ref<{ success: boolean; message: string } | null>(null)
@@ -211,6 +256,11 @@ const currentProvider = computed(() =>
 )
 const currentModels = computed(() => currentProvider.value?.models || [])
 const resolvedEndpoint = computed(() => getAIChatEndpoint(settings.value))
+const isConfigured = computed(() =>
+  Boolean(
+    settings.value.apiKey && settings.value.model && settings.value.baseUrl
+  )
+)
 
 onMounted(() => {
   settings.value = getAISettings()
@@ -250,7 +300,7 @@ const handleSaveSettings = () => {
   }
 
   saveAISettings(normalized)
-  ElMessage.success('设置已保存')
+  ElMessage.success('设置已保存，可点击右侧「一键体验示例工作流」')
 }
 
 const handleTestConnection = async () => {
@@ -298,139 +348,221 @@ const resetSettings = () => {
 </script>
 
 <style lang="scss" scoped>
-.settings-page {
-  padding: 24px;
-  max-width: 980px;
-  margin: 0 auto;
-}
+@use '@/style/ai-agent-page.scss';
+@use '@/style/studio-workspace.scss';
+@use '@/style/platform-page.scss';
 
-.settings-header {
+.ai-settings-page {
+  background: transparent;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: flex-start;
-  margin-bottom: 32px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 16px;
+  box-sizing: border-box;
 
-  h1 {
-    margin: 0 0 8px;
-    font-size: 28px;
-    font-weight: 700;
-    color: #1e293b;
-  }
-
-  p {
-    margin: 0;
-    color: #64748b;
-    font-size: 15px;
+  :deep(.ai-agent-studio-head) {
+    flex-shrink: 0;
+    margin-bottom: 0;
   }
 }
 
-.chat-entry {
+.settings-hero {
   flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 18px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #ecfeff 0%, #e0f2fe 100%);
-  border: 1px solid #bae6fd;
-  color: #0f766e;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 600;
+  margin-bottom: 0;
 }
 
-.settings-form {
-  background: #fff;
-  border-radius: 20px;
-  padding: 32px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-  margin-bottom: 32px;
+.ai-agent-settings-layout {
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 22vw);
+  gap: 0;
+  align-content: stretch;
+}
+
+.ai-agent-settings-main {
+  min-height: 0;
+  overflow-y: auto;
+  border-right: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 18px 20px 22px;
+}
+
+.ai-agent-settings-help {
+  min-height: 0;
+  overflow-y: auto;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.settings-status-card {
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--app-surface);
+  border: 1px solid rgba(217, 119, 6, 0.18);
+
+  &.ready {
+    border-color: rgba(22, 163, 74, 0.2);
+  }
+}
+
+.settings-status-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  strong {
+    font-size: 13px;
+    color: var(--app-text-main);
+  }
+}
+
+.settings-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--app-warning);
+}
+
+.settings-status-card.ready .settings-status-dot {
+  background: var(--app-success);
+}
+
+.settings-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 12px;
+
+  & + & {
+    border-top: 1px dashed var(--app-border);
+  }
+
+  span {
+    color: var(--app-text-faint);
+  }
+
+  strong {
+    color: var(--app-text-main);
+    font-weight: 600;
+    word-break: break-all;
+    text-align: right;
+  }
+}
+
+.settings-status-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+
+  button {
+    padding: 8px 10px;
+    border: 1px dashed var(--app-border-strong);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--app-text-sub);
+    font-size: 12px;
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--app-accent-muted);
+      background: var(--app-accent-soft);
+      color: var(--app-accent);
+    }
+  }
 }
 
 .form-group {
-  margin-bottom: 28px;
+  margin-bottom: 20px;
 
   label {
     display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--app-text-main);
   }
 }
 
 .provider-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
 }
 
 .provider-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 16px 12px;
-  background: #f8fafc;
-  border: 2px solid transparent;
-  border-radius: 14px;
+  padding: 14px 10px;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  background: var(--app-surface-muted);
   cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
+  transition: all 0.18s ease;
 
   &:hover {
-    background: #f1f5f9;
-    transform: translateY(-2px);
+    border-color: var(--app-accent-muted);
+    transform: translateY(-1px);
   }
 
   &.active {
-    background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
-    border-color: #8b5cf6;
+    border-color: var(--app-accent);
+    background: var(--app-accent-soft);
+    box-shadow: inset 0 0 0 1px var(--app-accent-muted);
   }
 }
 
 .provider-icon {
-  font-size: 28px;
+  font-size: 24px;
 }
 
 .provider-name {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  color: #475569;
+  color: var(--app-text-sub);
   text-align: center;
 }
 
 .free-tag {
   position: absolute;
   top: -6px;
-  right: -6px;
+  right: -4px;
   padding: 2px 6px;
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 600;
   border-radius: 999px;
+  background: var(--app-success);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
 }
 
 .form-input {
   width: 100%;
-  padding: 14px 16px;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 15px;
-  color: #1e293b;
-  background: #fff;
-  transition: all 0.2s ease;
+  padding: 11px 13px;
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  background: var(--app-surface-muted);
+  color: var(--app-text-main);
+  font-size: 14px;
+  transition: all 0.18s ease;
 
   &:focus {
     outline: none;
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
-  }
-
-  &::placeholder {
-    color: #94a3b8;
+    border-color: var(--app-accent-muted);
+    box-shadow: var(--app-search-focus-shadow);
+    background: var(--app-surface);
   }
 }
 
@@ -444,174 +576,94 @@ const resetSettings = () => {
 }
 
 .toggle-btn {
-  width: 50px;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  background: #f8fafc;
-  font-size: 18px;
+  width: 44px;
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  background: var(--app-surface-muted);
   cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #f1f5f9;
-  }
+  display: grid;
+  place-items: center;
+  color: var(--app-text-sub);
 }
 
 .form-hint {
   display: block;
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: 12px;
-  color: #94a3b8;
-  line-height: 1.6;
+  color: var(--app-text-faint);
+  line-height: 1.5;
 }
 
 .endpoint-hint {
-  color: #0f766e;
+  color: var(--app-accent);
 }
 
 .form-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 32px;
-}
-
-.save-btn,
-.test-btn,
-.reset-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 24px;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-  }
-}
-
-.save-btn {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-  color: #fff;
-}
-
-.test-btn {
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.reset-btn {
-  background: #fef2f2;
-  color: #dc2626;
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .test-result {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-  padding: 14px 18px;
-  border-radius: 12px;
-  font-size: 14px;
-  line-height: 1.6;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
 
   &.success {
-    background: #ecfdf5;
-    color: #16a34a;
+    background: rgba(22, 163, 74, 0.08);
+    border: 1px solid rgba(22, 163, 74, 0.14);
+    color: var(--app-success);
   }
 
   &.error {
-    background: #fef2f2;
-    color: #dc2626;
-  }
-}
-
-.result-icon {
-  font-size: 18px;
-}
-
-.help-section {
-  h3 {
-    margin: 0 0 20px;
-    font-size: 18px;
-    font-weight: 700;
-    color: #1e293b;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.14);
+    color: var(--app-danger);
   }
 }
 
 .help-cards {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 10px;
 }
 
 .help-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface-muted);
 
   h4 {
-    margin: 0 0 14px;
-    font-size: 15px;
-    font-weight: 600;
-    color: #1e293b;
-  }
-
-  ol {
-    margin: 0;
-    padding-left: 18px;
+    margin: 0 0 6px;
     font-size: 13px;
-    color: #64748b;
-    line-height: 1.8;
+    color: var(--app-text-main);
   }
 
-  a,
+  p {
+    margin: 0 0 4px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--app-text-sub);
+  }
+
   code {
-    color: #8b5cf6;
+    font-family: var(--app-font-mono);
+    font-size: 11px;
+  }
+
+  a {
+    color: var(--app-accent);
   }
 }
 
-@media (max-width: 1100px) {
-  .provider-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .settings-header {
-    flex-direction: column;
-  }
-
-  .help-cards {
+@media (max-width: 1024px) {
+  .ai-agent-settings-layout {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 600px) {
-  .provider-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .form-actions {
-    flex-direction: column;
   }
 }
 </style>

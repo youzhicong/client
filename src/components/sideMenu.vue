@@ -1,12 +1,23 @@
 <template>
-  <div class="app-sidebar">
+  <div class="app-sidebar" :class="{ 'mobile-open': mobileSidebarOpen }">
+    <button
+      v-if="mobileSidebarOpen"
+      type="button"
+      class="sidebar-backdrop"
+      aria-label="关闭导航菜单"
+      @click="closeMobileSidebar"
+    />
     <div class="sidebar-top">
-      <div class="sidebar-title">
+      <div v-if="isPortfolioMode" class="sidebar-title compact">
+        <strong>FlowAgent</strong>
+      </div>
+      <div v-else class="sidebar-title">
         <strong>项目导航</strong>
-        <span>按项目归类菜单，减少主导航堆叠</span>
+        <span>按项目归类菜单，Agent 工作流优先</span>
       </div>
 
       <el-select
+        v-if="projectWorkspaces.length > 1"
         :model-value="currentProject.key"
         class="project-select"
         placeholder="请选择项目"
@@ -22,7 +33,36 @@
     </div>
 
     <div class="sidebar-scroll">
-      <div class="project-summary">
+      <div v-if="isPortfolioMode" class="platform-nav">
+        <div
+          v-for="section in platformSections"
+          :key="section.key"
+          class="platform-nav-group"
+        >
+          <div class="platform-nav-head">{{ section.title }}</div>
+          <router-link
+            v-for="item in section.items"
+            :key="item.index"
+            :to="item.index"
+            class="agent-quick-link"
+            :class="{ active: isActiveMenu(item) }"
+          >
+            <span class="nav-icon-wrap" :class="item.theme">
+              <el-icon><component :is="item.icon" /></el-icon>
+            </span>
+            <span class="agent-quick-copy">
+              <strong>{{ item.label }}</strong>
+              <span>{{ item.desc }}</span>
+            </span>
+          </router-link>
+        </div>
+      </div>
+
+      <div
+        v-if="!isPortfolioMode"
+        class="project-summary"
+        :class="{ compact: isPortfolioMode }"
+      >
         <span class="project-summary-icon">
           <el-icon><component :is="currentProject.icon" /></el-icon>
         </span>
@@ -32,7 +72,7 @@
         </div>
       </div>
 
-      <div class="sidebar-actions">
+      <div v-if="!isPortfolioMode" class="sidebar-actions">
         <button
           type="button"
           class="action-link action-link-primary"
@@ -40,12 +80,23 @@
         >
           进入项目
         </button>
-        <button type="button" class="action-link" @click="goToBusinessHub">
-          查看总览
+        <button type="button" class="action-link" @click="goToHelpCenter">
+          帮助中心
         </button>
       </div>
 
-      <div v-if="recentItems.length" class="sidebar-panel">
+      <div v-if="isExternalRoute" class="sidebar-panel external-notice">
+        <span>当前页面不在主导航中，请返回 FlowAgent 工作区。</span>
+        <button
+          type="button"
+          class="action-link"
+          @click="goToCurrentProjectHome"
+        >
+          返回工作流
+        </button>
+      </div>
+
+      <div v-if="recentItems.length && !isPortfolioMode" class="sidebar-panel">
         <div class="panel-head">
           <span>最近访问</span>
           <button type="button" class="panel-clear" @click="clearRecentItems">
@@ -73,14 +124,14 @@
         </button>
       </div>
 
-      <div class="nav-group">
+      <div v-if="!isPortfolioMode" class="nav-group">
         <div class="nav-head">
           <strong>{{ currentProject.title }}</strong>
           <span>{{ currentProject.sections.length }} 个分组</span>
         </div>
 
         <div
-          v-for="(section, sectionIndex) in currentProject.sections"
+          v-for="(section, sectionIndex) in visibleSections"
           :key="section.key"
           class="menu-section"
         >
@@ -132,6 +183,27 @@
           </transition>
         </div>
       </div>
+
+      <nav v-if="isPortfolioMode" class="sidebar-account-nav">
+        <router-link
+          v-for="item in accountQuickLinks"
+          :key="item.index"
+          :to="item.index"
+          class="sidebar-account-link"
+          :class="{ active: isActiveMenu(item) }"
+        >
+          {{ item.label }}
+        </router-link>
+      </nav>
+
+      <div v-if="isPortfolioMode" class="sidebar-footer">
+        <router-link to="/ai/workflow?q=咖啡&run=1" class="sidebar-run-btn">
+          ☕ 一键跑「咖啡」工作流
+        </router-link>
+        <router-link to="/ai/dashboard" class="sidebar-foot-link"
+          >回到概览</router-link
+        >
+      </div>
     </div>
   </div>
 </template>
@@ -140,22 +212,29 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowDown } from '@element-plus/icons-vue'
+import { useMobileSidebar } from '@/composables/useMobileSidebar'
 import {
   defaultProjectWorkspace,
+  isPathVisibleInNavigation,
   projectWorkspaces,
-  resolveProjectByPath,
+  resolveVisibleProjectByPath,
   type MenuItem,
   type MenuSection,
   type ProjectWorkspace
 } from '@/config/navigation'
+import { defaultAppHomePath, isPortfolioMode } from '@/config/portfolio'
 import { useRecentNavigation } from '@/composables/useRecentNavigation'
 
 const route = useRoute()
 const router = useRouter()
+const { mobileSidebarOpen, closeMobileSidebar } = useMobileSidebar()
 const { recentItems, recordRecentPath, clearRecentItems } =
   useRecentNavigation()
 
 const activePath = computed(() => route.path)
+const isExternalRoute = computed(
+  () => isPortfolioMode && !isPathVisibleInNavigation(activePath.value)
+)
 
 const getMenuDelay = (sectionIndex: number, index: number) =>
   `${(sectionIndex * 0.05 + index * 0.03).toFixed(2)}s`
@@ -168,9 +247,7 @@ const isActiveMenu = (item: MenuItem) => {
   })
 }
 
-const currentProjectKey = ref(
-  (resolveProjectByPath(activePath.value) || defaultProjectWorkspace).key
-)
+const currentProjectKey = ref(resolveVisibleProjectByPath(activePath.value).key)
 
 const currentProject = computed<ProjectWorkspace>(() => {
   return (
@@ -179,6 +256,19 @@ const currentProject = computed<ProjectWorkspace>(() => {
     ) || defaultProjectWorkspace
   )
 })
+
+const platformSections = computed(() =>
+  currentProject.value.sections.filter((section) => section.key !== 'account')
+)
+
+const accountQuickLinks = computed(() => {
+  const account = currentProject.value.sections.find(
+    (section) => section.key === 'account'
+  )
+  return account?.items ?? []
+})
+
+const visibleSections = computed(() => currentProject.value.sections)
 
 const sectionHasActive = (section: MenuSection) =>
   section.items.some((item) => isActiveMenu(item))
@@ -192,11 +282,14 @@ const ensureProjectSections = (project: ProjectWorkspace) => {
   const activeSection = project.sections.find((section) =>
     sectionHasActive(section)
   )
-  const defaultKeys = activeSection
-    ? [buildSectionKey(project.key, activeSection.key)]
-    : project.sections
-        .slice(0, 1)
-        .map((section) => buildSectionKey(project.key, section.key))
+  const preferredKeys = [activeSection?.key].filter(Boolean)
+
+  const defaultKeys =
+    preferredKeys.length > 0
+      ? preferredKeys.map((key) => buildSectionKey(project.key, key as string))
+      : project.sections
+          .slice(0, 1)
+          .map((section) => buildSectionKey(project.key, section.key))
 
   openedSections.value = Array.from(
     new Set([
@@ -243,11 +336,13 @@ const handleProjectSelect = (projectKey: string) => {
 }
 
 const goToCurrentProjectHome = () => {
-  void router.push(currentProject.value.homePath)
+  void router.push(
+    isPortfolioMode ? defaultAppHomePath : currentProject.value.homePath
+  )
 }
 
-const goToBusinessHub = () => {
-  void router.push('/business-hub')
+const goToHelpCenter = () => {
+  void router.push('/help-center')
 }
 
 const goToRecentItem = (path: string) => {
@@ -257,9 +352,10 @@ const goToRecentItem = (path: string) => {
 watch(
   activePath,
   (path) => {
-    const matchedProject = resolveProjectByPath(path) || defaultProjectWorkspace
-    currentProjectKey.value = matchedProject.key
-    ensureProjectSections(matchedProject)
+    closeMobileSidebar()
+    const visibleProject = resolveVisibleProjectByPath(path)
+    currentProjectKey.value = visibleProject.key
+    ensureProjectSections(visibleProject)
     recordRecentPath(path)
   },
   { immediate: true }
@@ -268,11 +364,11 @@ watch(
 
 <style lang="scss" scoped>
 .app-sidebar {
-  width: 280px;
-  height: calc(100vh - 72px);
+  width: var(--app-sidebar-width);
+  height: calc(100vh - var(--app-header-height));
   position: fixed;
   left: 0;
-  top: 72px;
+  top: var(--app-header-height);
   z-index: 999;
   display: flex;
   flex-direction: column;
@@ -282,8 +378,25 @@ watch(
 }
 
 .sidebar-top {
-  padding: 16px 16px 12px;
+  padding: 18px 16px 14px;
   border-bottom: 1px solid var(--app-border);
+  background: linear-gradient(
+    180deg,
+    rgba(37, 99, 235, 0.04) 0%,
+    transparent 100%
+  );
+}
+
+.sidebar-title.compact {
+  margin-bottom: 0;
+
+  strong {
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--app-accent);
+    font-weight: 800;
+  }
 }
 
 .sidebar-title {
@@ -310,8 +423,10 @@ watch(
 
 .sidebar-scroll {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
-  padding: 14px 12px 18px;
+  padding: 14px 12px 12px;
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -323,12 +438,108 @@ watch(
   }
 }
 
+.platform-nav {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.platform-nav-group {
+  display: grid;
+  gap: 4px;
+}
+
+.platform-nav-head {
+  padding: 0 12px 6px;
+  color: var(--app-text-faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.agent-quick-link {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  text-decoration: none;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.15s ease;
+
+  &:hover {
+    background: var(--app-sidebar-hover);
+    transform: translateX(2px);
+  }
+
+  &.active {
+    background: var(--app-accent-soft);
+    border-color: var(--app-accent-muted);
+    box-shadow: var(--app-shadow-sm);
+
+    .agent-quick-copy strong {
+      color: var(--app-accent);
+    }
+
+    .nav-icon-wrap {
+      background: var(--app-accent);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
+    }
+  }
+}
+
+.agent-quick-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+
+  strong {
+    color: var(--app-sidebar-text);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  span {
+    color: var(--app-sidebar-muted);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+}
+
+.project-summary.compact {
+  padding: 10px 12px;
+  margin-bottom: 10px;
+
+  .project-summary-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .project-summary-copy span {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
 .project-summary,
 .sidebar-panel,
 .nav-group {
   border: 1px solid var(--app-border);
-  border-radius: 12px;
+  border-radius: var(--app-radius-md);
   background: var(--app-surface);
+  box-shadow: var(--app-shadow-sm);
 }
 
 .project-summary {
@@ -344,8 +555,8 @@ watch(
   height: 36px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
-  background: #eff6ff;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-accent-soft);
   color: var(--app-accent);
   font-size: 16px;
   flex-shrink: 0;
@@ -380,7 +591,7 @@ watch(
   height: 34px;
   border: 1px solid var(--app-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--app-surface);
   color: var(--app-text-main);
   font-size: 12px;
   font-weight: 600;
@@ -397,13 +608,13 @@ watch(
 }
 
 .action-link-primary {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
+  background: var(--app-accent);
+  border-color: var(--app-accent);
   color: #fff;
 
   &:hover {
-    background: #1e40af;
-    border-color: #1e40af;
+    background: var(--app-accent-strong);
+    border-color: var(--app-accent-strong);
     color: #fff;
   }
 }
@@ -411,6 +622,24 @@ watch(
 .sidebar-panel {
   padding: 12px;
   margin-bottom: 12px;
+}
+
+.external-notice {
+  display: grid;
+  gap: 8px;
+  border: 1px dashed #fbbf24;
+  border-radius: 10px;
+  background: #fffbeb;
+
+  span {
+    color: #92400e;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .action-link {
+    justify-self: start;
+  }
 }
 
 .panel-head {
@@ -451,13 +680,13 @@ watch(
     border-color 0.2s ease;
 
   &:hover {
-    background: #f8fafc;
-    border-color: #e2e8f0;
+    background: var(--app-sidebar-hover);
+    border-color: var(--app-border);
   }
 
   &.active {
-    background: #eff6ff;
-    border-color: #bfdbfe;
+    background: var(--app-accent-soft);
+    border-color: var(--app-accent-muted);
   }
 }
 
@@ -523,13 +752,13 @@ watch(
     border-color 0.2s ease;
 
   &:hover {
-    background: #f8fafc;
-    border-color: #e2e8f0;
+    background: var(--app-sidebar-hover);
+    border-color: var(--app-border);
   }
 
   &.active {
-    background: #f8fafc;
-    border-color: #dbeafe;
+    background: var(--app-surface-muted);
+    border-color: var(--app-accent-muted);
   }
 }
 
@@ -552,7 +781,7 @@ watch(
 }
 
 .section-icon {
-  background: #f1f5f9;
+  background: var(--app-surface-muted);
   color: var(--app-accent);
 }
 
@@ -618,13 +847,13 @@ watch(
     border-color 0.2s ease;
 
   &:hover {
-    background: #f8fafc;
-    border-color: #e2e8f0;
+    background: var(--app-sidebar-hover);
+    border-color: var(--app-border);
   }
 
   &.active {
-    background: #eff6ff;
-    border-color: #bfdbfe;
+    background: var(--app-accent-soft);
+    border-color: var(--app-accent-muted);
   }
 }
 
@@ -727,6 +956,82 @@ watch(
   color: #1e3a8a;
 }
 
+.sidebar-account-nav {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--app-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sidebar-footer {
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--app-border);
+  display: grid;
+  gap: 8px;
+}
+
+.sidebar-run-btn {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: linear-gradient(
+    135deg,
+    var(--app-accent) 0%,
+    var(--app-secondary) 100%
+  );
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.24);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(37, 99, 235, 0.3);
+  }
+}
+
+.sidebar-foot-link {
+  display: block;
+  padding: 6px 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--app-text-faint);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--app-accent);
+  }
+}
+
+.sidebar-account-link {
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--app-sidebar-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--app-sidebar-hover);
+    color: var(--app-sidebar-text);
+  }
+
+  &.active {
+    background: var(--app-accent-soft);
+    color: var(--app-accent);
+  }
+}
+
 @media (max-width: 1120px) {
   .app-sidebar {
     width: 248px;
@@ -734,7 +1039,34 @@ watch(
 }
 
 @media (max-width: 820px) {
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 998;
+    border: 0;
+    padding: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    cursor: pointer;
+  }
+
   .app-sidebar {
+    display: flex;
+    z-index: 999;
+    transform: translateX(-105%);
+    transition: transform 0.24s ease;
+    box-shadow: none;
+  }
+
+  .app-sidebar.mobile-open {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(15, 23, 42, 0.18);
+  }
+}
+
+@media (min-width: 821px) {
+  .sidebar-backdrop {
     display: none;
   }
 }
